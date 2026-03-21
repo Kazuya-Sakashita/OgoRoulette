@@ -5,7 +5,7 @@ import { RouletteWheel } from "@/components/roulette-wheel"
 import { Confetti } from "@/components/confetti"
 import { WinnerCard } from "@/components/winner-card"
 import { QrCode, Sparkles, Plus, X as XIcon, History, ChevronDown, ChevronUp, Calculator, LogOut } from "lucide-react"
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { createClient } from "@/lib/supabase/client"
@@ -22,6 +22,7 @@ export default function HomePage() {
   const [newName, setNewName] = useState("")
   const [winner, setWinner] = useState<{ name: string; index: number } | null>(null)
   const [showConfetti, setShowConfetti] = useState(false)
+  const confettiTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [user, setUser] = useState<User | null>(null)
   const router = useRouter()
 
@@ -45,6 +46,8 @@ export default function HomePage() {
     getUser()
   }, [])
 
+  useEffect(() => () => clearTimeout(confettiTimerRef.current ?? undefined), [])
+
   const handleLogout = async () => {
     const supabase = createClient()
     await supabase.auth.signOut()
@@ -62,7 +65,8 @@ export default function HomePage() {
     setIsSpinning(false)
     setWinner({ name: winnerName, index: winnerIndex })
     setShowConfetti(true)
-    setTimeout(() => setShowConfetti(false), 4000)
+    clearTimeout(confettiTimerRef.current ?? undefined)
+    confettiTimerRef.current = setTimeout(() => setShowConfetti(false), 4000)
 
     // Save session to DB (fire-and-forget — don't block the UX)
     if (user) {

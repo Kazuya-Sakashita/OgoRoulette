@@ -111,6 +111,7 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
   const [isGuestHost, setIsGuestHost] = useState(false)
   // Guest host token — used as X-Guest-Host-Token header for server-side auth
   const guestHostTokenRef = useRef<string | null>(null)
+  const confettiTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // --- Derived ---
 
@@ -177,6 +178,8 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
     const interval = setInterval(() => fetchRoom(), 3000)
     return () => clearInterval(interval)
   }, [code]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => () => clearTimeout(confettiTimerRef.current ?? undefined), [])
 
   useEffect(() => {
     if (!room) return
@@ -384,7 +387,8 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
       playResultSound()
       vibrate(HapticPattern.result)
       setShowConfetti(true)
-      setTimeout(() => setShowConfetti(false), 4000)
+      clearTimeout(confettiTimerRef.current ?? undefined)
+      confettiTimerRef.current = setTimeout(() => setShowConfetti(false), 4000)
       // ルームとセッションを COMPLETED にする（非クリティカル: ポーリングでメンバーに伝わる）
       fetch(`/api/rooms/${code}/spin-complete`, {
         method: "POST",
@@ -399,7 +403,8 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
         playResultSound()
         vibrate(HapticPattern.result)
         setShowConfetti(true)
-        setTimeout(() => setShowConfetti(false), 4000)
+        clearTimeout(confettiTimerRef.current ?? undefined)
+        confettiTimerRef.current = setTimeout(() => setShowConfetti(false), 4000)
       }
     }
   }
