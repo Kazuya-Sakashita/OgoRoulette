@@ -92,8 +92,9 @@ describe('calculateBillSplit', () => {
     expect(splitAmount).toBe(0)
   })
 
-  test('人数2人未満: isActive が true でも 0 を返す', () => {
+  test('人数1人: isActive は false（splitAmount が無意味なため）', () => {
     const result = calculateBillSplit(5000, 0, 1)
+    expect(result.isActive).toBe(false)
     expect(result.splitAmount).toBe(0)
     expect(result.remainingAmount).toBe(0)
   })

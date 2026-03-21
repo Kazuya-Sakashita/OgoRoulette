@@ -27,9 +27,12 @@ export function calculateBillSplit(
   const bill = Math.max(0, Math.floor(totalBill))
   const treat = Math.min(Math.max(0, Math.floor(treatAmount)), bill)
 
-  const isActive = bill > 0
+  // participantCount < 2 でも bill > 0 なら isActive: true を返していたが、
+  // splitAmount が 0 になるため呼び出し元の「金額入力済み」判定が誤動作する。
+  // 金額表示・保存が有効なのは参加者が 2 人以上いる場合のみ。
+  const isActive = bill > 0 && participantCount >= 2
 
-  if (!isActive || participantCount < 2) {
+  if (!isActive) {
     return { remainingAmount: 0, splitAmount: 0, isActive }
   }
 
