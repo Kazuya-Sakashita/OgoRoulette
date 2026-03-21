@@ -46,5 +46,9 @@ temp/
 
 # Claude Code related
 CLAUDE.md
-.claude/
+claude.md
+.claude/*
 .mcp.json
+
+# Blog drafts (local only)
+docs/blog/
