@@ -1,0 +1,19 @@
+<svg width="180" height="180" viewBox="0 0 180 180" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="180" height="180" rx="36" fill="#0B1B2B"/>
+  <!-- Roulette wheel segments (simplified 6-slice) -->
+  <path d="M90 90 L90 24 A66 66 0 0 1 147.1 57 Z" fill="#EF4444"/>
+  <path d="M90 90 L147.1 57 A66 66 0 0 1 147.1 123 Z" fill="#F59E0B"/>
+  <path d="M90 90 L147.1 123 A66 66 0 0 1 90 156 Z" fill="#22C55E"/>
+  <path d="M90 90 L90 156 A66 66 0 0 1 32.9 123 Z" fill="#3B82F6"/>
+  <path d="M90 90 L32.9 123 A66 66 0 0 1 32.9 57 Z" fill="#A855F7"/>
+  <path d="M90 90 L32.9 57 A66 66 0 0 1 90 24 Z" fill="#F97316"/>
+  <!-- Outer ring -->
+  <circle cx="90" cy="90" r="66" stroke="#F59E0B" stroke-width="7" fill="none"/>
+  <!-- Center hub -->
+  <circle cx="90" cy="90" r="20" fill="#0B1B2B"/>
+  <circle cx="90" cy="90" r="12" fill="#F59E0B"/>
+  <circle cx="90" cy="90" r="6" fill="#0B1B2B"/>
+  <!-- Pointer at top -->
+  <polygon points="90,12 84,28 96,28" fill="#F59E0B"/>
+</svg>

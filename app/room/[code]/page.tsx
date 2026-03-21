@@ -1,0 +1,363 @@
+"use client"
+
+import { useEffect, useRef, useState, use } from "react"
+import { Button } from "@/components/ui/button"
+import { ArrowLeft, Copy, Check, Users, Crown, QrCode, Share2, RefreshCw } from "lucide-react"
+import Link from "next/link"
+import Image from "next/image"
+import { useRouter } from "next/navigation"
+
+interface Member {
+  id: string
+  nickname: string | null
+  color: string
+  isHost: boolean
+  profile: {
+    id: string
+    name: string | null
+    avatarUrl: string | null
+  } | null
+}
+
+interface Room {
+  id: string
+  name: string | null
+  inviteCode: string
+  status: string
+  maxMembers: number
+  members: Member[]
+  owner: {
+    id: string
+    name: string | null
+    avatarUrl: string | null
+  }
+  _count: {
+    members: number
+  }
+}
+
+export default function RoomPage({ params }: { params: Promise<{ code: string }> }) {
+  const { code } = use(params)
+  const router = useRouter()
+  const [room, setRoom] = useState<Room | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [copied, setCopied] = useState(false)
+  const [showQRFull, setShowQRFull] = useState(false)
+  // Stops polling once room is COMPLETED (ref avoids stale closure in setInterval)
+  const isCompletedRef = useRef(false)
+
+  const fetchRoom = async () => {
+    try {
+      const res = await fetch(`/api/rooms/${code}`)
+      const data = await res.json()
+
+      if (!res.ok) {
+        setError(data.error || "ルームが見つかりません")
+        return
+      }
+
+      isCompletedRef.current = data.status === "COMPLETED"
+      // Skip re-render when key fields are unchanged (prevents QR image from re-fetching)
+      setRoom(prev => {
+        if (prev && prev.status === data.status && prev._count.members === data._count.members) return prev
+        return data
+      })
+    } catch {
+      setError("ルームの取得に失敗しました")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Poll for updates every 3 seconds; stops once room is COMPLETED
+  useEffect(() => {
+    fetchRoom()
+    const interval = setInterval(() => {
+      if (!isCompletedRef.current) fetchRoom()
+    }, 3000)
+    return () => clearInterval(interval)
+  }, [code]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const copyInviteLink = async () => {
+    const url = `${window.location.origin}/join/${room?.inviteCode}`
+    await navigator.clipboard.writeText(url)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  const shareRoom = async () => {
+    const url = `${window.location.origin}/join/${room?.inviteCode}`
+    const text = `OgoRouletteでルーレットしよう！\n${room?.name || "ルーレットルーム"}に参加: `
+    
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'OgoRoulette',
+          text: text,
+          url: url
+        })
+      } catch {
+        // User cancelled or share failed
+      }
+    } else {
+      copyInviteLink()
+    }
+  }
+
+  const shareUrl = room ? `${typeof window !== 'undefined' ? window.location.origin : ''}/join/${room.inviteCode}` : ''
+  const qrCodeUrl = room ? `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(shareUrl)}&bgcolor=FFFFFF&color=0B1B2B&margin=10` : ''
+
+  if (loading) {
+    return (
+      <main className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full" />
+      </main>
+    )
+  }
+
+  if (error || !room) {
+    return (
+      <main className="min-h-screen bg-background">
+        <div className="mx-auto max-w-[390px] min-h-screen flex flex-col px-5 py-6">
+          <header className="flex items-center gap-4 mb-8">
+            <Button asChild variant="ghost" size="icon" className="text-muted-foreground">
+              <Link href="/">
+                <ArrowLeft className="w-5 h-5" />
+              </Link>
+            </Button>
+          </header>
+          
+          <div className="flex-1 flex flex-col items-center justify-center text-center">
+            <div className="w-16 h-16 rounded-full bg-destructive/20 flex items-center justify-center mb-4">
+              <QrCode className="w-8 h-8 text-destructive" />
+            </div>
+            <h1 className="text-xl font-bold text-foreground mb-2">ルームが見つかりません</h1>
+            <p className="text-sm text-muted-foreground mb-6">{error}</p>
+            <Button asChild className="bg-gradient-accent text-primary-foreground">
+              <Link href="/">ホームに戻る</Link>
+            </Button>
+          </div>
+        </div>
+      </main>
+    )
+  }
+
+  return (
+    <main className="min-h-screen bg-background">
+      {/* Full Screen QR Modal */}
+      {showQRFull && (
+        <div 
+          className="fixed inset-0 bg-white z-50 flex flex-col items-center justify-center p-8"
+          onClick={() => setShowQRFull(false)}
+        >
+          <div className="text-center mb-6">
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <Image 
+                src="/images/logo-icon.png" 
+                alt="OgoRoulette" 
+                width={32} 
+                height={32}
+              />
+              <span className="text-xl font-bold text-gray-900">
+                Ogo<span className="text-[#F59E0B]">Roulette</span>
+              </span>
+            </div>
+            <p className="text-gray-600 text-sm">スキャンしてルームに参加</p>
+          </div>
+
+          <div className="bg-white p-4 rounded-3xl shadow-xl">
+            <img 
+              src={qrCodeUrl} 
+              alt="QR Code" 
+              className="w-64 h-64 sm:w-72 sm:h-72"
+            />
+          </div>
+
+          <div className="mt-6 text-center">
+            <p className="text-2xl font-mono font-bold text-gray-900 tracking-[0.2em]">
+              {room.inviteCode}
+            </p>
+            <p className="text-gray-500 text-sm mt-1">{room.name || "ルーレットルーム"}</p>
+          </div>
+
+          <Button 
+            onClick={() => setShowQRFull(false)}
+            className="mt-8 bg-[#0B1B2B] text-white hover:bg-[#0B1B2B]/90"
+          >
+            閉じる
+          </Button>
+        </div>
+      )}
+
+      <div className="mx-auto max-w-[390px] min-h-screen flex flex-col px-5 py-6">
+        {/* Header */}
+        <header className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <Button asChild variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
+              <Link href="/">
+                <ArrowLeft className="w-5 h-5" />
+              </Link>
+            </Button>
+            <div>
+              <h1 className="text-lg font-bold text-foreground">{room.name || "ルーレットルーム"}</h1>
+              <p className="text-xs text-muted-foreground">招待コード: {room.inviteCode}</p>
+            </div>
+          </div>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={fetchRoom}
+            className="text-muted-foreground hover:text-foreground"
+          >
+            <RefreshCw className="w-5 h-5" />
+          </Button>
+        </header>
+
+        {/* QR Code Section - Main Focus for Owner */}
+        <section className="mb-6">
+          <div className="glass-card rounded-3xl p-6 border border-white/10 text-center">
+            <h2 className="text-sm font-semibold text-muted-foreground mb-4 uppercase tracking-wider">
+              メンバーを招待
+            </h2>
+            
+            {/* QR Code */}
+            <button 
+              onClick={() => setShowQRFull(true)}
+              className="mx-auto block bg-white rounded-2xl p-3 shadow-lg hover:shadow-xl transition-shadow mb-4"
+            >
+              <img 
+                src={qrCodeUrl} 
+                alt="QR Code" 
+                className="w-44 h-44"
+              />
+            </button>
+            
+            <p className="text-xs text-muted-foreground mb-4">
+              タップして全画面表示
+            </p>
+
+            {/* Invite Code */}
+            <div className="flex items-center justify-center gap-2 p-3 rounded-xl bg-secondary mb-4">
+              <code className="text-xl font-mono font-bold text-primary tracking-[0.15em]">
+                {room.inviteCode}
+              </code>
+              <Button size="sm" variant="ghost" onClick={copyInviteLink} className="shrink-0">
+                {copied ? <Check className="w-4 h-4 text-accent" /> : <Copy className="w-4 h-4" />}
+              </Button>
+            </div>
+
+            {/* Share Buttons */}
+            <div className="flex gap-2">
+              <Button 
+                onClick={shareRoom}
+                variant="outline"
+                className="flex-1 h-10 rounded-xl border-white/10 bg-secondary hover:bg-white/10 text-foreground text-sm"
+              >
+                <Share2 className="w-4 h-4 mr-2" />
+                共有
+              </Button>
+              <Button 
+                onClick={copyInviteLink}
+                variant="outline"
+                className="flex-1 h-10 rounded-xl border-white/10 bg-secondary hover:bg-white/10 text-foreground text-sm"
+              >
+                {copied ? <Check className="w-4 h-4 mr-2" /> : <Copy className="w-4 h-4 mr-2" />}
+                リンクコピー
+              </Button>
+            </div>
+          </div>
+        </section>
+
+        {/* Members Section */}
+        <section className="flex-1">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Users className="w-4 h-4 text-muted-foreground" />
+              <h2 className="text-sm font-semibold text-foreground">参加者</h2>
+            </div>
+            <span className="text-xs text-muted-foreground bg-secondary px-2 py-1 rounded-full">
+              {room._count.members}/{room.maxMembers}人
+            </span>
+          </div>
+
+          {room.members.length === 0 ? (
+            <div className="p-6 rounded-2xl glass-card border border-white/10 text-center">
+              <Users className="w-10 h-10 text-muted-foreground mx-auto mb-3 opacity-50" />
+              <p className="text-sm text-muted-foreground">
+                メンバーの参加を待っています...
+              </p>
+              <p className="text-xs text-muted-foreground/60 mt-1">
+                QRコードをスキャンして参加できます
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {room.members.map((member) => (
+                <div 
+                  key={member.id}
+                  className="flex items-center gap-3 p-3 rounded-xl glass-card border border-white/10"
+                >
+                  <div 
+                    className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-white"
+                    style={{ backgroundColor: member.color }}
+                  >
+                    {member.profile?.avatarUrl ? (
+                      <Image 
+                        src={member.profile.avatarUrl} 
+                        alt={member.nickname || member.profile?.name || "User"} 
+                        width={40} 
+                        height={40}
+                        className="rounded-full"
+                      />
+                    ) : (
+                      (member.nickname || member.profile?.name || "?").charAt(0).toUpperCase()
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium text-foreground">
+                        {member.nickname || member.profile?.name || "ゲスト"}
+                      </span>
+                      {member.isHost && (
+                        <Crown className="w-4 h-4 text-primary" />
+                      )}
+                    </div>
+                    {member.isHost && (
+                      <span className="text-xs text-primary">ホスト</span>
+                    )}
+                  </div>
+                  <div 
+                    className="w-3 h-3 rounded-full animate-pulse"
+                    style={{ backgroundColor: '#22C55E' }}
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+
+        {/* Start Roulette Button */}
+        <section className="mt-6 space-y-3">
+          <Button 
+            onClick={() => router.push(`/room/${code}/play`)}
+            className="w-full h-14 text-lg font-bold rounded-2xl bg-gradient-accent hover:opacity-90 text-primary-foreground press-effect"
+            disabled={room._count.members < 2}
+          >
+            {room._count.members < 2 ? (
+              "2人以上で開始できます"
+            ) : (
+              "ルーレットを回す"
+            )}
+          </Button>
+          
+          {room._count.members < 2 && (
+            <p className="text-xs text-muted-foreground text-center">
+              あと{2 - room._count.members}人の参加が必要です
+            </p>
+          )}
+        </section>
+      </div>
+    </main>
+  )
+}

@@ -1,0 +1,196 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ============================================
+// User Profile (linked to Supabase Auth)
+// ============================================
+model Profile {
+  id        String   @id @db.Uuid
+  email     String?  @unique
+  name      String?
+  avatarUrl String?  @map("avatar_url")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Stats (denormalized for quick access)
+  totalTreated     Int @default(0) @map("total_treated")      // Times treated others
+  totalTreatedBy   Int @default(0) @map("total_treated_by")   // Times treated by others
+  totalAmountPaid  Int @default(0) @map("total_amount_paid")  // Total amount paid
+  totalSessions    Int @default(0) @map("total_sessions")     // Total sessions participated
+
+  // Relations
+  ownedRooms        Room[]            @relation("RoomOwner")
+  roomMemberships   RoomMember[]
+  hostedSessions    RouletteSession[] @relation("SessionHost")
+  wonSessions       RouletteSession[] @relation("SessionWinner")
+  participations    Participant[]
+
+  @@map("profiles")
+}
+
+// ============================================
+// Room (Group/Waiting Room for participants)
+// ============================================
+model Room {
+  id          String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  ownerId     String?    @map("owner_id") @db.Uuid
+  name        String?
+  inviteCode  String     @unique @map("invite_code") @db.VarChar(8)
+  status      RoomStatus @default(WAITING)
+  maxMembers  Int        @default(10) @map("max_members")
+  createdAt   DateTime   @default(now()) @map("created_at")
+  updatedAt   DateTime   @updatedAt @map("updated_at")
+  expiresAt   DateTime?  @map("expires_at")
+
+  // Relations
+  owner    Profile?         @relation("RoomOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  members  RoomMember[]
+  sessions RouletteSession[]
+
+  @@index([inviteCode])
+  @@index([ownerId])
+  @@map("rooms")
+}
+
+// Room member (many-to-many between Profile and Room)
+model RoomMember {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  roomId    String   @map("room_id") @db.Uuid
+  profileId String?  @map("profile_id") @db.Uuid
+  nickname  String?  // Optional nickname for this room
+  color     String   // Assigned color for roulette
+  isHost    Boolean  @default(false) @map("is_host")
+  joinedAt  DateTime @default(now()) @map("joined_at")
+
+  // Relations
+  room    Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  profile Profile? @relation(fields: [profileId], references: [id], onDelete: SetNull)
+
+  @@unique([roomId, profileId])
+  @@index([roomId])
+  @@index([profileId])
+  @@map("room_members")
+}
+
+enum RoomStatus {
+  WAITING    // Members joining
+  IN_SESSION // Roulette in progress
+  COMPLETED  // Session finished
+  EXPIRED    // Room expired
+}
+
+// ============================================
+// Roulette Session (Individual game)
+// ============================================
+model RouletteSession {
+  id            String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  roomId        String?       @map("room_id") @db.Uuid
+  hostId        String?       @map("host_id") @db.Uuid
+  winnerId      String?       @map("winner_id") @db.Uuid
+  
+  // Session details
+  title         String?
+  location      String?
+  
+  // Payment calculation
+  totalAmount   Int?          @map("total_amount")
+  treatAmount   Int?          @map("treat_amount")
+  splitAmount   Int?          @map("split_amount")     // Remaining to split
+  perPersonAmount Int?        @map("per_person_amount")
+  
+  // Status
+  status        SessionStatus @default(WAITING)
+  spinDuration  Int?          @map("spin_duration")    // In milliseconds
+  
+  // Timestamps
+  createdAt     DateTime      @default(now()) @map("created_at")
+  startedAt     DateTime?     @map("started_at")
+  completedAt   DateTime?     @map("completed_at")
+
+  // Relations
+  room          Room?         @relation(fields: [roomId], references: [id], onDelete: SetNull)
+  host          Profile?      @relation("SessionHost", fields: [hostId], references: [id], onDelete: SetNull)
+  winner        Profile?      @relation("SessionWinner", fields: [winnerId], references: [id], onDelete: SetNull)
+  participants  Participant[]
+  shareResults  ShareResult[]
+
+  @@index([roomId])
+  @@index([hostId])
+  @@index([createdAt])
+  @@map("roulette_sessions")
+}
+
+enum SessionStatus {
+  WAITING    // Waiting for participants
+  SPINNING   // Roulette is spinning
+  COMPLETED  // Winner decided
+  CANCELLED  // Session cancelled
+}
+
+// ============================================
+// Participant (in a specific session)
+// ============================================
+model Participant {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  sessionId   String   @map("session_id") @db.Uuid
+  profileId   String?  @map("profile_id") @db.Uuid
+  
+  // Participant info
+  name        String
+  color       String
+  avatarUrl   String?  @map("avatar_url")
+  
+  // Result
+  isWinner    Boolean  @default(false) @map("is_winner")
+  amountToPay Int?     @map("amount_to_pay")
+  
+  // Order in wheel (for consistent display)
+  orderIndex  Int      @default(0) @map("order_index")
+  
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  // Relations
+  session     RouletteSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  profile     Profile?        @relation(fields: [profileId], references: [id], onDelete: SetNull)
+
+  @@index([sessionId])
+  @@index([profileId])
+  @@map("participants")
+}
+
+// ============================================
+// Share Result (for social sharing tracking)
+// ============================================
+model ShareResult {
+  id          String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  sessionId   String       @map("session_id") @db.Uuid
+  platform    SharePlatform
+  shareCode   String?      @unique @map("share_code") @db.VarChar(12)
+  shareUrl    String?      @map("share_url")
+  imageUrl    String?      @map("image_url")  // Generated share image
+  viewCount   Int          @default(0) @map("view_count")
+  createdAt   DateTime     @default(now()) @map("created_at")
+
+  // Relations
+  session     RouletteSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+  @@index([shareCode])
+  @@map("share_results")
+}
+
+enum SharePlatform {
+  X           // Twitter/X
+  LINE
+  INSTAGRAM
+  LINK        // Copy link
+  IMAGE       // Save image
+}
+

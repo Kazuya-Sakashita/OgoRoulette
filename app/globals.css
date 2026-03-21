@@ -1,0 +1,240 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+
+@custom-variant dark (&:is(.dark *));
+
+/* OgoRoulette Design System
+   Inspired by: Linear.app, Stripe, Apple Wallet, modern mobile games
+   Style: modern, minimal, playful, high contrast, mobile-first, dark mode
+*/
+
+:root {
+  /* Background - Deep Navy */
+  --background: #0B1B2B;
+  --foreground: #F9FAFB;
+  
+  /* Card - Elevated surface */
+  --card: rgba(17, 27, 43, 0.8);
+  --card-foreground: #F9FAFB;
+  
+  --popover: rgba(17, 27, 43, 0.95);
+  --popover-foreground: #F9FAFB;
+  
+  /* Primary - Warm Orange */
+  --primary: #F59E0B;
+  --primary-foreground: #0B1B2B;
+  
+  /* Highlight - Bright Orange */
+  --highlight: #FBBF24;
+  
+  /* Secondary */
+  --secondary: rgba(255, 255, 255, 0.06);
+  --secondary-foreground: #F9FAFB;
+  
+  /* Muted */
+  --muted: rgba(255, 255, 255, 0.04);
+  --muted-foreground: rgba(249, 250, 251, 0.5);
+  
+  /* Accent - Orange (matching app theme) */
+  --accent: #F97316;
+  --accent-foreground: #FFFFFF;
+  
+  /* Destructive - Danger Red */
+  --destructive: #EF4444;
+  --destructive-foreground: #F9FAFB;
+  
+  /* Borders */
+  --border: rgba(255, 255, 255, 0.08);
+  --input: rgba(255, 255, 255, 0.06);
+  --ring: #F97316;
+  
+  /* Chart colors */
+  --chart-1: #F59E0B;
+  --chart-2: #22C55E;
+  --chart-3: #3B82F6;
+  --chart-4: #A855F7;
+  --chart-5: #EC4899;
+  
+  --radius: 1rem;
+  
+  /* Sidebar */
+  --sidebar: rgba(17, 27, 43, 0.9);
+  --sidebar-foreground: #F9FAFB;
+  --sidebar-primary: #F59E0B;
+  --sidebar-primary-foreground: #0B1B2B;
+  --sidebar-accent: rgba(255, 255, 255, 0.06);
+  --sidebar-accent-foreground: #F9FAFB;
+  --sidebar-border: rgba(255, 255, 255, 0.08);
+  --sidebar-ring: #F59E0B;
+}
+
+@theme inline {
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Noto Sans JP', sans-serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', monospace;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-highlight: var(--highlight);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+/* OgoRoulette Custom Utilities */
+@layer utilities {
+  /* Glassmorphism card */
+  .glass {
+    background: rgba(17, 27, 43, 0.6);
+    backdrop-filter: blur(24px) saturate(150%);
+    -webkit-backdrop-filter: blur(24px) saturate(150%);
+  }
+  
+  .glass-card {
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+  }
+  
+  /* Accent gradient text - Orange to Pink */
+  .text-gradient {
+    background: linear-gradient(135deg, #F97316, #EC4899);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  
+  /* Accent gradient background - Orange to Pink */
+  .bg-gradient-accent {
+    background: linear-gradient(135deg, #F97316, #EC4899);
+  }
+  
+  /* Alternative accent gradient */
+  .bg-gradient-warm {
+    background: linear-gradient(135deg, #FB923C, #F472B6);
+  }
+  
+  /* Soft shadow */
+  .shadow-soft {
+    box-shadow: 
+      0 2px 8px rgba(0, 0, 0, 0.2),
+      0 8px 24px rgba(0, 0, 0, 0.15);
+  }
+  
+  /* Glow effect for primary - Orange to Pink */
+  .glow-primary {
+    box-shadow: 0 0 40px rgba(249, 115, 22, 0.35), 0 0 80px rgba(236, 72, 153, 0.2);
+  }
+  
+  /* Pulse animation for buttons */
+  @keyframes pulse-glow {
+    0%, 100% {
+      box-shadow: 0 0 40px rgba(249, 115, 22, 0.35), 0 0 80px rgba(236, 72, 153, 0.2);
+    }
+    50% {
+      box-shadow: 0 0 60px rgba(249, 115, 22, 0.5), 0 0 100px rgba(236, 72, 153, 0.3);
+    }
+  }
+  
+  .animate-pulse-glow {
+    animation: pulse-glow 2s ease-in-out infinite;
+  }
+  
+  /* Button press animation */
+  .press-effect {
+    transition: transform 0.1s ease, box-shadow 0.1s ease;
+  }
+  .press-effect:active {
+    transform: scale(0.97);
+  }
+  
+  /* Gradient ring for focus states */
+  .ring-gradient {
+    --tw-ring-color: transparent;
+    position: relative;
+  }
+  .ring-gradient::before {
+    content: '';
+    position: absolute;
+    inset: -3px;
+    background: linear-gradient(135deg, #F97316, #EC4899);
+    border-radius: inherit;
+    z-index: -1;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+  }
+  .ring-gradient:focus-visible::before,
+  .ring-gradient:active::before {
+    opacity: 1;
+  }
+  
+  /* Override default focus ring with gradient */
+  .focus-gradient:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.5), 0 0 0 6px rgba(236, 72, 153, 0.3);
+  }
+  
+  /* Hover gradient background for ghost/outline buttons */
+  .hover-gradient:hover {
+    background: linear-gradient(135deg, rgba(249, 115, 22, 0.15), rgba(236, 72, 153, 0.15)) !important;
+  }
+  .hover-gradient:active {
+    background: linear-gradient(135deg, rgba(249, 115, 22, 0.25), rgba(236, 72, 153, 0.25)) !important;
+  }
+  
+  /* Confetti fall animation */
+  @keyframes confetti-fall {
+    0% {
+      transform: translateY(0) rotate(0deg);
+      opacity: 1;
+    }
+    100% {
+      transform: translateY(100vh) rotate(720deg);
+      opacity: 0;
+    }
+  }
+  
+  .animate-confetti-fall {
+    animation: confetti-fall 3s ease-out forwards;
+  }
+}
