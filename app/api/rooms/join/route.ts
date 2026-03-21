@@ -1,10 +1,7 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { createClient } from "@/lib/supabase/server"
-
-const SEGMENT_COLORS = [
-  '#F59E0B', '#F43F5E', '#8B5CF6', '#3B82F6', '#22C55E', '#FBBF24', '#EC4899', '#06B6D4'
-]
+import { SEGMENT_COLORS } from "@/lib/constants"
 
 // POST /api/rooms/join - Join a room with invite code
 export async function POST(request: Request) {

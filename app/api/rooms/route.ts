@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { createClient } from "@/lib/supabase/server"
+import { SEGMENT_COLORS } from "@/lib/constants"
 
 // Generate random invite code (6 characters, avoids confusing chars)
 function generateInviteCode(): string {
@@ -97,7 +98,7 @@ export async function POST(request: Request) {
             create: {
               profileId: user.id,
               isHost: true,
-              color: '#F59E0B',
+              color: SEGMENT_COLORS[0],
               nickname: user.user_metadata?.name || user.email?.split('@')[0]
             }
           }
@@ -127,7 +128,7 @@ export async function POST(request: Request) {
           create: {
             profileId: null,
             isHost: true,
-            color: '#F59E0B',
+            color: SEGMENT_COLORS[0],
             nickname: guestNickname.trim()
           }
         }
