@@ -43,14 +43,17 @@ export async function POST(
     if (room.status === "COMPLETED" || room.status === "EXPIRED") {
       return NextResponse.json({ error: "このルームはすでに終了しています" }, { status: 409 })
     }
+    if (room.status === "IN_SESSION") {
+      return NextResponse.json({ error: "スピンが進行中です" }, { status: 409 })
+    }
 
     // 認証ルームへの未認証アクセスは拒否
     if (room.ownerId && !user) {
       return NextResponse.json({ error: "ログインが必要です" }, { status: 401 })
     }
 
-    // 認証ユーザーはオーナー検証必須
     if (user) {
+      // 認証ユーザーはオーナー検証必須
       const ownerMembership = await prisma.roomMember.findFirst({
         where: { roomId: room.id, isHost: true, profileId: user.id },
         select: { id: true },
@@ -76,7 +79,8 @@ export async function POST(
 
     // サーバーが当選者をランダムに決定（偏りのない暗号的乱数）
     const winnerIndex = randomInt(0, participants.length)
-    const winnerName = (participants[winnerIndex] as { name: string }).name
+    const winnerParticipant = participants[winnerIndex] as { name: string }
+    const winnerName = winnerParticipant.name
 
     // 全クライアント共有の animation 開始時刻
     // SPIN_COUNTDOWN_MS 後にアニメーションが始まる = 3秒ポーリングのメンバーも間に合う
@@ -91,7 +95,7 @@ export async function POST(
     // アトミック: room を IN_SESSION に設定 + SPINNING セッションを作成
     const session = await prisma.$transaction(async (tx) => {
       const lockResult = await tx.room.updateMany({
-        where: { id: room.id, status: { notIn: ["COMPLETED", "EXPIRED"] } },
+        where: { id: room.id, status: "WAITING" },
         data: { status: "IN_SESSION" },
       })
 
