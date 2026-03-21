@@ -166,7 +166,7 @@ export default function HomePage() {
               </Button>
             ) : (
               <Button asChild variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground text-sm">
-                <Link href="/">
+                <Link href="/auth/login">
                   ログイン
                 </Link>
               </Button>
