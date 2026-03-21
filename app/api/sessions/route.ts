@@ -2,7 +2,9 @@ import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { createClient } from "@/lib/supabase/server"
 
-// GET /api/sessions - Get sessions for current user
+const SESSION_PAGE_LIMIT = 50
+
+// GET /api/sessions - Get sessions for current user (最新 SESSION_PAGE_LIMIT 件)
 export async function GET() {
   try {
     const supabase = await createClient()
@@ -28,6 +30,7 @@ export async function GET() {
         },
       },
       orderBy: { createdAt: "desc" },
+      take: SESSION_PAGE_LIMIT,
     })
 
     return NextResponse.json(sessions)
