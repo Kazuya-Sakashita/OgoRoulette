@@ -23,7 +23,7 @@ export default function HomePage() {
   const [showConfetti, setShowConfetti] = useState(false)
   const [user, setUser] = useState<User | null>(null)
   const router = useRouter()
-  
+
   // Partial Treat Split state
   const [showBillInput, setShowBillInput] = useState(false)
   const [totalBill, setTotalBill] = useState<number>(0)
@@ -77,6 +77,7 @@ export default function HomePage() {
           treatAmount: hasBillInput ? treatAmount : null,
           perPersonAmount: hasBillInput ? splitAmount : null,
           winnerName,
+          winnerIndex,
           participants: participants.map((name, index) => ({
             name,
             color: SEGMENT_COLORS[index % SEGMENT_COLORS.length],
@@ -117,9 +118,9 @@ export default function HomePage() {
 
       {/* Winner Card Modal with payment breakdown */}
       {winner && (
-        <WinnerCard 
-          winner={winner.name} 
-          winnerIndex={winner.index} 
+        <WinnerCard
+          winner={winner.name}
+          winnerIndex={winner.index}
           onClose={closeWinnerCard}
           totalBill={hasBillInput ? totalBill : undefined}
           treatAmount={hasBillInput ? treatAmount : undefined}
@@ -130,14 +131,14 @@ export default function HomePage() {
 
       {/* Mobile-first container - max 390px as per spec */}
       <div className="mx-auto max-w-[390px] min-h-screen flex flex-col px-5 py-6">
-        
+
         {/* Header */}
         <header className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-2">
-            <Image 
-              src="/images/logo-icon.png" 
-              alt="OgoRoulette" 
-              width={36} 
+            <Image
+              src="/images/logo-icon.png"
+              alt="OgoRoulette"
+              width={36}
               height={36}
               className="w-9 h-9"
               priority
@@ -156,10 +157,10 @@ export default function HomePage() {
               </Button>
             )}
             {user ? (
-              <Button 
+              <Button
                 onClick={handleLogout}
-                variant="ghost" 
-                size="icon" 
+                variant="ghost"
+                size="icon"
                 className="text-muted-foreground hover:text-foreground"
               >
                 <LogOut className="w-5 h-5" />
@@ -275,7 +276,7 @@ export default function HomePage() {
                     placeholder="20000"
                   />
                 </div>
-                
+
                 {/* Quick amount buttons */}
                 <div className="flex gap-2 mt-3">
                   {quickAmounts.map((amount) => (
@@ -283,8 +284,8 @@ export default function HomePage() {
                       key={amount}
                       onClick={() => setTreatAmount(Math.min(amount, totalBill || amount))}
                       className={`flex-1 py-2 rounded-xl text-xs font-medium transition-all ${
-                        treatAmount === amount 
-                          ? 'bg-gradient-accent text-primary-foreground' 
+                        treatAmount === amount
+                          ? 'bg-gradient-accent text-primary-foreground'
                           : 'bg-secondary text-muted-foreground hover:text-foreground border border-white/10'
                       }`}
                     >
@@ -327,10 +328,10 @@ export default function HomePage() {
           <div className="relative mb-6">
             {/* Ambient background glow */}
             <div className="absolute inset-0 scale-[1.6] bg-primary/10 rounded-full blur-3xl pointer-events-none" />
-            
-            <RouletteWheel 
-              isSpinning={isSpinning} 
-              size={280} 
+
+            <RouletteWheel
+              isSpinning={isSpinning}
+              size={280}
               participants={participants}
               onSpinComplete={handleSpinComplete}
             />
@@ -374,9 +375,9 @@ export default function HomePage() {
                 key={index}
                 className="group flex items-center gap-2 px-3 py-1.5 rounded-full glass-card border border-white/10 transition-all hover:border-primary/30"
               >
-                <div 
+                <div
                   className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-primary-foreground"
-                  style={{ 
+                  style={{
                     background: `linear-gradient(135deg, ${['#F59E0B', '#F43F5E', '#8B5CF6', '#3B82F6', '#22C55E', '#FBBF24'][index % 6]}, ${['#FBBF24', '#FB7185', '#A78BFA', '#60A5FA', '#4ADE80', '#FCD34D'][index % 6]})`
                   }}
                 >
@@ -408,14 +409,14 @@ export default function HomePage() {
                 className="flex-1 h-10 px-4 rounded-xl bg-secondary border border-white/10 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
                 autoFocus
               />
-              <Button 
+              <Button
                 onClick={addParticipant}
                 disabled={!newName.trim()}
                 className="h-10 px-5 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-medium text-sm"
               >
                 追加
               </Button>
-              <Button 
+              <Button
                 onClick={() => { setShowAddInput(false); setNewName(""); }}
                 variant="ghost"
                 className="h-10 w-10 rounded-xl text-muted-foreground hover:text-foreground"
@@ -438,7 +439,7 @@ export default function HomePage() {
 
         {/* Bottom Actions */}
         <section className="mt-6 space-y-3">
-          <Button 
+          <Button
             asChild
             className="w-full h-14 rounded-2xl bg-gradient-accent hover:opacity-90 text-primary-foreground font-bold press-effect text-base"
           >
@@ -447,7 +448,7 @@ export default function HomePage() {
               ルームを作成
             </Link>
           </Button>
-          <Button 
+          <Button
             asChild
             variant="outline"
             className="w-full h-12 rounded-xl border-white/10 bg-secondary hover:bg-white/10 text-foreground font-semibold press-effect text-sm"

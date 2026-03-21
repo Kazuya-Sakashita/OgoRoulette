@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { createClient } from "@/lib/supabase/server"
 
-// GET /api/sessions - Get all sessions for current user
+// GET /api/sessions - Get sessions for current user
 export async function GET() {
   try {
     const supabase = await createClient()
@@ -51,6 +51,7 @@ export async function POST(request: Request) {
       treatAmount,
       perPersonAmount,
       winnerName,
+      winnerIndex, // 優先: インデックスで判定。未送信時は名前にフォールバック。
       participants, // [{ name: string; color: string; index: number }]
       roomId,
     } = body
@@ -124,8 +125,10 @@ export async function POST(request: Request) {
             create: (participants as { name: string; color: string; index: number }[]).map((p) => ({
               name: p.name,
               color: p.color,
-              isWinner: p.name === winnerName,
-              amountToPay: p.name === winnerName
+              isWinner: typeof winnerIndex === "number"
+                ? p.index === winnerIndex
+                : p.name === winnerName,
+              amountToPay: (typeof winnerIndex === "number" ? p.index === winnerIndex : p.name === winnerName)
                 ? (treatAmount || null)
                 : (perPersonAmount || null),
               orderIndex: p.index,
