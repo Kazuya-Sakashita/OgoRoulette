@@ -294,10 +294,11 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
     spinScheduledRef.current = false
 
     try {
-      const participantData = participants.map((name, index) => ({
-        name,
+      const participantData = (room?.members ?? []).map((member, index) => ({
+        name: getMemberName(member),
         color: SEGMENT_COLORS[index % SEGMENT_COLORS.length],
         index,
+        profileId: member.profile?.id ?? null,
       }))
 
       const res = await fetch(`/api/rooms/${code}/spin`, {

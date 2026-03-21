@@ -25,7 +25,7 @@ export async function POST(
 
     const body = await request.json()
     const { participants, totalAmount, treatAmount } = body
-    // participants: { name: string; color: string; index: number }[]
+    // participants: { name: string; color: string; index: number; profileId?: string | null }[]
 
     if (!Array.isArray(participants) || participants.length < 2) {
       return NextResponse.json({ error: "2人以上の参加者が必要です" }, { status: 400 })
@@ -92,8 +92,9 @@ export async function POST(
 
     // サーバーが当選者をランダムに決定（偏りのない暗号的乱数）
     const winnerIndex = randomInt(0, participants.length)
-    const winnerParticipant = participants[winnerIndex] as { name: string }
+    const winnerParticipant = participants[winnerIndex] as { name: string; profileId?: string | null }
     const winnerName = winnerParticipant.name
+    const winnerProfileId = winnerParticipant.profileId ?? null
 
     // 全クライアント共有の animation 開始時刻
     // SPIN_COUNTDOWN_MS 後にアニメーションが始まる = 3秒ポーリングのメンバーも間に合う
@@ -122,6 +123,7 @@ export async function POST(
       return tx.rouletteSession.create({
         data: {
           hostId: user?.id ?? null,
+          winnerId: winnerProfileId,
           roomId: room.id,
           totalAmount: hasBill ? totalAmount : null,
           treatAmount: hasBill ? (treatAmount ?? 0) : null,
@@ -129,9 +131,10 @@ export async function POST(
           status: "SPINNING",
           startedAt: spinStartedAt,
           participants: {
-            create: (participants as { name: string; color: string; index: number }[]).map((p) => ({
+            create: (participants as { name: string; color: string; index: number; profileId?: string | null }[]).map((p) => ({
               name: p.name,
               color: p.color,
+              profileId: p.profileId ?? null,
               isWinner: p.index === winnerIndex,
               amountToPay: p.index === winnerIndex
                 ? (hasBill ? (treatAmount ?? 0) : null)
@@ -143,6 +146,17 @@ export async function POST(
         select: { id: true },
       })
     })
+
+    // 当選者の統計を更新（認証ユーザーのみ・失敗してもスピン結果には影響しない）
+    if (winnerProfileId) {
+      prisma.profile.update({
+        where: { id: winnerProfileId },
+        data: {
+          totalTreated:    { increment: 1 },
+          totalAmountPaid: { increment: hasBill ? (treatAmount ?? 0) : 0 },
+        },
+      }).catch(() => {})
+    }
 
     return NextResponse.json({
       winnerIndex,
