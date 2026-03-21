@@ -5,6 +5,7 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { ChevronLeft, ChevronRight, Calendar, Users, Crown, Sparkles } from "lucide-react"
 import { SEGMENT_COLORS } from "@/lib/constants"
+import { formatCurrency } from "@/lib/format"
 
 // --- Types ---
 
@@ -44,10 +45,6 @@ function formatDate(dateString: string) {
     date: `${month}/${day}(${weekday})`,
     time: `${hours}:${minutes}`,
   }
-}
-
-function formatCurrency(amount: number) {
-  return new Intl.NumberFormat("ja-JP", { style: "currency", currency: "JPY" }).format(amount)
 }
 
 /** 支払い種別を判定する純粋関数 */

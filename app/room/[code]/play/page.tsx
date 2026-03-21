@@ -15,6 +15,7 @@ import { WinnerCard } from "@/components/winner-card"
 import { Confetti } from "@/components/confetti"
 import { createClient } from "@/lib/supabase/client"
 import { SEGMENT_COLORS } from "@/lib/constants"
+import { formatCurrency } from "@/lib/format"
 import type { User } from "@supabase/supabase-js"
 
 // --- Types ---
@@ -74,10 +75,6 @@ interface WinnerData {
 
 function getMemberName(member: Member): string {
   return member.nickname || member.profile?.name || "ゲスト"
-}
-
-function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat("ja-JP", { style: "currency", currency: "JPY" }).format(amount)
 }
 
 // --- Component ---

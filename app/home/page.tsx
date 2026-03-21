@@ -13,6 +13,7 @@ import { useRouter } from "next/navigation"
 import type { User } from "@supabase/supabase-js"
 import { SEGMENT_COLORS } from "@/lib/constants"
 import { calculateBillSplit } from "@/lib/bill-calculator"
+import { formatCurrency } from "@/lib/format"
 
 export default function HomePage() {
   const [isSpinning, setIsSpinning] = useState(false)
@@ -48,10 +49,6 @@ export default function HomePage() {
     const supabase = createClient()
     await supabase.auth.signOut()
     router.push('/')
-  }
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY' }).format(amount)
   }
 
   const handleSpin = () => {
