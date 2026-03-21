@@ -61,6 +61,19 @@ export async function POST(
       if (!ownerMembership) {
         return NextResponse.json({ error: "オーナーのみスピンできます" }, { status: 403 })
       }
+    } else {
+      // ゲストルーム: X-Guest-Host-Token でホストメンバーIDを検証
+      const guestToken = request.headers.get("X-Guest-Host-Token")
+      if (!guestToken) {
+        return NextResponse.json({ error: "オーナーのみスピンできます" }, { status: 403 })
+      }
+      const guestMember = await prisma.roomMember.findFirst({
+        where: { id: guestToken, roomId: room.id, isHost: true, profileId: null },
+        select: { id: true },
+      })
+      if (!guestMember) {
+        return NextResponse.json({ error: "オーナーのみスピンできます" }, { status: 403 })
+      }
     }
 
     // Ensure host profile exists (authenticated only)

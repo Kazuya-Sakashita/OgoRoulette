@@ -99,13 +99,21 @@ export default function CreateRoomPage() {
         return
       }
 
-      // Guest: save invite code to localStorage so play page can identify as host
+      // Guest: save invite code + host member ID to localStorage so play page can identify as host
       if (!currentUser) {
         const stored: string[] = JSON.parse(
           localStorage.getItem("ogoroulette_host_rooms") || "[]"
         )
         stored.push(data.inviteCode)
         localStorage.setItem("ogoroulette_host_rooms", JSON.stringify(stored))
+
+        // Host member ID is used as a server-verified guest host token
+        const hostMember = (data.members as Array<{ id: string; isHost: boolean }>)?.find(
+          (m) => m.isHost
+        )
+        if (hostMember?.id) {
+          localStorage.setItem(`ogoroulette_host_token_${data.inviteCode}`, hostMember.id)
+        }
       }
 
       // Redirect to room lobby — URL now carries the room state (reload-safe)

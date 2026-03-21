@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/server"
 // WHAT: ルームを WAITING にリセットして再スピンを可能にする
 // WHY:  同じメンバーで「もう一回！」の要求に応えるため
 export async function POST(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ code: string }> }
 ) {
   try {
@@ -32,13 +32,26 @@ export async function POST(
       return NextResponse.json({ error: "ログインが必要です" }, { status: 401 })
     }
 
-    // 認証ユーザーはオーナー検証必須
     if (user) {
+      // 認証ユーザーはオーナー検証必須
       const ownerMembership = await prisma.roomMember.findFirst({
         where: { roomId: room.id, isHost: true, profileId: user.id },
         select: { id: true },
       })
       if (!ownerMembership) {
+        return NextResponse.json({ error: "オーナーのみリセットできます" }, { status: 403 })
+      }
+    } else {
+      // ゲストルーム: X-Guest-Host-Token でホストメンバーIDを検証
+      const guestToken = request.headers.get("X-Guest-Host-Token")
+      if (!guestToken) {
+        return NextResponse.json({ error: "オーナーのみリセットできます" }, { status: 403 })
+      }
+      const guestMember = await prisma.roomMember.findFirst({
+        where: { id: guestToken, roomId: room.id, isHost: true, profileId: null },
+        select: { id: true },
+      })
+      if (!guestMember) {
         return NextResponse.json({ error: "オーナーのみリセットできます" }, { status: 403 })
       }
     }

@@ -112,6 +112,8 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
 
   // Guest host detection
   const [isGuestHost, setIsGuestHost] = useState(false)
+  // Guest host token — used as X-Guest-Host-Token header for server-side auth
+  const guestHostTokenRef = useRef<string | null>(null)
 
   // --- Derived ---
 
@@ -185,7 +187,14 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
       localStorage.getItem("ogoroulette_host_rooms") || "[]"
     )
     setIsGuestHost(stored.includes(room.inviteCode))
+    guestHostTokenRef.current = localStorage.getItem(`ogoroulette_host_token_${room.inviteCode}`)
   }, [room?.inviteCode]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ゲストホスト専用: サーバー認可用ヘッダーを組み立てる
+  const buildGuestAuthHeaders = (): Record<string, string> => {
+    if (currentUser || !guestHostTokenRef.current) return {}
+    return { "X-Guest-Host-Token": guestHostTokenRef.current }
+  }
 
   // Member: react to polling results, sync animation start to server's spinStartedAt
   useEffect(() => {
@@ -293,7 +302,7 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
 
       const res = await fetch(`/api/rooms/${code}/spin`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...buildGuestAuthHeaders() },
         body: JSON.stringify({
           participants: participantData,
           totalAmount: hasBillInput ? totalBill : null,
@@ -334,7 +343,10 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
     pendingMemberWinnerRef.current = null
 
     try {
-      const res = await fetch(`/api/rooms/${code}/reset`, { method: "POST" })
+      const res = await fetch(`/api/rooms/${code}/reset`, {
+        method: "POST",
+        headers: buildGuestAuthHeaders(),
+      })
       if (res.ok) {
         setRoom(prev => prev ? { ...prev, status: "WAITING", sessions: [] } : prev)
       }
@@ -377,7 +389,10 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
       setShowConfetti(true)
       setTimeout(() => setShowConfetti(false), 4000)
       // ルームとセッションを COMPLETED にする（非クリティカル: ポーリングでメンバーに伝わる）
-      fetch(`/api/rooms/${code}/spin-complete`, { method: "POST" }).catch(() => {})
+      fetch(`/api/rooms/${code}/spin-complete`, {
+        method: "POST",
+        headers: buildGuestAuthHeaders(),
+      }).catch(() => {})
     } else {
       // Member: サーバー確定の当選者を使う
       const serverWinner = pendingMemberWinnerRef.current
