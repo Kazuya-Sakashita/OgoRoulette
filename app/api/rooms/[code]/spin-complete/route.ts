@@ -18,11 +18,16 @@ export async function POST(
 
     const room = await prisma.room.findUnique({
       where: { inviteCode: code.toUpperCase() },
-      select: { id: true, status: true, ownerId: true },
+      select: { id: true, status: true, ownerId: true, expiresAt: true },
     })
 
     if (!room) {
       return NextResponse.json({ error: "ルームが見つかりません" }, { status: 404 })
+    }
+
+    // expiresAt を直接チェック（ステータス更新クーロンに依存しない）
+    if (room.expiresAt && room.expiresAt < new Date()) {
+      return NextResponse.json({ error: "ルームが期限切れです" }, { status: 403 })
     }
 
     // 認証ルームへの未認証アクセスは拒否
