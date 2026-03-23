@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button"
 import { RouletteWheel } from "@/components/roulette-wheel"
 import { Confetti } from "@/components/confetti"
 import { WinnerCard } from "@/components/winner-card"
+import { CountdownOverlay } from "@/components/countdown-overlay"
 import { QrCode, Sparkles, Plus, X as XIcon, History, ChevronDown, ChevronUp, Calculator, LogOut } from "lucide-react"
 import { useState, useEffect, useCallback, useRef } from "react"
 import Link from "next/link"
@@ -23,6 +24,8 @@ export default function HomePage() {
   const [winner, setWinner] = useState<{ name: string; index: number } | null>(null)
   const [showConfetti, setShowConfetti] = useState(false)
   const confettiTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [countdown, setCountdown] = useState<number | null>(null)
+  const countdownTimersRef = useRef<ReturnType<typeof setTimeout>[]>([])
   const [user, setUser] = useState<User | null>(null)
   const router = useRouter()
 
@@ -47,6 +50,7 @@ export default function HomePage() {
   }, [])
 
   useEffect(() => () => clearTimeout(confettiTimerRef.current ?? undefined), [])
+  useEffect(() => () => countdownTimersRef.current.forEach(clearTimeout), [])
 
   const handleLogout = async () => {
     const supabase = createClient()
@@ -55,10 +59,15 @@ export default function HomePage() {
   }
 
   const handleSpin = () => {
-    if (!isSpinning && participants.length >= 2) {
-      setIsSpinning(true)
-      setWinner(null)
-    }
+    if (isSpinning || participants.length < 2 || countdown !== null) return
+    setWinner(null)
+    setCountdown(3)
+    countdownTimersRef.current.forEach(clearTimeout)
+    countdownTimersRef.current = [
+      setTimeout(() => setCountdown(2), 1000),
+      setTimeout(() => setCountdown(1), 2000),
+      setTimeout(() => { setCountdown(null); setIsSpinning(true) }, 3000),
+    ]
   }
 
   const handleSpinComplete = useCallback((winnerName: string, winnerIndex: number) => {
@@ -114,6 +123,9 @@ export default function HomePage() {
 
   return (
     <main className="min-h-screen bg-background overflow-x-hidden">
+      {/* Countdown overlay — shown before spin starts */}
+      <CountdownOverlay countdown={countdown} participants={participants} />
+
       {/* Confetti effect — intense + winner color during result reveal */}
       <Confetti
         active={showConfetti}
@@ -345,7 +357,7 @@ export default function HomePage() {
           {/* SPIN Button */}
           <Button
             onClick={handleSpin}
-            disabled={isSpinning || participants.length < 2}
+            disabled={isSpinning || participants.length < 2 || countdown !== null}
             className="w-full max-w-[280px] h-16 text-xl font-bold rounded-2xl bg-gradient-accent hover:opacity-90 text-white shadow-lg glow-primary press-effect disabled:opacity-50 disabled:cursor-not-allowed transition-all uppercase tracking-wider animate-pulse-glow"
           >
             {isSpinning ? (

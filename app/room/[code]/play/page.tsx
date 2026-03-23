@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button"
 import { RouletteWheel } from "@/components/roulette-wheel"
 import { WinnerCard } from "@/components/winner-card"
 import { Confetti } from "@/components/confetti"
+import { CountdownOverlay } from "@/components/countdown-overlay"
 import { createClient } from "@/lib/supabase/client"
 import { SEGMENT_COLORS } from "@/lib/constants"
 import { formatCurrency } from "@/lib/format"
@@ -107,6 +108,10 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
   // Member: stores server-confirmed winner while local wheel animation runs
   const pendingMemberWinnerRef = useRef<WinnerData | null>(null)
 
+  // Countdown display — driven by spinStartedAtMs vs Date.now()
+  const [spinStartedAtMs, setSpinStartedAtMs] = useState<number | null>(null)
+  const [countdownValue, setCountdownValue] = useState<number | null>(null)
+
   // Guest host detection
   const [isGuestHost, setIsGuestHost] = useState(false)
   // Guest host token — used as X-Guest-Host-Token header for server-side auth
@@ -181,6 +186,26 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
 
   useEffect(() => () => clearTimeout(confettiTimerRef.current ?? undefined), [])
 
+  // Drive countdown display from spinStartedAtMs while in preparing phase.
+  // Polls at 200 ms for smooth second-level accuracy.
+  useEffect(() => {
+    if (phase !== "preparing" || spinStartedAtMs === null) {
+      setCountdownValue(null)
+      return
+    }
+    const tick = () => {
+      const remaining = spinStartedAtMs - Date.now()
+      if (remaining <= 0) {
+        setCountdownValue(null)
+        return
+      }
+      setCountdownValue(Math.ceil(remaining / 1000))
+    }
+    tick()
+    const id = setInterval(tick, 200)
+    return () => clearInterval(id)
+  }, [phase, spinStartedAtMs])
+
   // スピン中のページ離脱を警告する
   useEffect(() => {
     if (phase !== "spinning" && phase !== "preparing") return
@@ -230,6 +255,7 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
       // Align to server spinStartedAt — if in the past, starts immediately
       const startMs = session.startedAt ? new Date(session.startedAt).getTime() : Date.now()
       const delay = Math.max(0, startMs - Date.now())
+      setSpinStartedAtMs(startMs)
       spinScheduledRef.current = true
       setPhase("preparing")
       setTimeout(() => setPhase("spinning"), delay)
@@ -321,6 +347,7 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
       const data = await res.json()
       // サーバーが決定した spinStartedAt まで待ってからアニメーション開始
       const delay = Math.max(0, data.spinStartedAt - Date.now())
+      setSpinStartedAtMs(data.spinStartedAt)
       setPendingWinnerIndex(data.winnerIndex)
       setTimeout(() => {
         if (!spinScheduledRef.current) {
@@ -339,6 +366,7 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
     setPhase("waiting")
     setPendingWinnerIndex(undefined)
     setSpinError(null)
+    setSpinStartedAtMs(null)
     spinScheduledRef.current = false
     prevSessionIdRef.current = null
     pendingMemberWinnerRef.current = null
@@ -453,6 +481,13 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
         active={showConfetti}
         intense={!!winner}
         winnerColor={winner ? SEGMENT_COLORS[winner.index % SEGMENT_COLORS.length] : undefined}
+      />
+
+      {/* Countdown overlay — shows 3→2→1 during preparing phase */}
+      <CountdownOverlay
+        countdown={countdownValue}
+        participants={participants}
+        memberCount={room._count.members}
       />
 
       {winner && (
