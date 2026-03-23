@@ -9,11 +9,12 @@ import { SPIN_COUNTDOWN_MS } from "@/lib/constants"
 // WHAT: オーナー専用。サーバーが当選者を決定し、全クライアントが使う spinStartedAt を返す。
 // WHY:  クライアント側の当選者決定は不正可能。spinStartedAt を共有することでオーナー・メンバー間の
 //       アニメーション開始タイミングをサーバー基準で統一する。
-// HOW:  1. 当選者を crypto.randomInt で決定
-//       2. spinStartedAt = now + SPIN_COUNTDOWN_MS（全員がカウントダウン後に同時開始）
-//       3. ルームを IN_SESSION に設定（メンバーはこれを見て spinning UI を表示）
-//       4. セッションを SPINNING 状態で作成（startedAt = spinStartedAt）
-//       5. winnerIndex / winnerName / spinStartedAt / spinDurationMs を返す
+// HOW:  1. 参加者リストを DB から取得（クライアント送信値は使わない）
+//       2. 当選者を crypto.randomInt で決定
+//       3. spinStartedAt = now + SPIN_COUNTDOWN_MS（全員がカウントダウン後に同時開始）
+//       4. ルームを IN_SESSION に設定（メンバーはこれを見て spinning UI を表示）
+//       5. セッションを SPINNING 状態で作成（startedAt = spinStartedAt）
+//       6. winnerIndex / winnerName / spinStartedAt を返す
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ code: string }> }
@@ -24,20 +25,51 @@ export async function POST(
     const { data: { user } } = await supabase.auth.getUser()
 
     const body = await request.json()
-    const { participants, totalAmount, treatAmount } = body
-    // participants: { name: string; color: string; index: number; profileId?: string | null }[]
+    // participants はクライアントから受け取らず DB から取得する（操作防止）
+    const { totalAmount, treatAmount } = body
 
-    if (!Array.isArray(participants) || participants.length < 2) {
-      return NextResponse.json({ error: "2人以上の参加者が必要です" }, { status: 400 })
+    // 金額バリデーション: 数値なら 0〜9,999,999 の範囲に限定
+    if (totalAmount !== null && totalAmount !== undefined) {
+      if (typeof totalAmount !== "number" || !Number.isInteger(totalAmount) || totalAmount < 0 || totalAmount > 9_999_999) {
+        return NextResponse.json({ error: "合計金額は0〜9,999,999円の整数で入力してください" }, { status: 400 })
+      }
+    }
+    if (treatAmount !== null && treatAmount !== undefined) {
+      if (typeof treatAmount !== "number" || !Number.isInteger(treatAmount) || treatAmount < 0 || treatAmount > 9_999_999) {
+        return NextResponse.json({ error: "奢り金額は0〜9,999,999円の整数で入力してください" }, { status: 400 })
+      }
     }
 
     const room = await prisma.room.findUnique({
       where: { inviteCode: code.toUpperCase() },
-      select: { id: true, status: true, ownerId: true },
+      select: {
+        id: true,
+        status: true,
+        ownerId: true,
+        expiresAt: true,
+        members: {
+          select: {
+            nickname: true,
+            color: true,
+            profileId: true,
+            profile: { select: { id: true, name: true } },
+          },
+          orderBy: { joinedAt: "asc" },
+        },
+      },
     })
 
     if (!room) {
       return NextResponse.json({ error: "ルームが見つかりません" }, { status: 404 })
+    }
+
+    // expiresAt を直接チェック（ステータス更新クーロンに依存しない）
+    if (room.expiresAt && room.expiresAt < new Date()) {
+      return NextResponse.json({ error: "ルームが期限切れです" }, { status: 403 })
+    }
+
+    if (room.members.length < 2) {
+      return NextResponse.json({ error: "2人以上の参加者が必要です" }, { status: 400 })
     }
 
     if (room.status === "COMPLETED" || room.status === "EXPIRED") {
@@ -90,9 +122,17 @@ export async function POST(
       })
     }
 
+    // DB メンバーから参加者リストを構築（クライアント送信値は使わない）
+    const participants = room.members.map((member, index) => ({
+      name: member.nickname || member.profile?.name || "ゲスト",
+      color: member.color,
+      index,
+      profileId: member.profileId ?? null,
+    }))
+
     // サーバーが当選者をランダムに決定（偏りのない暗号的乱数）
     const winnerIndex = randomInt(0, participants.length)
-    const winnerParticipant = participants[winnerIndex] as { name: string; profileId?: string | null }
+    const winnerParticipant = participants[winnerIndex]
     const winnerName = winnerParticipant.name
     const winnerProfileId = winnerParticipant.profileId ?? null
 
@@ -131,7 +171,7 @@ export async function POST(
           status: "SPINNING",
           startedAt: spinStartedAt,
           participants: {
-            create: (participants as { name: string; color: string; index: number; profileId?: string | null }[]).map((p) => ({
+            create: participants.map((p) => ({
               name: p.name,
               color: p.color,
               profileId: p.profileId ?? null,
