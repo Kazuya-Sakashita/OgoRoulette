@@ -6,6 +6,7 @@ import { ArrowLeft, Copy, Check, Users, Crown, QrCode, Share2, RefreshCw } from 
 import Link from "next/link"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
+import QRCode from "react-qr-code"
 
 interface Member {
   id: string
@@ -53,11 +54,19 @@ export default function RoomPage({ params }: { params: Promise<{ code: string }>
       const data = await res.json()
 
       if (!res.ok) {
+        isCompletedRef.current = true // stop polling on error
         setError(data.error || "ルームが見つかりません")
         return
       }
 
-      isCompletedRef.current = data.status === "COMPLETED"
+      // IN_SESSION or COMPLETED → redirect to play page
+      if (data.status === "IN_SESSION" || data.status === "COMPLETED") {
+        isCompletedRef.current = true
+        router.push(`/room/${code}/play`)
+        return
+      }
+
+      isCompletedRef.current = false
       // Skip re-render when key fields are unchanged (prevents QR image from re-fetching)
       setRoom(prev => {
         if (prev && prev.status === data.status && prev._count.members === data._count.members) return prev
@@ -81,9 +90,13 @@ export default function RoomPage({ params }: { params: Promise<{ code: string }>
 
   const copyInviteLink = async () => {
     const url = `${window.location.origin}/join/${room?.inviteCode}`
-    await navigator.clipboard.writeText(url)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
+    try {
+      await navigator.clipboard.writeText(url)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch {
+      // clipboard write failed (e.g., permissions denied)
+    }
   }
 
   const shareRoom = async () => {
@@ -106,7 +119,6 @@ export default function RoomPage({ params }: { params: Promise<{ code: string }>
   }
 
   const shareUrl = room ? `${typeof window !== 'undefined' ? window.location.origin : ''}/join/${room.inviteCode}` : ''
-  const qrCodeUrl = room ? `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(shareUrl)}&bgcolor=FFFFFF&color=0B1B2B&margin=10` : ''
 
   if (loading) {
     return (
@@ -167,11 +179,9 @@ export default function RoomPage({ params }: { params: Promise<{ code: string }>
           </div>
 
           <div className="bg-white p-4 rounded-3xl shadow-xl">
-            <img 
-              src={qrCodeUrl} 
-              alt="QR Code" 
-              className="w-64 h-64 sm:w-72 sm:h-72"
-            />
+            {shareUrl && (
+              <QRCode value={shareUrl} size={256} bgColor="#FFFFFF" fgColor="#0B1B2B" />
+            )}
           </div>
 
           <div className="mt-6 text-center">
@@ -222,15 +232,13 @@ export default function RoomPage({ params }: { params: Promise<{ code: string }>
             </h2>
             
             {/* QR Code */}
-            <button 
+            <button
               onClick={() => setShowQRFull(true)}
               className="mx-auto block bg-white rounded-2xl p-3 shadow-lg hover:shadow-xl transition-shadow mb-4"
             >
-              <img 
-                src={qrCodeUrl} 
-                alt="QR Code" 
-                className="w-44 h-44"
-              />
+              {shareUrl && (
+                <QRCode value={shareUrl} size={176} bgColor="#FFFFFF" fgColor="#0B1B2B" />
+              )}
             </button>
             
             <p className="text-xs text-muted-foreground mb-4">
