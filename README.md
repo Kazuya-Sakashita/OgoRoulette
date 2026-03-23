@@ -121,19 +121,27 @@ pnpm install
 
 ### 環境変数
 
-`.env.local` をプロジェクトルートに作成し、以下を設定してください。
+`.env.example` をコピーして `.env.local` を作成し、各値を設定してください。
 
-```env
-# Supabase
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-
-# Prisma (Supabase PostgreSQL)
-DATABASE_URL=your_database_url
-DIRECT_URL=your_direct_url
+```bash
+cp .env.example .env.local
 ```
 
-> Supabase の `DATABASE_URL` / `DIRECT_URL` は、Supabaseダッシュボードの **Settings > Database > Connection string** から取得できます。
+| 変数名 | 必須 | 説明 |
+|--------|------|------|
+| `NEXT_PUBLIC_SUPABASE_URL` | ✅ | Supabase プロジェクト URL |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | ✅ | Supabase 匿名キー |
+| `SUPABASE_SERVICE_ROLE_KEY` | ✅ | Supabase サービスロールキー（LINE 認証用） |
+| `DATABASE_URL` | ✅ | Prisma 接続 URL（Transaction pooler） |
+| `DIRECT_URL` | ✅ | Prisma マイグレーション用 Direct URL |
+| `LINE_CHANNEL_ID` | ✅ | LINE ログイン チャネル ID |
+| `LINE_CHANNEL_SECRET` | ✅ | LINE ログイン チャネルシークレット |
+| `LINE_CALLBACK_URL` | ✅ | LINE OAuth コールバック URL |
+| `NEXT_PUBLIC_APP_URL` | ✅ | アプリの公開 URL（例: `https://your-domain.com`） |
+| `GUEST_HOST_SECRET` | ✅ | ゲストホストトークン HMAC 署名シークレット（`openssl rand -hex 32` で生成） |
+| `NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL` | ⚠️ 開発のみ | Google OAuth の開発環境リダイレクト先。**本番では設定しない** |
+
+> **注意:** `SUPABASE_SERVICE_ROLE_KEY` と `GUEST_HOST_SECRET` はサーバーのみで使用し、クライアントに公開しないでください。
 
 ### DB セットアップ
 

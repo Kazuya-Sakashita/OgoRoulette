@@ -10,7 +10,8 @@
     "postinstall": "prisma generate",
     "db:push": "dotenv -e .env.local -- prisma db push",
     "test": "vitest run",
-    "db:studio": "dotenv -e .env.local -- prisma studio"
+    "db:studio": "dotenv -e .env.local -- prisma studio",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",
