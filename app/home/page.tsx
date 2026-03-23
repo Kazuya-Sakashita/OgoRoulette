@@ -22,7 +22,11 @@ import {
   recordTreat,
   getTreatTitle,
   getGroupRanking,
+  syncGroupsFromCloud,
+  updateGroupCloudId,
+  seedTreatStats,
   type SavedGroup,
+  type CloudGroup,
 } from "@/lib/group-storage"
 import { RecordingCanvas } from "@/components/recording-canvas"
 import { ShareSheet } from "@/components/share-sheet"
@@ -85,6 +89,55 @@ export default function HomePage() {
     getUser()
     setSavedGroups(loadGroups())
   }, [])
+
+  // Cloud sync — runs once when user state becomes non-null (i.e. after auth check on mount)
+  useEffect(() => {
+    if (!user) return
+
+    // 1. Groups: merge cloud groups into LocalStorage
+    fetch("/api/groups")
+      .then((r) => r.json())
+      .then((cloudGroups: CloudGroup[]) => {
+        const merged = syncGroupsFromCloud(cloudGroups)
+        setSavedGroups(merged)
+
+        // Push local-only groups (no cloudId) to cloud
+        for (const g of merged) {
+          if (!g.cloudId) {
+            fetch("/api/groups", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ name: g.name, participants: g.participants }),
+            })
+              .then((r) => r.json())
+              .then((cg: { id?: string }) => {
+                if (cg.id) updateGroupCloudId(g.name, cg.id)
+              })
+              .catch(() => {})
+          }
+        }
+      })
+      .catch(() => {})
+
+    // 2. Sessions → seed treat stats in LocalStorage
+    fetch("/api/sessions")
+      .then((r) => r.json())
+      .then((sessions: Array<{ participants?: Array<{ isWinner: boolean; name: string }>; treatAmount?: number | null }>) => {
+        const cloudStats: Record<string, { count: number; totalAmount: number }> = {}
+        for (const s of sessions) {
+          const winner = s.participants?.find((p) => p.isWinner)
+          if (winner?.name) {
+            const prev = cloudStats[winner.name] ?? { count: 0, totalAmount: 0 }
+            cloudStats[winner.name] = {
+              count: prev.count + 1,
+              totalAmount: prev.totalAmount + (s.treatAmount ?? 0),
+            }
+          }
+        }
+        seedTreatStats(cloudStats)
+      })
+      .catch(() => {})
+  }, [user])
 
   useEffect(() => () => clearTimeout(confettiTimerRef.current ?? undefined), [])
   useEffect(() => () => countdownTimersRef.current.forEach(clearTimeout), [])
@@ -169,9 +222,23 @@ export default function HomePage() {
     }
   }
 
-  const handleSaveGroup = () => {
+  const handleSaveGroup = async () => {
     if (!groupName.trim()) return
-    saveGroup(groupName.trim(), participants)
+    const name = groupName.trim()
+    saveGroup(name, participants)  // LocalStorage
+
+    if (user) {
+      try {
+        const res = await fetch("/api/groups", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name, participants }),
+        })
+        const cg: { id?: string } = await res.json()
+        if (cg.id) updateGroupCloudId(name, cg.id)
+      } catch { /* silently fail */ }
+    }
+
     setSavedGroups(loadGroups())
     setGroupName("")
     setShowSaveInput(false)
@@ -182,8 +249,13 @@ export default function HomePage() {
   }
 
   const handleDeleteGroup = (id: string) => {
-    deleteGroup(id)
+    const group = savedGroups.find((g) => g.id === id)
+    deleteGroup(id)  // LocalStorage
     setSavedGroups(loadGroups())
+
+    if (user && group?.cloudId) {
+      fetch(`/api/groups/${group.cloudId}`, { method: "DELETE" }).catch(() => {})
+    }
   }
 
   const removeParticipant = (index: number) => {

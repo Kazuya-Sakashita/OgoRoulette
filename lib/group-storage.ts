@@ -1,5 +1,6 @@
 export interface SavedGroup {
   id: string
+  cloudId?: string   // DB UUID — set after first cloud sync
   name: string
   participants: string[]
   updatedAt: number
@@ -15,6 +16,14 @@ export interface RankingEntry {
   name: string
   count: number
   totalAmount: number
+}
+
+// Shape returned by GET /api/groups
+export interface CloudGroup {
+  id: string
+  name: string
+  participants: string[]
+  updatedAt: string  // ISO date string
 }
 
 const GROUPS_KEY = "ogoroulette_groups"
@@ -55,6 +64,54 @@ export function saveGroup(name: string, participants: string[]): SavedGroup {
 export function deleteGroup(id: string): void {
   const groups = loadGroups().filter((g) => g.id !== id)
   localStorage.setItem(GROUPS_KEY, JSON.stringify(groups))
+}
+
+/** After POST /api/groups succeeds, store the returned cloud ID against the local group */
+export function updateGroupCloudId(localName: string, cloudId: string): void {
+  const groups = loadGroups()
+  const target = groups.find((g) => g.name === localName)
+  if (target) {
+    target.cloudId = cloudId
+    localStorage.setItem(GROUPS_KEY, JSON.stringify(groups))
+  }
+}
+
+/**
+ * Merge cloud groups into LocalStorage.
+ * - Cloud wins on participant conflicts (cloud is assumed to be newer for cross-device changes).
+ * - Cloud-only groups are added to LocalStorage.
+ * - Returns the merged list and writes it to LocalStorage.
+ */
+export function syncGroupsFromCloud(cloudGroups: CloudGroup[]): SavedGroup[] {
+  if (typeof window === "undefined") return []
+  const local = loadGroups()
+
+  for (const cloud of cloudGroups) {
+    const cloudUpdatedAt = new Date(cloud.updatedAt).getTime()
+    const idx = local.findIndex((lg) => lg.name === cloud.name)
+    if (idx >= 0) {
+      // Match by name: update cloudId; cloud wins if it's newer
+      local[idx] = {
+        ...local[idx],
+        cloudId: cloud.id,
+        participants: cloudUpdatedAt > local[idx].updatedAt ? cloud.participants : local[idx].participants,
+        updatedAt: Math.max(local[idx].updatedAt, cloudUpdatedAt),
+      }
+    } else {
+      // Cloud-only group: add locally
+      local.push({
+        id: crypto.randomUUID(),
+        cloudId: cloud.id,
+        name: cloud.name,
+        participants: cloud.participants,
+        updatedAt: cloudUpdatedAt,
+      })
+    }
+  }
+
+  const sorted = local.sort((a, b) => b.updatedAt - a.updatedAt).slice(0, 20)
+  localStorage.setItem(GROUPS_KEY, JSON.stringify(sorted))
+  return sorted
 }
 
 // --- Treat stats ---
@@ -101,4 +158,31 @@ export function getTreatTitle(count: number): string {
   if (count <= 9) return "🏆 奢り王"
   if (count <= 19) return "💎 奢り女王"
   return "🌟 伝説の奢り神様"
+}
+
+/**
+ * Seed LocalStorage treat stats from cloud session history.
+ * For each name, use whichever count/amount is higher (DB is source of truth for past sessions,
+ * LocalStorage tracks current-device spins that may not yet be synced).
+ */
+export function seedTreatStats(
+  cloudStats: Record<string, { count: number; totalAmount: number }>
+): void {
+  if (typeof window === "undefined") return
+  const local = loadStats()
+  let changed = false
+
+  for (const [name, cloud] of Object.entries(cloudStats)) {
+    const prev = local[name] ?? { count: 0, totalAmount: 0, lastTreatedAt: 0 }
+    const newCount = Math.max(cloud.count, prev.count)
+    const newAmount = Math.max(cloud.totalAmount, prev.totalAmount)
+    if (newCount !== prev.count || newAmount !== prev.totalAmount) {
+      local[name] = { count: newCount, totalAmount: newAmount, lastTreatedAt: prev.lastTreatedAt }
+      changed = true
+    }
+  }
+
+  if (changed) {
+    localStorage.setItem(STATS_KEY, JSON.stringify(local))
+  }
 }

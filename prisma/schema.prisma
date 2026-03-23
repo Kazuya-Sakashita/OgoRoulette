@@ -31,8 +31,27 @@ model Profile {
   hostedSessions    RouletteSession[] @relation("SessionHost")
   wonSessions       RouletteSession[] @relation("SessionWinner")
   participations    Participant[]
+  savedGroups       UserGroup[]
 
   @@map("profiles")
+}
+
+// ============================================
+// User-saved groups (cloud sync for logged-in users)
+// ============================================
+model UserGroup {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId       String   @map("user_id") @db.Uuid
+  name         String
+  participants String[]
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  user Profile @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, name])
+  @@index([userId])
+  @@map("user_groups")
 }
 
 // ============================================
