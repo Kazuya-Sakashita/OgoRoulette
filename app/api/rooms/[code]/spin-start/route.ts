@@ -2,12 +2,13 @@ import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { createClient } from "@/lib/supabase/server"
 import { canStartSpin } from "@/lib/room-spin"
+import { verifyGuestToken } from "@/lib/guest-token"
 
 // POST /api/rooms/[code]/spin-start
 // オーナーがスピンを開始するとき WAITING → IN_SESSION に遷移する。
 // メンバーはポーリングで IN_SESSION を検知して「スピン中」UIを表示できる。
 export async function POST(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ code: string }> }
 ) {
   try {
@@ -44,9 +45,20 @@ export async function POST(
           { status: 403 }
         )
       }
+    } else {
+      // ゲストルーム: X-Guest-Host-Token を HMAC で検証
+      const guestToken = request.headers.get("X-Guest-Host-Token")
+      if (!guestToken) {
+        return NextResponse.json({ error: "オーナーのみスピンを開始できます" }, { status: 403 })
+      }
+      const hostMember = await prisma.roomMember.findFirst({
+        where: { roomId: room.id, isHost: true, profileId: null },
+        select: { id: true },
+      })
+      if (!hostMember || !verifyGuestToken(guestToken, hostMember.id, code.toUpperCase())) {
+        return NextResponse.json({ error: "オーナーのみスピンを開始できます" }, { status: 403 })
+      }
     }
-    // ゲストホスト（user=null）: roomId 知識が唯一の証明。
-    // IN_SESSION はデータを保存しない視覚的状態変化のみのため低リスク。
 
     await prisma.room.update({
       where: { id: room.id },

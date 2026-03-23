@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { createClient } from "@/lib/supabase/server"
+import { verifyGuestToken } from "@/lib/guest-token"
 
 // POST /api/rooms/[code]/spin-complete
 // WHAT: オーナーのアニメーション完了後に呼ぶ。ルームを COMPLETED、セッションを COMPLETED に設定。
@@ -45,16 +46,16 @@ export async function POST(
         return NextResponse.json({ error: "オーナーのみ操作できます" }, { status: 403 })
       }
     } else {
-      // ゲストルーム: X-Guest-Host-Token でホストメンバーIDを検証
+      // ゲストルーム: X-Guest-Host-Token を HMAC で検証
       const guestToken = request.headers.get("X-Guest-Host-Token")
       if (!guestToken) {
         return NextResponse.json({ error: "オーナーのみ操作できます" }, { status: 403 })
       }
-      const guestMember = await prisma.roomMember.findFirst({
-        where: { id: guestToken, roomId: room.id, isHost: true, profileId: null },
+      const hostMember = await prisma.roomMember.findFirst({
+        where: { roomId: room.id, isHost: true, profileId: null },
         select: { id: true },
       })
-      if (!guestMember) {
+      if (!hostMember || !verifyGuestToken(guestToken, hostMember.id, code.toUpperCase())) {
         return NextResponse.json({ error: "オーナーのみ操作できます" }, { status: 403 })
       }
     }

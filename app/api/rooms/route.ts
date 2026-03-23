@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma"
 import { createClient } from "@/lib/supabase/server"
 import { SEGMENT_COLORS } from "@/lib/constants"
 import { randomInt } from "crypto"
+import { signGuestToken } from "@/lib/guest-token"
 
 // Generate random invite code (6 characters, avoids confusing chars)
 function generateInviteCode(): string {
@@ -161,7 +162,19 @@ export async function POST(request: Request) {
       }
     })
 
-    return NextResponse.json(room, { status: 201 })
+    // ゲストホストトークンを HMAC で署名してクライアントに返す
+    // クライアントはこのトークンを localStorage に保存し、spin / reset / spin-complete で使用する
+    const hostMember = room.members.find(m => m.isHost)
+    let hostToken: string | null = null
+    if (hostMember) {
+      try {
+        hostToken = signGuestToken(hostMember.id, inviteCode)
+      } catch {
+        console.error("GUEST_HOST_SECRET is not configured")
+        return NextResponse.json({ error: "サーバー設定エラーが発生しました" }, { status: 500 })
+      }
+    }
+    return NextResponse.json({ ...room, hostToken }, { status: 201 })
   } catch (error) {
     console.error("Error creating room:", error)
     return NextResponse.json({ error: "Failed to create room" }, { status: 500 })

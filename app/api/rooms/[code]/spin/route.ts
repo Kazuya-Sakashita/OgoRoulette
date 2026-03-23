@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server"
 import { calculateBillSplit } from "@/lib/bill-calculator"
 import { randomInt } from "crypto"
 import { SPIN_COUNTDOWN_MS } from "@/lib/constants"
+import { verifyGuestToken } from "@/lib/guest-token"
 
 // POST /api/rooms/[code]/spin
 // WHAT: オーナー専用。サーバーが当選者を決定し、全クライアントが使う spinStartedAt を返す。
@@ -49,6 +50,8 @@ export async function POST(
         expiresAt: true,
         members: {
           select: {
+            id: true,
+            isHost: true,
             nickname: true,
             color: true,
             profileId: true,
@@ -94,16 +97,10 @@ export async function POST(
         return NextResponse.json({ error: "オーナーのみスピンできます" }, { status: 403 })
       }
     } else {
-      // ゲストルーム: X-Guest-Host-Token でホストメンバーIDを検証
+      // ゲストルーム: X-Guest-Host-Token を HMAC で検証
       const guestToken = request.headers.get("X-Guest-Host-Token")
-      if (!guestToken) {
-        return NextResponse.json({ error: "オーナーのみスピンできます" }, { status: 403 })
-      }
-      const guestMember = await prisma.roomMember.findFirst({
-        where: { id: guestToken, roomId: room.id, isHost: true, profileId: null },
-        select: { id: true },
-      })
-      if (!guestMember) {
+      const hostMember = room.members.find(m => m.isHost)
+      if (!guestToken || !hostMember || !verifyGuestToken(guestToken, hostMember.id, code.toUpperCase())) {
         return NextResponse.json({ error: "オーナーのみスピンできます" }, { status: 403 })
       }
     }

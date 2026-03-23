@@ -1,4 +1,5 @@
 import { describe, test, expect, vi, beforeEach, type Mock } from 'vitest'
+import { verifyGuestToken } from '@/lib/guest-token'
 
 // WHAT: スピン API の安全性と状態遷移を検証する
 // WHY:  C-1 修正（participants を DB から取得）の回帰テスト。
@@ -36,6 +37,12 @@ vi.mock('@/lib/supabase/server', () => ({
   }),
 }))
 
+// --- guest-token モック（HMAC 検証をテスト環境でバイパス） ---
+vi.mock('@/lib/guest-token', () => ({
+  verifyGuestToken: vi.fn().mockReturnValue(true),
+  signGuestToken: vi.fn().mockReturnValue('signed-test-token'),
+}))
+
 // --- crypto.randomInt を確定値にする ---
 
 vi.mock('crypto', async (importOriginal) => {
@@ -56,21 +63,29 @@ function makeRequest(body: Record<string, unknown>): Request {
   })
 }
 
-// DB メンバー 3人のサンプル
-const DB_MEMBERS = [
-  { nickname: 'Alice', color: '#F97316', profileId: null, profile: null },
-  { nickname: 'Bob',   color: '#EC4899', profileId: null, profile: null },
-  { nickname: 'Carol', color: '#8B5CF6', profileId: null, profile: null },
+// DB メンバー 3人のサンプル（id / isHost を含む）
+type MockMember = {
+  id: string
+  isHost: boolean
+  nickname: string | null
+  color: string
+  profileId: string | null
+  profile: { id: string; name: string | null } | null
+}
+
+const DB_MEMBERS: MockMember[] = [
+  { id: 'host-member-uuid', isHost: true,  nickname: 'Alice', color: '#F97316', profileId: null, profile: null },
+  { id: 'member-2',         isHost: false, nickname: 'Bob',   color: '#EC4899', profileId: null, profile: null },
+  { id: 'member-3',         isHost: false, nickname: 'Carol', color: '#8B5CF6', profileId: null, profile: null },
 ]
 
-function mockWaitingRoomWithMembers(members = DB_MEMBERS) {
+function mockWaitingRoomWithMembers(members: MockMember[] = DB_MEMBERS) {
   mockPrisma.room.findUnique.mockResolvedValue({
     id: 'room-uuid',
     status: 'WAITING',
     ownerId: null,
     members,
   })
-  mockPrisma.roomMember.findFirst.mockResolvedValue({ id: 'host-member-uuid' })
 }
 
 // --- テスト ---
@@ -112,9 +127,9 @@ describe('POST /api/rooms/[code]/spin', () => {
 
     test('DB メンバーの name（nickname → profile.name → "ゲスト" の順）が使われる', async () => {
       mockWaitingRoomWithMembers([
-        { nickname: null, color: '#F97316', profileId: 'p1', profile: { id: 'p1', name: 'ProfileName' } },
-        { nickname: 'HasNickname', color: '#EC4899', profileId: null, profile: null },
-        { nickname: null, color: '#8B5CF6', profileId: null, profile: null }, // → "ゲスト"
+        { id: 'host-member-uuid', isHost: true,  nickname: null,          color: '#F97316', profileId: 'p1', profile: { id: 'p1', name: 'ProfileName' } },
+        { id: 'member-2',         isHost: false, nickname: 'HasNickname', color: '#EC4899', profileId: null, profile: null },
+        { id: 'member-3',         isHost: false, nickname: null,          color: '#8B5CF6', profileId: null, profile: null }, // → "ゲスト"
       ])
       const { POST } = await import('./route')
 
@@ -162,7 +177,7 @@ describe('POST /api/rooms/[code]/spin', () => {
     test('DB メンバーが 1 人のみの場合は 400 を返す', async () => {
       mockPrisma.room.findUnique.mockResolvedValue({
         id: 'room-uuid', status: 'WAITING', ownerId: null,
-        members: [{ nickname: 'Solo', color: '#F97316', profileId: null, profile: null }],
+        members: [{ id: 'solo-uuid', isHost: true, nickname: 'Solo', color: '#F97316', profileId: null, profile: null }],
       })
       const { POST } = await import('./route')
 
@@ -247,12 +262,12 @@ describe('POST /api/rooms/[code]/spin', () => {
       expect(res.status).toBe(403)
     })
 
-    test('別ルームのトークンはゲストルームで 403 を返す', async () => {
+    test('無効なトークンはゲストルームで 403 を返す', async () => {
       mockPrisma.room.findUnique.mockResolvedValue({
         id: 'room-uuid', status: 'WAITING', ownerId: null, members: DB_MEMBERS,
       })
-      // findFirst が null を返す = 別ルームのトークン
-      mockPrisma.roomMember.findFirst.mockResolvedValue(null)
+      // verifyGuestToken が false を返す = 無効なトークン
+      vi.mocked(verifyGuestToken).mockReturnValueOnce(false)
       const { POST } = await import('./route')
 
       const res = await POST(makeRequest({ totalAmount: null, treatAmount: null }), {
