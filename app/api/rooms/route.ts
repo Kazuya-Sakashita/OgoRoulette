@@ -2,13 +2,14 @@ import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { createClient } from "@/lib/supabase/server"
 import { SEGMENT_COLORS } from "@/lib/constants"
+import { randomInt } from "crypto"
 
 // Generate random invite code (6 characters, avoids confusing chars)
 function generateInviteCode(): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
   let code = ''
   for (let i = 0; i < 6; i++) {
-    code += chars.charAt(Math.floor(Math.random() * chars.length))
+    code += chars.charAt(randomInt(0, chars.length))
   }
   return code
 }
@@ -67,9 +68,26 @@ export async function POST(request: Request) {
     const body = await request.json()
     const { name, maxMembers = 10, guestNickname } = body
 
+    // maxMembers バリデーション
+    if (typeof maxMembers !== "number" || !Number.isInteger(maxMembers) || maxMembers < 2 || maxMembers > 20) {
+      return NextResponse.json({ error: "参加人数は2〜20人で設定してください" }, { status: 400 })
+    }
+
+    // ルーム名の長さ制限
+    const trimmedName = typeof name === "string" ? name.trim() : ""
+    if (trimmedName.length > 30) {
+      return NextResponse.json({ error: "ルーム名は30文字以内で入力してください" }, { status: 400 })
+    }
+
     // Guest requires a nickname
-    if (!user && !guestNickname?.trim()) {
-      return NextResponse.json({ error: "ニックネームを入力してください" }, { status: 400 })
+    if (!user) {
+      const trimmedNickname = guestNickname?.trim() ?? ""
+      if (!trimmedNickname) {
+        return NextResponse.json({ error: "ニックネームを入力してください" }, { status: 400 })
+      }
+      if (trimmedNickname.length > 20) {
+        return NextResponse.json({ error: "ニックネームは20文字以内で入力してください" }, { status: 400 })
+      }
     }
 
     const inviteCode = await generateUniqueInviteCode()
@@ -90,7 +108,7 @@ export async function POST(request: Request) {
       const room = await prisma.room.create({
         data: {
           ownerId: user.id,
-          name: name || "新しいルーム",
+          name: trimmedName || "新しいルーム",
           inviteCode,
           maxMembers,
           expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
@@ -120,7 +138,7 @@ export async function POST(request: Request) {
     const room = await prisma.room.create({
       data: {
         ownerId: null,
-        name: name || "新しいルーム",
+        name: trimmedName || "新しいルーム",
         inviteCode,
         maxMembers,
         expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
@@ -129,7 +147,7 @@ export async function POST(request: Request) {
             profileId: null,
             isHost: true,
             color: SEGMENT_COLORS[0],
-            nickname: guestNickname.trim()
+            nickname: (guestNickname as string).trim()
           }
         }
       },

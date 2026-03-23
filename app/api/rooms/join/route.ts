@@ -2,9 +2,23 @@ import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { createClient } from "@/lib/supabase/server"
 import { SEGMENT_COLORS } from "@/lib/constants"
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
 
 // POST /api/rooms/join - Join a room with invite code
 export async function POST(request: Request) {
+  // レート制限: 同一 IP から 1分間に 10回まで
+  const ip = getClientIp(request.headers)
+  const { allowed, resetAt } = checkRateLimit(ip, "join", 10, 60_000)
+  if (!allowed) {
+    return NextResponse.json(
+      { error: "リクエストが多すぎます。しばらくしてからお試しください。" },
+      {
+        status: 429,
+        headers: { "Retry-After": String(Math.ceil((resetAt - Date.now()) / 1000)) },
+      }
+    )
+  }
+
   try {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
@@ -35,6 +49,10 @@ export async function POST(request: Request) {
 
     if (room.status === 'COMPLETED') {
       return NextResponse.json({ error: "このルームは既に終了しています" }, { status: 400 })
+    }
+
+    if (room.status === 'IN_SESSION') {
+      return NextResponse.json({ error: "ルーレットが進行中のため参加できません" }, { status: 400 })
     }
 
     if (room._count.members >= room.maxMembers) {
@@ -92,6 +110,11 @@ export async function POST(request: Request) {
       })
     }
 
+    const trimmedGuestName = (guestName as string).trim()
+    if (trimmedGuestName.length > 20) {
+      return NextResponse.json({ error: "名前は20文字以内で入力してください" }, { status: 400 })
+    }
+
     const colorIndex = room._count.members % SEGMENT_COLORS.length
 
     await prisma.roomMember.create({
@@ -100,7 +123,7 @@ export async function POST(request: Request) {
         profileId: null,
         isHost: false,
         color: SEGMENT_COLORS[colorIndex],
-        nickname: guestName.trim()
+        nickname: trimmedGuestName
       }
     })
 
