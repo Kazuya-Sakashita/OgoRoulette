@@ -173,7 +173,9 @@ export async function GET(request: NextRequest) {
     console.log("[LINE callback] step=generate_link OK")
 
     // ミドルウェアと同じパターン: verifyOtp が呼ぶ setAll でリダイレクトレスポンスに cookie をセット
-    let redirectResponse = NextResponse.redirect(`${origin}/home`)
+    // 複数回 setAll が呼ばれても全 cookie を蓄積し、最後にまとめて適用する
+    const redirectResponse = NextResponse.redirect(`${origin}/home`)
+    const pendingCookies: Array<{ name: string; value: string; options: Parameters<typeof redirectResponse.cookies.set>[2] }> = []
 
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -184,11 +186,7 @@ export async function GET(request: NextRequest) {
             return request.cookies.getAll()
           },
           setAll(cookiesToSet) {
-            // setAll が呼ばれるたびにレスポンスを再生成し、cookie を上書き
-            redirectResponse = NextResponse.redirect(`${origin}/home`)
-            cookiesToSet.forEach(({ name, value, options }) =>
-              redirectResponse.cookies.set(name, value, options)
-            )
+            cookiesToSet.forEach((c) => pendingCookies.push(c))
           },
         },
       }
@@ -204,6 +202,11 @@ export async function GET(request: NextRequest) {
       console.error("[LINE callback] step=verify_otp FAILED", { message: verifyError.message })
       return NextResponse.redirect(`${origin}/auth/error`)
     }
+
+    // 蓄積された cookie を一括でリダイレクトレスポンスに適用
+    pendingCookies.forEach(({ name, value, options }) =>
+      redirectResponse.cookies.set(name, value, options)
+    )
 
     console.log("[LINE callback] step=verify_otp OK → session established")
 
