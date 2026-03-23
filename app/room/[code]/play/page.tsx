@@ -181,6 +181,14 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
 
   useEffect(() => () => clearTimeout(confettiTimerRef.current ?? undefined), [])
 
+  // スピン中のページ離脱を警告する
+  useEffect(() => {
+    if (phase !== "spinning" && phase !== "preparing") return
+    const handler = (e: BeforeUnloadEvent) => { e.preventDefault() }
+    window.addEventListener("beforeunload", handler)
+    return () => window.removeEventListener("beforeunload", handler)
+  }, [phase])
+
   useEffect(() => {
     if (!room) return
     const stored: string[] = JSON.parse(
@@ -294,18 +302,10 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
     spinScheduledRef.current = false
 
     try {
-      const participantData = (room?.members ?? []).map((member, index) => ({
-        name: getMemberName(member),
-        color: SEGMENT_COLORS[index % SEGMENT_COLORS.length],
-        index,
-        profileId: member.profile?.id ?? null,
-      }))
-
       const res = await fetch(`/api/rooms/${code}/spin`, {
         method: "POST",
         headers: { "Content-Type": "application/json", ...buildGuestAuthHeaders() },
         body: JSON.stringify({
-          participants: participantData,
           totalAmount: hasBillInput ? totalBill : null,
           treatAmount: hasBillInput ? treatAmount : null,
         }),
@@ -350,9 +350,12 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
       })
       if (res.ok) {
         setRoom(prev => prev ? { ...prev, status: "WAITING", sessions: [] } : prev)
+      } else {
+        const data = await res.json()
+        setSpinError(data.error || "リセットに失敗しました")
       }
     } catch {
-      // ポーリングが状態を追いつく
+      setSpinError("ネットワークエラーが発生しました")
     }
   }
 
