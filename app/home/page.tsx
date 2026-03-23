@@ -20,14 +20,13 @@ import {
   saveGroup,
   deleteGroup,
   recordTreat,
-  getTreatCount,
   getTreatTitle,
   getGroupRanking,
   type SavedGroup,
 } from "@/lib/group-storage"
-import { RecordingCanvas, type RecordingPhase } from "@/components/recording-canvas"
+import { RecordingCanvas } from "@/components/recording-canvas"
 import { ShareSheet } from "@/components/share-sheet"
-import { VideoRecorder, canRecord } from "@/lib/video-recorder"
+import { useVideoRecorder } from "@/lib/use-video-recorder"
 
 export default function HomePage() {
   const [isSpinning, setIsSpinning] = useState(false)
@@ -52,13 +51,18 @@ export default function HomePage() {
   const [lastRanking, setLastRanking] = useState<Array<{ name: string; count: number }> | undefined>(undefined)
 
   // Video recording
-  const [recordingPhase, setRecordingPhase] = useState<RecordingPhase>("idle")
-  const [recordedBlob, setRecordedBlob]     = useState<Blob | null>(null)
-  const [showShareSheet, setShowShareSheet] = useState(false)
-  const recordingCanvasRef  = useRef<HTMLCanvasElement>(null)
-  const wheelRotationRef    = useRef<number>(0)
-  const recorderRef         = useRef(new VideoRecorder())
-  const revealTimerRef      = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const {
+    recordingPhase,
+    setRecordingPhase,
+    recordedBlob,
+    showShareSheet,
+    setShowShareSheet,
+    recordingCanvasRef,
+    wheelRotationRef,
+    startRecording,
+    stopRecordingAfterReveal,
+    reset: resetRecording,
+  } = useVideoRecorder()
   const winnerIndexForColor = winner ? winner.index : 0
 
   // Partial Treat Split state
@@ -84,7 +88,6 @@ export default function HomePage() {
 
   useEffect(() => () => clearTimeout(confettiTimerRef.current ?? undefined), [])
   useEffect(() => () => countdownTimersRef.current.forEach(clearTimeout), [])
-  useEffect(() => () => clearTimeout(revealTimerRef.current ?? undefined), [])
 
   const handleLogout = async () => {
     const supabase = createClient()
@@ -95,8 +98,7 @@ export default function HomePage() {
   const handleSpin = () => {
     if (isSpinning || participants.length < 2 || countdown !== null) return
     setWinner(null)
-    setRecordedBlob(null)
-    setShowShareSheet(false)
+    resetRecording()
     setRecordingPhase("countdown")
     setCountdown(3)
     countdownTimersRef.current.forEach(clearTimeout)
@@ -106,11 +108,7 @@ export default function HomePage() {
       setTimeout(() => {
         setCountdown(null)
         setIsSpinning(true)
-        setRecordingPhase("spinning")
-        // Start recording the recording canvas
-        if (recordingCanvasRef.current && canRecord(recordingCanvasRef.current)) {
-          recorderRef.current.start(recordingCanvasRef.current)
-        }
+        startRecording()
       }, 3000),
     ]
   }
@@ -130,15 +128,7 @@ export default function HomePage() {
     setLastRanking(getGroupRanking(participants).map(r => ({ name: r.name, count: r.count })))
 
     // Trigger reveal phase in recording canvas, then stop recording 2.5s later
-    setRecordingPhase("reveal")
-    clearTimeout(revealTimerRef.current ?? undefined)
-    revealTimerRef.current = setTimeout(async () => {
-      setRecordingPhase("done")
-      const blob = await recorderRef.current.stop()
-      if (blob && blob.size > 0) {
-        setRecordedBlob(blob)
-      }
-    }, 2500)
+    stopRecordingAfterReveal()
 
     // Save session to DB (fire-and-forget — don't block the UX)
     if (user) {
@@ -168,11 +158,7 @@ export default function HomePage() {
     setLastTreatCount(undefined)
     setLastTreatTitle(undefined)
     setLastRanking(undefined)
-    setShowShareSheet(false)
-    setRecordedBlob(null)
-    setRecordingPhase("idle")
-    clearTimeout(revealTimerRef.current ?? undefined)
-    recorderRef.current.stop().catch(() => {})
+    resetRecording()
   }
 
   const addParticipant = () => {
@@ -185,11 +171,10 @@ export default function HomePage() {
 
   const handleSaveGroup = () => {
     if (!groupName.trim()) return
-    const updated = saveGroup(groupName.trim(), participants)
+    saveGroup(groupName.trim(), participants)
     setSavedGroups(loadGroups())
     setGroupName("")
     setShowSaveInput(false)
-    void updated
   }
 
   const handleLoadGroup = (group: SavedGroup) => {
@@ -268,11 +253,7 @@ export default function HomePage() {
           onClose={() => {
             setShowShareSheet(false)
           }}
-          onRespin={() => {
-            setShowShareSheet(false)
-            setRecordedBlob(null)
-            closeWinnerCard()
-          }}
+          onRespin={closeWinnerCard}
         />
       )}
 
