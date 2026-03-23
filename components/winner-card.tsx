@@ -25,6 +25,9 @@ interface WinnerCardProps {
   treatCount?: number
   treatTitle?: string
   ranking?: Array<{ name: string; count: number }>
+  // Video recording
+  videoBlob?: Blob | null
+  onShareVideo?: () => void
 }
 
 const REACTIONS = [
@@ -49,6 +52,8 @@ export function WinnerCard({
   treatCount,
   treatTitle,
   ranking,
+  videoBlob,
+  onShareVideo,
 }: WinnerCardProps) {
   const color = SEGMENT_COLORS[winnerIndex % SEGMENT_COLORS.length]
   const [reaction] = useState(() => REACTIONS[Math.floor(Math.random() * REACTIONS.length)])
@@ -379,6 +384,23 @@ export function WinnerCard({
                       style={{ color: "#FBBF24" }}
                     />
                   </div>
+
+                  {/* Video share CTA — shown when recording is ready */}
+                  {videoBlob && onShareVideo && (
+                    <motion.button
+                      onClick={onShareVideo}
+                      className="w-full h-14 rounded-2xl mb-5 font-bold text-base text-white flex items-center justify-center gap-2 hover:opacity-90 active:scale-95 transition-all"
+                      style={{
+                        background: `linear-gradient(135deg, ${color}, #EC4899)`,
+                        boxShadow: `0 4px 24px ${color}50`,
+                      }}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.2 }}
+                    >
+                      🎬 動画でシェア
+                    </motion.button>
+                  )}
 
                   {/* Treat count badge + title */}
                   {typeof treatCount === "number" && treatCount > 0 && (

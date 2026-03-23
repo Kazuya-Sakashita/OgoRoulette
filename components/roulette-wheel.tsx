@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useRef, useCallback } from "react"
+import { useEffect, useState, useRef, useCallback, MutableRefObject } from "react"
 import { motion, useMotionValue, animate } from "framer-motion"
 import { SEGMENT_COLORS } from "@/lib/constants"
 
@@ -13,6 +13,8 @@ interface RouletteWheelProps {
   // 演出フック: 呼び出し元（play/page.tsx）が音・振動を担当する
   onSpinStart?: () => void
   onSlowingDown?: () => void  // 減速フェーズ開始時（結果直前）
+  /** Ref written each frame with the current rotation in degrees — used by RecordingCanvas */
+  wheelRotationRef?: MutableRefObject<number>
 }
 
 export function RouletteWheel({
@@ -23,12 +25,19 @@ export function RouletteWheel({
   onSpinComplete,
   onSpinStart,
   onSlowingDown,
+  wheelRotationRef,
 }: RouletteWheelProps) {
   const rotation = useMotionValue(0)
   const [glowIntensity, setGlowIntensity] = useState(0.2)
   const [winnerIndex, setWinnerIndex] = useState<number | null>(null)
   const [isSlowingDown, setIsSlowingDown] = useState(false)
   const lastRotation = useRef(0)
+
+  // Keep wheelRotationRef in sync — used by RecordingCanvas to read current rotation
+  useEffect(() => {
+    if (!wheelRotationRef) return
+    return rotation.on("change", (v) => { wheelRotationRef.current = v })
+  }, [rotation, wheelRotationRef])
 
   // Stable callback refs — prevents animation re-runs when parent re-renders
   const onSpinCompleteRef = useRef(onSpinComplete)

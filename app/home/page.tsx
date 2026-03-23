@@ -25,6 +25,9 @@ import {
   getGroupRanking,
   type SavedGroup,
 } from "@/lib/group-storage"
+import { RecordingCanvas, type RecordingPhase } from "@/components/recording-canvas"
+import { ShareSheet } from "@/components/share-sheet"
+import { VideoRecorder, canRecord } from "@/lib/video-recorder"
 
 export default function HomePage() {
   const [isSpinning, setIsSpinning] = useState(false)
@@ -47,6 +50,16 @@ export default function HomePage() {
   const [lastTreatCount, setLastTreatCount] = useState<number | undefined>(undefined)
   const [lastTreatTitle, setLastTreatTitle] = useState<string | undefined>(undefined)
   const [lastRanking, setLastRanking] = useState<Array<{ name: string; count: number }> | undefined>(undefined)
+
+  // Video recording
+  const [recordingPhase, setRecordingPhase] = useState<RecordingPhase>("idle")
+  const [recordedBlob, setRecordedBlob]     = useState<Blob | null>(null)
+  const [showShareSheet, setShowShareSheet] = useState(false)
+  const recordingCanvasRef  = useRef<HTMLCanvasElement>(null)
+  const wheelRotationRef    = useRef<number>(0)
+  const recorderRef         = useRef(new VideoRecorder())
+  const revealTimerRef      = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const winnerIndexForColor = winner ? winner.index : 0
 
   // Partial Treat Split state
   const [showBillInput, setShowBillInput] = useState(false)
@@ -71,6 +84,7 @@ export default function HomePage() {
 
   useEffect(() => () => clearTimeout(confettiTimerRef.current ?? undefined), [])
   useEffect(() => () => countdownTimersRef.current.forEach(clearTimeout), [])
+  useEffect(() => () => clearTimeout(revealTimerRef.current ?? undefined), [])
 
   const handleLogout = async () => {
     const supabase = createClient()
@@ -81,12 +95,23 @@ export default function HomePage() {
   const handleSpin = () => {
     if (isSpinning || participants.length < 2 || countdown !== null) return
     setWinner(null)
+    setRecordedBlob(null)
+    setShowShareSheet(false)
+    setRecordingPhase("countdown")
     setCountdown(3)
     countdownTimersRef.current.forEach(clearTimeout)
     countdownTimersRef.current = [
       setTimeout(() => setCountdown(2), 1000),
       setTimeout(() => setCountdown(1), 2000),
-      setTimeout(() => { setCountdown(null); setIsSpinning(true) }, 3000),
+      setTimeout(() => {
+        setCountdown(null)
+        setIsSpinning(true)
+        setRecordingPhase("spinning")
+        // Start recording the recording canvas
+        if (recordingCanvasRef.current && canRecord(recordingCanvasRef.current)) {
+          recorderRef.current.start(recordingCanvasRef.current)
+        }
+      }, 3000),
     ]
   }
 
@@ -103,6 +128,17 @@ export default function HomePage() {
     setLastTreatCount(newCount)
     setLastTreatTitle(getTreatTitle(newCount))
     setLastRanking(getGroupRanking(participants).map(r => ({ name: r.name, count: r.count })))
+
+    // Trigger reveal phase in recording canvas, then stop recording 2.5s later
+    setRecordingPhase("reveal")
+    clearTimeout(revealTimerRef.current ?? undefined)
+    revealTimerRef.current = setTimeout(async () => {
+      setRecordingPhase("done")
+      const blob = await recorderRef.current.stop()
+      if (blob && blob.size > 0) {
+        setRecordedBlob(blob)
+      }
+    }, 2500)
 
     // Save session to DB (fire-and-forget — don't block the UX)
     if (user) {
@@ -132,6 +168,11 @@ export default function HomePage() {
     setLastTreatCount(undefined)
     setLastTreatTitle(undefined)
     setLastRanking(undefined)
+    setShowShareSheet(false)
+    setRecordedBlob(null)
+    setRecordingPhase("idle")
+    clearTimeout(revealTimerRef.current ?? undefined)
+    recorderRef.current.stop().catch(() => {})
   }
 
   const addParticipant = () => {
@@ -171,6 +212,18 @@ export default function HomePage() {
 
   return (
     <main className="min-h-screen bg-background overflow-x-hidden">
+      {/* Hidden recording canvas — off-screen, captured by MediaRecorder */}
+      <RecordingCanvas
+        phase={recordingPhase}
+        countdown={countdown}
+        wheelRotationRef={wheelRotationRef}
+        participants={participants}
+        winnerIndex={winner?.index ?? null}
+        winner={winner?.name ?? null}
+        winnerColor={SEGMENT_COLORS[winnerIndexForColor % SEGMENT_COLORS.length]}
+        canvasRef={recordingCanvasRef}
+      />
+
       {/* Countdown overlay — shown before spin starts */}
       <CountdownOverlay countdown={countdown} participants={participants} />
 
@@ -180,6 +233,13 @@ export default function HomePage() {
         intense={!!winner}
         winnerColor={winner ? SEGMENT_COLORS[winner.index % SEGMENT_COLORS.length] : undefined}
       />
+
+      {/* REC indicator in main UI — visible while recording is active */}
+      {(recordingPhase === "countdown" || recordingPhase === "spinning" || recordingPhase === "reveal") && (
+        <div className="fixed top-4 right-4 z-30 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-red-500/90 text-white text-xs font-bold animate-pulse pointer-events-none">
+          ● REC
+        </div>
+      )}
 
       {/* Winner Card Modal with payment breakdown */}
       {winner && (
@@ -194,6 +254,25 @@ export default function HomePage() {
           treatCount={lastTreatCount}
           treatTitle={lastTreatTitle}
           ranking={lastRanking}
+          videoBlob={recordedBlob}
+          onShareVideo={() => setShowShareSheet(true)}
+        />
+      )}
+
+      {/* Share sheet — appears when recording is ready */}
+      {showShareSheet && recordedBlob && winner && (
+        <ShareSheet
+          blob={recordedBlob}
+          winner={winner.name}
+          winnerColor={SEGMENT_COLORS[winner.index % SEGMENT_COLORS.length]}
+          onClose={() => {
+            setShowShareSheet(false)
+          }}
+          onRespin={() => {
+            setShowShareSheet(false)
+            setRecordedBlob(null)
+            closeWinnerCard()
+          }}
         />
       )}
 
@@ -402,6 +481,7 @@ export default function HomePage() {
               size={280}
               participants={participants}
               onSpinComplete={handleSpinComplete}
+              wheelRotationRef={wheelRotationRef}
             />
           </div>
 
