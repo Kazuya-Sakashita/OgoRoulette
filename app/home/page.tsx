@@ -5,7 +5,7 @@ import { RouletteWheel } from "@/components/roulette-wheel"
 import { Confetti } from "@/components/confetti"
 import { WinnerCard } from "@/components/winner-card"
 import { CountdownOverlay } from "@/components/countdown-overlay"
-import { QrCode, Sparkles, Plus, X as XIcon, History, ChevronDown, ChevronUp, Calculator, LogOut } from "lucide-react"
+import { QrCode, Sparkles, Plus, X as XIcon, History, ChevronDown, ChevronUp, Calculator, LogOut, Bookmark, Trash2 } from "lucide-react"
 import { useState, useEffect, useCallback, useRef } from "react"
 import Link from "next/link"
 import Image from "next/image"
@@ -15,6 +15,16 @@ import type { User } from "@supabase/supabase-js"
 import { SEGMENT_COLORS } from "@/lib/constants"
 import { calculateBillSplit } from "@/lib/bill-calculator"
 import { formatCurrency } from "@/lib/format"
+import {
+  loadGroups,
+  saveGroup,
+  deleteGroup,
+  recordTreat,
+  getTreatCount,
+  getTreatTitle,
+  getGroupRanking,
+  type SavedGroup,
+} from "@/lib/group-storage"
 
 export default function HomePage() {
   const [isSpinning, setIsSpinning] = useState(false)
@@ -28,6 +38,15 @@ export default function HomePage() {
   const countdownTimersRef = useRef<ReturnType<typeof setTimeout>[]>([])
   const [user, setUser] = useState<User | null>(null)
   const router = useRouter()
+
+  // Saved groups (LocalStorage)
+  const [savedGroups, setSavedGroups] = useState<SavedGroup[]>([])
+  const [showSaveInput, setShowSaveInput] = useState(false)
+  const [groupName, setGroupName] = useState("")
+  // Winner gamification state (set after spin)
+  const [lastTreatCount, setLastTreatCount] = useState<number | undefined>(undefined)
+  const [lastTreatTitle, setLastTreatTitle] = useState<string | undefined>(undefined)
+  const [lastRanking, setLastRanking] = useState<Array<{ name: string; count: number }> | undefined>(undefined)
 
   // Partial Treat Split state
   const [showBillInput, setShowBillInput] = useState(false)
@@ -47,6 +66,7 @@ export default function HomePage() {
       setUser(user)
     }
     getUser()
+    setSavedGroups(loadGroups())
   }, [])
 
   useEffect(() => () => clearTimeout(confettiTimerRef.current ?? undefined), [])
@@ -77,6 +97,13 @@ export default function HomePage() {
     clearTimeout(confettiTimerRef.current ?? undefined)
     confettiTimerRef.current = setTimeout(() => setShowConfetti(false), 4000)
 
+    // Record treat in LocalStorage and compute gamification data
+    const amount = hasBillInput ? treatAmount : 0
+    const newCount = recordTreat(winnerName, amount)
+    setLastTreatCount(newCount)
+    setLastTreatTitle(getTreatTitle(newCount))
+    setLastRanking(getGroupRanking(participants).map(r => ({ name: r.name, count: r.count })))
+
     // Save session to DB (fire-and-forget — don't block the UX)
     if (user) {
       fetch("/api/sessions", {
@@ -102,6 +129,9 @@ export default function HomePage() {
 
   const closeWinnerCard = () => {
     setWinner(null)
+    setLastTreatCount(undefined)
+    setLastTreatTitle(undefined)
+    setLastRanking(undefined)
   }
 
   const addParticipant = () => {
@@ -110,6 +140,24 @@ export default function HomePage() {
       setNewName("")
       setShowAddInput(false)
     }
+  }
+
+  const handleSaveGroup = () => {
+    if (!groupName.trim()) return
+    const updated = saveGroup(groupName.trim(), participants)
+    setSavedGroups(loadGroups())
+    setGroupName("")
+    setShowSaveInput(false)
+    void updated
+  }
+
+  const handleLoadGroup = (group: SavedGroup) => {
+    setParticipants(group.participants)
+  }
+
+  const handleDeleteGroup = (id: string) => {
+    deleteGroup(id)
+    setSavedGroups(loadGroups())
   }
 
   const removeParticipant = (index: number) => {
@@ -143,6 +191,9 @@ export default function HomePage() {
           treatAmount={hasBillInput ? treatAmount : undefined}
           splitAmount={hasBillInput ? splitAmount : undefined}
           participants={participants}
+          treatCount={lastTreatCount}
+          treatTitle={lastTreatTitle}
+          ranking={lastRanking}
         />
       )}
 
@@ -452,7 +503,80 @@ export default function HomePage() {
               プレイヤーを追加
             </Button>
           )}
+
+          {/* Save current group */}
+          <div className="mt-3">
+            {showSaveInput ? (
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={groupName}
+                  onChange={(e) => setGroupName(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleSaveGroup()}
+                  placeholder="グループ名"
+                  maxLength={20}
+                  className="flex-1 h-9 px-3 rounded-xl bg-secondary border border-white/10 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
+                  autoFocus
+                />
+                <Button
+                  onClick={handleSaveGroup}
+                  disabled={!groupName.trim()}
+                  className="h-9 px-4 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-medium text-xs"
+                >
+                  保存
+                </Button>
+                <Button
+                  onClick={() => { setShowSaveInput(false); setGroupName("") }}
+                  variant="ghost"
+                  className="h-9 w-9 rounded-xl text-muted-foreground hover:text-foreground"
+                >
+                  <XIcon className="w-3.5 h-3.5" />
+                </Button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setShowSaveInput(true)}
+                className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <Bookmark className="w-3.5 h-3.5" />
+                このメンバーを保存
+              </button>
+            )}
+          </div>
         </section>
+
+        {/* Saved groups */}
+        {savedGroups.length > 0 && (
+          <section className="mt-4">
+            <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+              保存済みグループ
+            </h2>
+            <div className="space-y-2">
+              {savedGroups.map((group) => (
+                <div
+                  key={group.id}
+                  className="flex items-center gap-2 px-3 py-2.5 rounded-xl glass-card border border-white/10 hover:border-primary/20 transition-all"
+                >
+                  <button
+                    onClick={() => handleLoadGroup(group)}
+                    className="flex-1 text-left min-w-0"
+                  >
+                    <p className="text-sm font-medium text-foreground truncate">{group.name}</p>
+                    <p className="text-xs text-muted-foreground truncate">
+                      {group.participants.join(" · ")}
+                    </p>
+                  </button>
+                  <button
+                    onClick={() => handleDeleteGroup(group.id)}
+                    className="w-7 h-7 rounded-lg bg-destructive/10 flex items-center justify-center text-destructive/60 hover:bg-destructive/20 hover:text-destructive transition-all shrink-0"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* Bottom Actions */}
         <section className="mt-6 space-y-3">

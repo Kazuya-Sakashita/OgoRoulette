@@ -21,6 +21,10 @@ interface WinnerCardProps {
   isOwner?: boolean
   roomCode?: string
   onRespin?: () => void
+  // Gamification props
+  treatCount?: number
+  treatTitle?: string
+  ranking?: Array<{ name: string; count: number }>
 }
 
 const REACTIONS = [
@@ -42,6 +46,9 @@ export function WinnerCard({
   isOwner = false,
   roomCode,
   onRespin,
+  treatCount,
+  treatTitle,
+  ranking,
 }: WinnerCardProps) {
   const color = SEGMENT_COLORS[winnerIndex % SEGMENT_COLORS.length]
   const [reaction] = useState(() => REACTIONS[Math.floor(Math.random() * REACTIONS.length)])
@@ -373,6 +380,22 @@ export function WinnerCard({
                     />
                   </div>
 
+                  {/* Treat count badge + title */}
+                  {typeof treatCount === "number" && treatCount > 0 && (
+                    <div className="flex items-center gap-2 mb-5">
+                      <div
+                        className="flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-semibold"
+                        style={{ background: `${color}22`, color, border: `1px solid ${color}40` }}
+                      >
+                        <span>🍺</span>
+                        <span>通算{treatCount}回奢り</span>
+                      </div>
+                      {treatTitle && (
+                        <span className="text-sm text-white/60">{treatTitle}</span>
+                      )}
+                    </div>
+                  )}
+
                   {/* Payment Breakdown */}
                   {hasBillInfo && (
                     <div className="mb-6 p-4 rounded-2xl bg-white/5 border border-white/10">
@@ -456,6 +479,43 @@ export function WinnerCard({
                         <span className="text-lg font-bold text-white">
                           {formatCurrency(bill)}
                         </span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Group ranking */}
+                  {ranking && ranking.some((r) => r.count > 0) && (
+                    <div className="mb-6 p-4 rounded-2xl bg-white/5 border border-white/10">
+                      <div className="flex items-center gap-2 mb-3">
+                        <Crown className="w-4 h-4 text-primary" />
+                        <span className="text-sm font-medium text-muted-foreground">奢りランキング</span>
+                      </div>
+                      <div className="space-y-2">
+                        {ranking.slice(0, 5).map((entry, i) => {
+                          const medal = i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `${i + 1}.`
+                          const isWinner = entry.name === winner
+                          return (
+                            <div
+                              key={entry.name}
+                              className="flex items-center gap-2 px-3 py-2 rounded-xl"
+                              style={
+                                isWinner
+                                  ? { background: `${color}18`, border: `1px solid ${color}35` }
+                                  : { background: "rgba(255,255,255,0.04)" }
+                              }
+                            >
+                              <span className="text-base w-6 shrink-0">{medal}</span>
+                              <span
+                                className={`flex-1 text-sm font-medium truncate ${isWinner ? "text-white" : "text-white/70"}`}
+                              >
+                                {entry.name}
+                              </span>
+                              <span className="text-xs text-muted-foreground shrink-0">
+                                {entry.count}回
+                              </span>
+                            </div>
+                          )
+                        })}
                       </div>
                     </div>
                   )}

@@ -17,6 +17,7 @@ import { CountdownOverlay } from "@/components/countdown-overlay"
 import { createClient } from "@/lib/supabase/client"
 import { SEGMENT_COLORS } from "@/lib/constants"
 import { formatCurrency } from "@/lib/format"
+import { getTreatTitle } from "@/lib/group-storage"
 import type { User } from "@supabase/supabase-js"
 
 // --- Types ---
@@ -139,6 +140,19 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
   )
 
   const quickAmounts = [5000, 10000, 15000, 20000]
+
+  // Aggregate win counts from completed sessions for in-room ranking
+  const roomRanking = useMemo(() => {
+    if (!room?.sessions?.length) return undefined
+    const counts: Record<string, number> = {}
+    for (const session of room.sessions) {
+      const wp = session.participants?.find((p) => p.isWinner)
+      if (wp) counts[wp.name] = (counts[wp.name] ?? 0) + 1
+    }
+    return Object.entries(counts)
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count)
+  }, [room?.sessions])
 
   // --- Effects ---
 
@@ -505,6 +519,12 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
           isOwner={isOwner}
           roomCode={code}
           onRespin={isOwner ? handleRespin : undefined}
+          treatCount={roomRanking?.find((r) => r.name === winner.name)?.count}
+          treatTitle={(() => {
+            const c = roomRanking?.find((r) => r.name === winner.name)?.count
+            return c ? getTreatTitle(c) : undefined
+          })()}
+          ranking={roomRanking}
         />
       )}
 
