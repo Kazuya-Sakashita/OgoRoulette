@@ -8,6 +8,7 @@ import Image from "next/image"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import type { User } from "@supabase/supabase-js"
+import QRCode from "react-qr-code"
 
 interface Member {
   id: string
@@ -99,7 +100,7 @@ export default function CreateRoomPage() {
         return
       }
 
-      // Guest: save invite code + host member ID to localStorage so play page can identify as host
+      // Guest: save invite code + HMAC-signed host token to localStorage so play page can identify as host
       if (!currentUser) {
         const stored: string[] = JSON.parse(
           localStorage.getItem("ogoroulette_host_rooms") || "[]"
@@ -107,12 +108,9 @@ export default function CreateRoomPage() {
         stored.push(data.inviteCode)
         localStorage.setItem("ogoroulette_host_rooms", JSON.stringify(stored))
 
-        // Host member ID is used as a server-verified guest host token
-        const hostMember = (data.members as Array<{ id: string; isHost: boolean }>)?.find(
-          (m) => m.isHost
-        )
-        if (hostMember?.id) {
-          localStorage.setItem(`ogoroulette_host_token_${data.inviteCode}`, hostMember.id)
+        // hostToken は HMAC-SHA256 署名済みトークン（生の memberId ではない）
+        if (data.hostToken) {
+          localStorage.setItem(`ogoroulette_host_token_${data.inviteCode}`, data.hostToken)
         }
       }
 
@@ -154,7 +152,6 @@ export default function CreateRoomPage() {
   }
 
   const shareUrl = room ? `${typeof window !== 'undefined' ? window.location.origin : ''}/join/${room.inviteCode}` : ''
-  const qrCodeUrl = room ? `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(shareUrl)}&bgcolor=FFFFFF&color=0B1B2B&margin=10` : ''
 
   // Full Screen QR Code Display (shows immediately after room creation)
   if (showQRFull && room) {
@@ -179,11 +176,9 @@ export default function CreateRoomPage() {
 
           {/* QR Code - Large */}
           <div className="bg-white p-4 rounded-3xl shadow-2xl border border-gray-100 mb-6">
-            <img 
-              src={qrCodeUrl} 
-              alt="QR Code" 
-              className="w-64 h-64 sm:w-80 sm:h-80"
-            />
+            {shareUrl && (
+              <QRCode value={shareUrl} size={288} bgColor="#FFFFFF" fgColor="#0B1B2B" className="sm:w-80 sm:h-80" />
+            )}
           </div>
 
           {/* Invite Code */}
@@ -267,15 +262,13 @@ export default function CreateRoomPage() {
               </h2>
               
               {/* QR Code */}
-              <button 
+              <button
                 onClick={() => setShowQRFull(true)}
                 className="mx-auto block bg-white rounded-2xl p-3 shadow-lg hover:shadow-xl transition-all hover:scale-105 mb-4"
               >
-                <img 
-                  src={qrCodeUrl} 
-                  alt="QR Code" 
-                  className="w-40 h-40"
-                />
+                {shareUrl && (
+                  <QRCode value={shareUrl} size={160} bgColor="#FFFFFF" fgColor="#0B1B2B" />
+                )}
               </button>
               
               <p className="text-xs text-muted-foreground mb-4">
