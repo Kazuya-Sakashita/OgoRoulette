@@ -23,7 +23,7 @@ interface ShareSheetProps {
   winner: string
   winnerColor: string
   onClose: () => void
-  onRespin: () => void
+  onRespin?: () => void
 }
 
 type ShareStatus = "idle" | "sharing" | "shared" | "error"
@@ -253,14 +253,16 @@ export function ShareSheet({ blob, winner, winnerColor, onClose, onRespin }: Sha
               </Button>
             </div>
 
-            {/* Respin */}
-            <Button
-              onClick={onRespin}
-              variant="outline"
-              className="w-full h-12 rounded-2xl border-white/15 bg-transparent text-muted-foreground hover:text-white hover:bg-white/10 text-sm font-medium"
-            >
-              🎲 もう一度回す
-            </Button>
+            {/* Respin — hidden for room members who cannot trigger a new spin */}
+            {onRespin && (
+              <Button
+                onClick={onRespin}
+                variant="outline"
+                className="w-full h-12 rounded-2xl border-white/15 bg-transparent text-muted-foreground hover:text-white hover:bg-white/10 text-sm font-medium"
+              >
+                🎲 もう一度回す
+              </Button>
+            )}
           </div>
         </motion.div>
       </motion.div>

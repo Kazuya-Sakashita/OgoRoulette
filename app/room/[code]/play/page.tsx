@@ -18,6 +18,9 @@ import { createClient } from "@/lib/supabase/client"
 import { SEGMENT_COLORS } from "@/lib/constants"
 import { formatCurrency } from "@/lib/format"
 import { getTreatTitle } from "@/lib/group-storage"
+import { RecordingCanvas } from "@/components/recording-canvas"
+import { ShareSheet } from "@/components/share-sheet"
+import { useVideoRecorder } from "@/lib/use-video-recorder"
 import type { User } from "@supabase/supabase-js"
 
 // --- Types ---
@@ -112,6 +115,20 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
   // Countdown display — driven by spinStartedAtMs vs Date.now()
   const [spinStartedAtMs, setSpinStartedAtMs] = useState<number | null>(null)
   const [countdownValue, setCountdownValue] = useState<number | null>(null)
+
+  // Video recording
+  const {
+    recordingPhase,
+    setRecordingPhase,
+    recordedBlob,
+    showShareSheet,
+    setShowShareSheet,
+    recordingCanvasRef,
+    wheelRotationRef,
+    startRecording,
+    stopRecordingAfterReveal,
+    reset: resetRecording,
+  } = useVideoRecorder()
 
   // Guest host detection
   const [isGuestHost, setIsGuestHost] = useState(false)
@@ -236,6 +253,13 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
     setIsGuestHost(stored.includes(room.inviteCode))
     guestHostTokenRef.current = localStorage.getItem(`ogoroulette_host_token_${room.inviteCode}`)
   }, [room?.inviteCode]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Sync roulette phase → recording phase.
+  // "preparing" maps to countdown; "spinning" starts the recorder.
+  useEffect(() => {
+    if (phase === "preparing") setRecordingPhase("countdown")
+    else if (phase === "spinning") startRecording()
+  }, [phase]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ゲストホスト専用: サーバー認可用ヘッダーを組み立てる
   const buildGuestAuthHeaders = (): Record<string, string> => {
@@ -384,6 +408,7 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
     spinScheduledRef.current = false
     prevSessionIdRef.current = null
     pendingMemberWinnerRef.current = null
+    resetRecording()
 
     try {
       const res = await fetch(`/api/rooms/${code}/reset`, {
@@ -421,6 +446,7 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
     setPhase("result")
     spinScheduledRef.current = false
     setPendingWinnerIndex(undefined)
+    stopRecordingAfterReveal()
 
     if (isOwner) {
       setWinner({
@@ -491,6 +517,36 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
 
   return (
     <main className="min-h-screen bg-background overflow-x-hidden">
+      {/* Hidden recording canvas — off-screen, captured by MediaRecorder */}
+      <RecordingCanvas
+        phase={recordingPhase}
+        countdown={countdownValue}
+        wheelRotationRef={wheelRotationRef}
+        participants={participants}
+        winnerIndex={winner?.index ?? null}
+        winner={winner?.name ?? null}
+        winnerColor={winner ? SEGMENT_COLORS[winner.index % SEGMENT_COLORS.length] : SEGMENT_COLORS[0]}
+        canvasRef={recordingCanvasRef}
+      />
+
+      {/* REC indicator — visible while recording is active */}
+      {(recordingPhase === "countdown" || recordingPhase === "spinning" || recordingPhase === "reveal") && (
+        <div className="fixed top-4 right-4 z-30 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-red-500/90 text-white text-xs font-bold animate-pulse pointer-events-none">
+          ● REC
+        </div>
+      )}
+
+      {/* Share sheet — appears once recording is ready */}
+      {showShareSheet && recordedBlob && winner && (
+        <ShareSheet
+          blob={recordedBlob}
+          winner={winner.name}
+          winnerColor={SEGMENT_COLORS[winner.index % SEGMENT_COLORS.length]}
+          onClose={() => setShowShareSheet(false)}
+          onRespin={isOwner ? () => { resetRecording(); handleRespin() } : undefined}
+        />
+      )}
+
       <Confetti
         active={showConfetti}
         intense={!!winner}
@@ -511,6 +567,7 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
           onClose={() => {
             setWinner(null)
             setPhase("waiting")
+            resetRecording()
           }}
           totalBill={winner.totalAmount}
           treatAmount={winner.treatAmount}
@@ -525,6 +582,8 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
             return c ? getTreatTitle(c) : undefined
           })()}
           ranking={roomRanking}
+          videoBlob={recordedBlob}
+          onShareVideo={() => setShowShareSheet(true)}
         />
       )}
 
@@ -720,6 +779,7 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
               onSpinComplete={handleSpinComplete}
               onSpinStart={handleSpinStart}
               onSlowingDown={handleSlowingDown}
+              wheelRotationRef={wheelRotationRef}
             />
           </div>
 
