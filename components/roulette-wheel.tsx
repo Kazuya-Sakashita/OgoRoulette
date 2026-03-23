@@ -266,7 +266,7 @@ export function RouletteWheel({
         {Array.from({ length: segments }).map((_, index) => {
           const pos = getTextPosition(index)
           const name = participants[index] || String.fromCharCode(65 + index)
-          const displayName = name.length > 4 ? name.substring(0, 4) : name
+          const displayName = name.length > 6 ? name.substring(0, 6) : name
           
           return (
             <text

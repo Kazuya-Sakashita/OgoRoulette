@@ -7,6 +7,7 @@ export const SPIN_DURATION_MS = 5500
 
 // Canonical roulette segment colors — shared across RouletteWheel and WinnerCard
 // Order matters: index 0 = first segment color shown on wheel
+// 10 colors to cover the default maxMembers of 10 without repeating
 export const SEGMENT_COLORS = [
   "#F97316", // Orange
   "#EC4899", // Pink
@@ -14,4 +15,8 @@ export const SEGMENT_COLORS = [
   "#3B82F6", // Blue
   "#22C55E", // Green
   "#FBBF24", // Yellow
+  "#EF4444", // Red
+  "#06B6D4", // Cyan
+  "#A855F7", // Violet
+  "#F59E0B", // Amber
 ]

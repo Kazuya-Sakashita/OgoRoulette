@@ -12,6 +12,7 @@ export default function ScanPage() {
   const [mode, setMode] = useState<"scan" | "manual">("manual") // Default to manual since camera requires permissions
   const [inviteCode, setInviteCode] = useState("")
   const [error, setError] = useState<string | null>(null)
+  const [cameraNotice, setCameraNotice] = useState<string | null>(null)
 
   const handleManualJoin = () => {
     if (!inviteCode.trim()) {
@@ -86,10 +87,14 @@ export default function ScanPage() {
                   </p>
                 </div>
 
-                <Button 
+                {cameraNotice && (
+                  <p className="text-sm text-muted-foreground text-center mb-4 px-2">
+                    {cameraNotice}
+                  </p>
+                )}
+                <Button
                   onClick={() => {
-                    // In production, this would request camera permissions and start scanning
-                    alert("カメラ機能は実装中です。コード入力をお使いください。")
+                    setCameraNotice("カメラ機能は実装中です。コード入力をお使いください。")
                   }}
                   className="bg-gradient-accent text-primary-foreground rounded-xl press-effect"
                 >
