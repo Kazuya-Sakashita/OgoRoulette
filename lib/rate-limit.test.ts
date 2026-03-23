@@ -1,0 +1,155 @@
+import { describe, expect, test } from 'vitest'
+import { checkRateLimit, getClientIp } from './rate-limit'
+
+// WHAT: checkRateLimit / getClientIp のユニットテスト
+// WHY:  レート制限は新規追加のセキュリティ機能。境界値・IP分離・時間ウィンドウをすべて検証する。
+
+// NOTE: グローバルな Map を共有するため、各テストはユニークなキー（IP + endpoint）を使う
+
+describe('checkRateLimit', () => {
+
+  // --- 基本動作 ---
+
+  test('初回リクエストは許可される', () => {
+    const result = checkRateLimit('1.0.0.1', 'basic-first', 5, 60_000)
+    expect(result.allowed).toBe(true)
+    expect(result.remaining).toBe(4)
+  })
+
+  test('制限内のリクエストはすべて許可される', () => {
+    const limit = 3
+    for (let i = 0; i < limit; i++) {
+      const result = checkRateLimit('1.0.0.2', 'basic-within', limit, 60_000)
+      expect(result.allowed).toBe(true)
+    }
+  })
+
+  test('ちょうど制限数目のリクエストは許可される（境界値）', () => {
+    const limit = 3
+    // 1回目・2回目は消費
+    checkRateLimit('1.0.0.3', 'basic-boundary', limit, 60_000)
+    checkRateLimit('1.0.0.3', 'basic-boundary', limit, 60_000)
+    // 3回目（= limit）は許可
+    expect(checkRateLimit('1.0.0.3', 'basic-boundary', limit, 60_000).allowed).toBe(true)
+    // 4回目（> limit）は拒否
+    expect(checkRateLimit('1.0.0.3', 'basic-boundary', limit, 60_000).allowed).toBe(false)
+  })
+
+  test('制限を超えたリクエストは拒否され remaining は 0', () => {
+    const limit = 2
+    checkRateLimit('1.0.0.4', 'basic-exceed', limit, 60_000)
+    checkRateLimit('1.0.0.4', 'basic-exceed', limit, 60_000)
+
+    const result = checkRateLimit('1.0.0.4', 'basic-exceed', limit, 60_000)
+    expect(result.allowed).toBe(false)
+    expect(result.remaining).toBe(0)
+  })
+
+  // --- IP / エンドポイント分離 ---
+
+  test('異なる IP は独立してカウントされる', () => {
+    const limit = 1
+    checkRateLimit('10.0.0.1', 'sep-ip', limit, 60_000)
+    // 10.0.0.1 は制限に達した
+    expect(checkRateLimit('10.0.0.1', 'sep-ip', limit, 60_000).allowed).toBe(false)
+    // 10.0.0.2 はまだ許可される
+    expect(checkRateLimit('10.0.0.2', 'sep-ip', limit, 60_000).allowed).toBe(true)
+  })
+
+  test('異なるエンドポイントは独立してカウントされる', () => {
+    const limit = 1
+    checkRateLimit('10.0.1.1', 'sep-ep-a', limit, 60_000)
+    // ep-a は制限に達した
+    expect(checkRateLimit('10.0.1.1', 'sep-ep-a', limit, 60_000).allowed).toBe(false)
+    // ep-b はまだ許可される
+    expect(checkRateLimit('10.0.1.1', 'sep-ep-b', limit, 60_000).allowed).toBe(true)
+  })
+
+  // --- ウィンドウのリセット ---
+
+  test('ウィンドウ経過後はカウントがリセットされ再び許可される', async () => {
+    const limit = 1
+    const windowMs = 50
+
+    checkRateLimit('10.0.2.1', 'reset-window', limit, windowMs)
+    // 制限に達した
+    expect(checkRateLimit('10.0.2.1', 'reset-window', limit, windowMs).allowed).toBe(false)
+
+    // ウィンドウ終了まで待機
+    await new Promise(r => setTimeout(r, windowMs + 20))
+
+    // リセット後は許可される
+    expect(checkRateLimit('10.0.2.1', 'reset-window', limit, windowMs).allowed).toBe(true)
+  })
+
+  // --- resetAt の正確性 ---
+
+  test('resetAt はウィンドウ終了時刻を示す', () => {
+    const windowMs = 60_000
+    const before = Date.now()
+    const { resetAt } = checkRateLimit('10.0.3.1', 'resat-accuracy', 5, windowMs)
+    const after = Date.now()
+
+    expect(resetAt).toBeGreaterThanOrEqual(before + windowMs)
+    expect(resetAt).toBeLessThanOrEqual(after + windowMs)
+  })
+
+  test('制限超過時の resetAt は元のウィンドウ終了時刻と一致する', () => {
+    const limit = 1
+    const windowMs = 60_000
+    const { resetAt: firstResetAt } = checkRateLimit('10.0.3.2', 'resat-exceed', limit, windowMs)
+    const { resetAt: exceededResetAt } = checkRateLimit('10.0.3.2', 'resat-exceed', limit, windowMs)
+
+    // 超過時も同じウィンドウの終了時刻を返す
+    expect(exceededResetAt).toBe(firstResetAt)
+  })
+
+  // --- remaining カウント ---
+
+  test('remaining はリクエストごとに減少する', () => {
+    const limit = 5
+    const results = Array.from({ length: limit }, () =>
+      checkRateLimit('10.0.4.1', 'remaining-count', limit, 60_000)
+    )
+    expect(results[0].remaining).toBe(4)
+    expect(results[1].remaining).toBe(3)
+    expect(results[2].remaining).toBe(2)
+    expect(results[3].remaining).toBe(1)
+    expect(results[4].remaining).toBe(0)
+  })
+})
+
+describe('getClientIp', () => {
+
+  test('x-forwarded-for の最初の IP を返す', () => {
+    const headers = new Headers({ 'x-forwarded-for': '1.2.3.4, 5.6.7.8, 9.9.9.9' })
+    expect(getClientIp(headers)).toBe('1.2.3.4')
+  })
+
+  test('x-forwarded-for が単一 IP の場合', () => {
+    const headers = new Headers({ 'x-forwarded-for': '10.0.0.1' })
+    expect(getClientIp(headers)).toBe('10.0.0.1')
+  })
+
+  test('x-forwarded-for の値の空白をトリムする', () => {
+    const headers = new Headers({ 'x-forwarded-for': '  1.2.3.4  , 5.6.7.8' })
+    expect(getClientIp(headers)).toBe('1.2.3.4')
+  })
+
+  test('x-forwarded-for がない場合は x-real-ip を返す', () => {
+    const headers = new Headers({ 'x-real-ip': '9.9.9.9' })
+    expect(getClientIp(headers)).toBe('9.9.9.9')
+  })
+
+  test('どちらもない場合は "unknown" を返す', () => {
+    const headers = new Headers()
+    expect(getClientIp(headers)).toBe('unknown')
+  })
+
+  test('x-forwarded-for が空文字列の場合は x-real-ip にフォールバック', () => {
+    // x-forwarded-for が存在するが値が空のケース
+    const headers = new Headers({ 'x-real-ip': '4.4.4.4' })
+    headers.delete('x-forwarded-for')
+    expect(getClientIp(headers)).toBe('4.4.4.4')
+  })
+})
