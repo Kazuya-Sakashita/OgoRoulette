@@ -1,18 +1,6 @@
 import type { Metadata, Viewport } from 'next'
-import { Noto_Sans_JP, Inter } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
-
-const notoSansJP = Noto_Sans_JP({ 
-  subsets: ["latin"],
-  variable: '--font-noto-sans-jp',
-  weight: ['400', '500', '700', '900'],
-});
-
-const inter = Inter({ 
-  subsets: ["latin"],
-  variable: '--font-inter',
-});
 
 export const metadata: Metadata = {
   title: 'OgoRoulette - 誰が奢る？ルーレットで決めよう',
@@ -45,7 +33,16 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ja" suppressHydrationWarning>
-      <body className={`${notoSansJP.variable} ${inter.variable} font-sans antialiased`}>
+      <head>
+        {/* Google Fonts — 直接 CDN から読み込み（next/font/google の Turbopack ビルド問題を回避） */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Noto+Sans+JP:wght@400;500;700;900&display=swap"
+          rel="stylesheet"
+        />
+      </head>
+      <body className="font-sans antialiased">
         {children}
         <Analytics />
       </body>
