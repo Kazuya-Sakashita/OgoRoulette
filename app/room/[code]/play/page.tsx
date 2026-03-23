@@ -449,7 +449,11 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
 
   return (
     <main className="min-h-screen bg-background overflow-x-hidden">
-      <Confetti active={showConfetti} />
+      <Confetti
+        active={showConfetti}
+        intense={!!winner}
+        winnerColor={winner ? SEGMENT_COLORS[winner.index % SEGMENT_COLORS.length] : undefined}
+      />
 
       {winner && (
         <WinnerCard

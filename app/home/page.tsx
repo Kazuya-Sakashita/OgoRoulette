@@ -114,8 +114,12 @@ export default function HomePage() {
 
   return (
     <main className="min-h-screen bg-background overflow-x-hidden">
-      {/* Confetti effect */}
-      <Confetti active={showConfetti} />
+      {/* Confetti effect — intense + winner color during result reveal */}
+      <Confetti
+        active={showConfetti}
+        intense={!!winner}
+        winnerColor={winner ? SEGMENT_COLORS[winner.index % SEGMENT_COLORS.length] : undefined}
+      />
 
       {/* Winner Card Modal with payment breakdown */}
       {winner && (
