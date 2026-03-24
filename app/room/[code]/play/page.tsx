@@ -15,9 +15,10 @@ import { WinnerCard } from "@/components/winner-card"
 import { Confetti } from "@/components/confetti"
 import { CountdownOverlay } from "@/components/countdown-overlay"
 import { createClient } from "@/lib/supabase/client"
-import { SEGMENT_COLORS } from "@/lib/constants"
+import { SEGMENT_COLORS, SPIN_COUNTDOWN_MS } from "@/lib/constants"
 import { formatCurrency } from "@/lib/format"
 import { getTreatTitle } from "@/lib/group-storage"
+import { trackEvent, AnalyticsEvent } from "@/lib/analytics"
 import { RecordingCanvas } from "@/components/recording-canvas"
 import { ShareSheet } from "@/components/share-sheet"
 import { useVideoRecorder } from "@/lib/use-video-recorder"
@@ -63,6 +64,7 @@ interface Room {
   inviteCode: string
   maxMembers: number
   status: string
+  expiresAt?: string | null
   members: Member[]
   sessions: Session[]
   _count: { members: number }
@@ -132,6 +134,9 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
 
   // Guest host detection
   const [isGuestHost, setIsGuestHost] = useState(false)
+  // isGuestHostResolved: true once localStorage has been read (or currentUser confirms auth user)
+  // Used in loading guard to prevent member-side effects from firing before isOwner is settled
+  const [isGuestHostResolved, setIsGuestHostResolved] = useState(false)
   // Guest host token — used as X-Guest-Host-Token header for server-side auth
   const guestHostTokenRef = useRef<string | null>(null)
   const confettiTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -149,6 +154,11 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
     : isGuestHost
 
   const isCompleted = room?.status === "COMPLETED"
+
+  // ISSUE-010: 有効期限の派生状態
+  const expiresAtMs = room?.expiresAt ? new Date(room.expiresAt).getTime() : null
+  const isExpired = expiresAtMs !== null && expiresAtMs < Date.now()
+  const isExpiringSoon = expiresAtMs !== null && !isExpired && expiresAtMs - Date.now() < 24 * 60 * 60 * 1000
 
   const { splitAmount, isActive: hasBillInput } = calculateBillSplit(
     totalBill,
@@ -208,22 +218,45 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
     }
   }
 
-  // Always poll — phase-based detection (spinScheduledRef / prevSessionIdRef) prevents re-triggering.
-  // Uses recursive setTimeout instead of setInterval so each request waits for the previous to complete,
-  // preventing concurrent overlapping requests when the API response takes > 3 s.
+  // ISSUE-009: Supabase Realtime サブスクリプション（主系）+ ポーリング 10s フォールバック（副系）
+  // Realtime が Room テーブルの変更を検知したとき fetchRoom() を呼ぶ。
+  // WebSocket が切れた場合や Realtime 未設定の場合はポーリングが 10 秒ごとにデータを再取得する。
+  // ⚠️ Supabase ダッシュボードで Room テーブルの Realtime を有効化し、
+  //    RLS ポリシー（inviteCode で読み取り許可）を設定する必要があります。
   useEffect(() => {
+    const supabase = createClient()
     let timeoutId: ReturnType<typeof setTimeout> | null = null
     let cancelled = false
 
+    // 初回取得
+    fetchRoom()
+
+    // Realtime: Room テーブルの変更を購読（ポーリングより低レイテンシ）
+    const channel = supabase
+      .channel(`room-play:${code}`)
+      .on(
+        "postgres_changes" as Parameters<ReturnType<typeof supabase.channel>["on"]>[0],
+        {
+          event: "*",
+          schema: "public",
+          table: "Room",
+          filter: `inviteCode=eq.${code.toUpperCase()}`,
+        },
+        () => { fetchRoom() }
+      )
+      .subscribe()
+
+    // フォールバックポーリング: 10 秒ごと（Realtime が機能していない場合の安全網）
     const poll = async () => {
       await fetchRoom()
-      if (!cancelled) timeoutId = setTimeout(poll, 3000)
+      if (!cancelled) timeoutId = setTimeout(poll, 10000)
     }
+    timeoutId = setTimeout(poll, 10000)
 
-    poll()
     return () => {
       cancelled = true
       if (timeoutId !== null) clearTimeout(timeoutId)
+      supabase.removeChannel(channel)
     }
   }, [code]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -257,14 +290,54 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
     return () => window.removeEventListener("beforeunload", handler)
   }, [phase])
 
+  // ISSUE-003: phase="spinning" タイムアウト安全網
+  // アニメーション総時間（4.5秒+バウンス0.5秒）+ バッファ2.5秒 = 7.5秒
+  // Framer Motion の .then() が発火しない稀なケースで phase が "spinning" に固まるのを回収する
   useEffect(() => {
+    if (phase !== "spinning") return
+    const SPIN_TIMEOUT_MS = 4500 + 500 + 2500
+    const id = setTimeout(() => {
+      console.warn("[OgoRoulette] spin animation timeout — resetting phase to waiting")
+      trackEvent(AnalyticsEvent.PHASE_TIMEOUT, { phase: "spinning" })
+      setPhase("waiting")
+      setSpinError("アニメーションがタイムアウトしました。再試行してください")
+      spinScheduledRef.current = false
+      setPendingWinnerIndex(undefined)
+    }, SPIN_TIMEOUT_MS)
+    return () => clearTimeout(id)
+  }, [phase])
+
+  // ISSUE-003: phase="preparing" タイムアウト安全網
+  // SPIN_COUNTDOWN_MS(3秒) + clock skew 許容(2秒) + バッファ(4秒) = 9秒
+  // ISSUE-001/002 の isOwner フリッカーや ISSUE-004 の clock skew で preparing に固まった場合の回収
+  // cleanup が phase 変化時に timeout をキャンセルするため、発火時は必ず phase === "preparing"
+  useEffect(() => {
+    if (phase !== "preparing") return
+    const PREPARING_TIMEOUT_MS = SPIN_COUNTDOWN_MS + 6000
+    const id = setTimeout(() => {
+      console.warn("[OgoRoulette] preparing phase timeout — resetting")
+      trackEvent(AnalyticsEvent.PHASE_TIMEOUT, { phase: "preparing" })
+      setPhase("waiting")
+      setSpinError("準備がタイムアウトしました。再試行してください")
+      spinScheduledRef.current = false
+    }, PREPARING_TIMEOUT_MS)
+    return () => clearTimeout(id)
+  }, [phase])
+
+  useEffect(() => {
+    // 認証ユーザーは localStorage チェック不要なので即 resolved
+    if (currentUser) {
+      setIsGuestHostResolved(true)
+      return
+    }
     if (!room) return
     const stored: string[] = JSON.parse(
       localStorage.getItem("ogoroulette_host_rooms") || "[]"
     )
     setIsGuestHost(stored.includes(room.inviteCode))
     guestHostTokenRef.current = localStorage.getItem(`ogoroulette_host_token_${room.inviteCode}`)
-  }, [room?.inviteCode]) // eslint-disable-line react-hooks/exhaustive-deps
+    setIsGuestHostResolved(true)
+  }, [room?.inviteCode, currentUser]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Sync roulette phase → recording phase.
   // "preparing" maps to countdown; "spinning" starts the recorder.
@@ -344,7 +417,7 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
     } else {
       prevSessionIdRef.current = latestId
     }
-  }, [room, isOwner]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [room, isOwner])
 
   // --- Handlers ---
 
@@ -372,6 +445,7 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
     playPressSound()
     vibrate(HapticPattern.press)
 
+    trackEvent(AnalyticsEvent.SPIN_BUTTON_CLICKED, { participants_count: participants.length })
     setSpinError(null)
     setPhase("preparing")
     setWinner(null)
@@ -389,14 +463,18 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
 
       if (!res.ok) {
         const data = await res.json()
+        trackEvent(AnalyticsEvent.SPIN_API_ERROR, { error: data.error ?? "unknown", status: res.status })
         setSpinError(data.error || "スピンに失敗しました")
         setPhase("waiting")
         return
       }
 
+      trackEvent(AnalyticsEvent.SPIN_API_SUCCESS)
       const data = await res.json()
       // サーバーが決定した spinStartedAt まで待ってからアニメーション開始
-      const delay = Math.max(0, data.spinStartedAt - Date.now())
+      // clock skew 上限: SPIN_COUNTDOWN_MS + 2秒（最大5秒）を超えないようにキャップ
+      const MAX_SPIN_DELAY_MS = SPIN_COUNTDOWN_MS + 2000
+      const delay = Math.max(0, Math.min(data.spinStartedAt - Date.now(), MAX_SPIN_DELAY_MS))
       setSpinStartedAtMs(data.spinStartedAt)
       setPendingWinnerIndex(data.winnerIndex)
       setTimeout(() => {
@@ -422,19 +500,25 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
     pendingMemberWinnerRef.current = null
     resetRecording()
 
+    trackEvent(AnalyticsEvent.RESPIN_CLICKED)
+    // ISSUE-006: API 呼び出し前に楽観的更新してポーリングとの競合を防ぐ
+    // これにより SPIN ボタンが「結果を見る」に一時的に切り替わらなくなる
+    setRoom(prev => prev ? { ...prev, status: "WAITING", sessions: [] } : prev)
+
     try {
       const res = await fetch(`/api/rooms/${code}/reset`, {
         method: "POST",
         headers: buildGuestAuthHeaders(),
       })
-      if (res.ok) {
-        setRoom(prev => prev ? { ...prev, status: "WAITING", sessions: [] } : prev)
-      } else {
+      if (!res.ok) {
         const data = await res.json()
         setSpinError(data.error || "リセットに失敗しました")
+        // 楽観的更新をロールバック（最新状態を再取得）
+        await fetchRoom()
       }
     } catch {
       setSpinError("ネットワークエラーが発生しました")
+      await fetchRoom()
     }
   }
 
@@ -459,6 +543,7 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
     spinScheduledRef.current = false
     setPendingWinnerIndex(undefined)
     stopRecordingAfterReveal()
+    trackEvent(AnalyticsEvent.SPIN_ANIMATION_COMPLETE)
 
     if (isOwner) {
       setWinner({
@@ -473,11 +558,31 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
       setShowConfetti(true)
       clearTimeout(confettiTimerRef.current ?? undefined)
       confettiTimerRef.current = setTimeout(() => setShowConfetti(false), 4000)
-      // ルームとセッションを COMPLETED にする（非クリティカル: ポーリングでメンバーに伝わる）
-      fetch(`/api/rooms/${code}/spin-complete`, {
-        method: "POST",
-        headers: buildGuestAuthHeaders(),
-      }).catch(() => {})
+      // ISSUE-005: ルームとセッションを COMPLETED にする（retry 付き）
+      // 失敗すると room が IN_SESSION のまま残り次スピンが 409 になるため retry する
+      ;(async () => {
+        const MAX_RETRIES = 3
+        for (let i = 0; i < MAX_RETRIES; i++) {
+          try {
+            const res = await fetch(`/api/rooms/${code}/spin-complete`, {
+              method: "POST",
+              headers: buildGuestAuthHeaders(),
+            })
+            if (res.ok || res.status === 404) return // 完了済み or ルームなし → 終了
+            // 409 は別セッションがすでに COMPLETED → 終了
+            if (res.status === 409) return
+          } catch {
+            // ネットワークエラー → retry
+          }
+          if (i < MAX_RETRIES - 1) {
+            await new Promise(r => setTimeout(r, 1000 * (i + 1)))
+          } else {
+            console.error("[OgoRoulette] spin-complete failed after retries")
+            trackEvent(AnalyticsEvent.SPIN_COMPLETE_FAILED)
+            setSpinError("結果の保存に失敗しました。ページを再読み込みしてください")
+          }
+        }
+      })()
     } else {
       // Member: サーバー確定の当選者を使う
       const serverWinner = pendingMemberWinnerRef.current
@@ -495,7 +600,7 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
 
   // --- Render: loading / error ---
 
-  if (loading || !authLoaded) {
+  if (loading || !authLoaded || !isGuestHostResolved) {
     return (
       <main className="min-h-screen bg-background flex items-center justify-center">
         <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full" />
@@ -622,6 +727,21 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
             </p>
           </Link>
         </header>
+
+        {/* ISSUE-010: 有効期限バナー */}
+        {isExpired && (
+          <div className="mb-3 px-3 py-2 rounded-xl bg-red-500/15 border border-red-500/30 flex items-center justify-between gap-2">
+            <p className="text-xs text-red-400 font-medium">このルームは有効期限が切れています</p>
+            <Link href="/room/create" className="text-xs text-red-400 underline shrink-0">新しいルームを作る</Link>
+          </div>
+        )}
+        {isExpiringSoon && expiresAtMs && (
+          <div className="mb-3 px-3 py-2 rounded-xl bg-yellow-500/10 border border-yellow-500/25">
+            <p className="text-xs text-yellow-400">
+              有効期限: {new Date(expiresAtMs).toLocaleDateString("ja-JP", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" })}
+            </p>
+          </div>
+        )}
 
         {/* Participants */}
         <section className="mb-4">
@@ -932,6 +1052,15 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
               </motion.div>
             )}
           </AnimatePresence>
+
+          {/* ISSUE-011: SPIN ボタンが押せない理由を状態別に表示 */}
+          {isOwner && (phase === "result" || (phase === "waiting" && participants.length < 2)) && (
+            <p className="text-xs text-muted-foreground text-center mt-2">
+              {phase === "result"
+                ? "結果カードを閉じると再スピンできます"
+                : "参加者を2人以上追加してください"}
+            </p>
+          )}
         </div>
       </div>
     </main>
