@@ -134,6 +134,9 @@ export function RouletteWheel({
 
   useEffect(() => {
     if (!isSpinning) return
+    // runSpin() 先頭の setState × 3 はスピン開始前の視覚リセット。
+    // React 18 バッチにより1回のレンダリングにまとまるため実害なし。
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     const cleanup = runSpin()
     return cleanup
   }, [isSpinning, runSpin])
