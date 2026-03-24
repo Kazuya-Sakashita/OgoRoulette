@@ -57,10 +57,18 @@ export async function POST(
       }
     }
 
-    await prisma.room.update({
-      where: { id: room.id },
-      data: { status: "WAITING" },
-    })
+    // ISSUE-005: トランザクションで room を WAITING に戻し、残った SPINNING セッションを CANCELLED にする
+    // spin-complete が失敗した場合に room が IN_SESSION + セッション SPINNING で残るケースを正しく回収する
+    await prisma.$transaction([
+      prisma.room.update({
+        where: { id: room.id },
+        data: { status: "WAITING" },
+      }),
+      prisma.rouletteSession.updateMany({
+        where: { roomId: room.id, status: "SPINNING" },
+        data: { status: "CANCELLED" },
+      }),
+    ])
 
     return NextResponse.json({ status: "WAITING" })
   } catch (error) {
