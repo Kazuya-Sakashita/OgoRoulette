@@ -8,7 +8,10 @@
 
 export function getSupportedMimeType(): string {
   if (typeof MediaRecorder === "undefined") return ""
+  // ISSUE-007: iOS Safari (15.4+) は WebM 非対応。mp4;codecs=h264 を先頭に置くことで
+  // iOS Safari が明示的な H.264 MP4 を選ぶ。Chrome/Firefox は false を返し VP9/VP8 にフォールバックする
   const candidates = [
+    "video/mp4;codecs=h264",
     "video/webm;codecs=vp9,opus",
     "video/webm;codecs=vp9",
     "video/webm;codecs=vp8",
