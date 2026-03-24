@@ -71,13 +71,19 @@ export async function POST(request: Request) {
       }
 
       // Ensure profile exists
+      const resolvedNickname =
+        user.user_metadata?.name ||
+        user.user_metadata?.full_name ||
+        user.user_metadata?.display_name ||
+        "LINEユーザー"
+
       await prisma.profile.upsert({
         where: { id: user.id },
         update: {},
         create: {
           id: user.id,
           email: user.email,
-          name: user.user_metadata?.name || user.email?.split('@')[0],
+          name: resolvedNickname,
           avatarUrl: user.user_metadata?.avatar_url
         }
       })
@@ -92,7 +98,7 @@ export async function POST(request: Request) {
           profileId: user.id,
           isHost: false,
           color: SEGMENT_COLORS[colorIndex],
-          nickname: user.user_metadata?.name || user.email?.split('@')[0]
+          nickname: resolvedNickname
         }
       })
 
