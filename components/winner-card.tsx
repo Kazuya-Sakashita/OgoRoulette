@@ -291,6 +291,15 @@ export function WinnerCard({
               )}
             </div>
 
+            {/* ISSUE-008: Phase A 右上の閉じるボタン — Phase A のまま閉じて再スピンできる */}
+            <button
+              onClick={(e) => { e.stopPropagation(); onClose() }}
+              className="absolute top-4 right-4 z-20 w-9 h-9 rounded-full bg-black/30 flex items-center justify-center text-white/50 hover:bg-black/50 hover:text-white transition-all"
+              aria-label="閉じる"
+            >
+              <XIcon className="w-4 h-4" />
+            </button>
+
             {/* Hint at bottom */}
             <motion.p
               className="absolute bottom-12 text-white/35 text-sm tracking-wider"
@@ -384,6 +393,17 @@ export function WinnerCard({
                       style={{ color: "#FBBF24" }}
                     />
                   </div>
+
+                  {/* ISSUE-008: もう一回！を上部に配置してスクロール不要で見える位置に */}
+                  {isOwner && onRespin && (
+                    <Button
+                      onClick={onRespin}
+                      className="w-full h-12 rounded-2xl bg-gradient-accent hover:opacity-90 text-white font-semibold text-sm transition-all mb-4"
+                    >
+                      <RotateCcw className="w-4 h-4 mr-2" />
+                      もう一回！
+                    </Button>
+                  )}
 
                   {/* Video share CTA — shown when recording is ready */}
                   {videoBlob && onShareVideo && (
@@ -610,15 +630,6 @@ export function WinnerCard({
 
                   {/* Next actions */}
                   <div className="space-y-2">
-                    {isOwner && onRespin && (
-                      <Button
-                        onClick={onRespin}
-                        className="w-full h-12 rounded-2xl bg-gradient-accent hover:opacity-90 text-white font-semibold text-sm transition-all"
-                      >
-                        <RotateCcw className="w-4 h-4 mr-2" />
-                        もう一回！
-                      </Button>
-                    )}
                     {isOwner && roomCode && !onRespin && (
                       <Button
                         asChild
