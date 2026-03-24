@@ -45,8 +45,8 @@ export default function HomePage() {
   const [user, setUser] = useState<User | null>(null)
   const router = useRouter()
 
-  // Saved groups (LocalStorage)
-  const [savedGroups, setSavedGroups] = useState<SavedGroup[]>([])
+  // Saved groups (LocalStorage) — lazy init avoids an extra render on mount
+  const [savedGroups, setSavedGroups] = useState<SavedGroup[]>(() => loadGroups())
   const [showSaveInput, setShowSaveInput] = useState(false)
   const [groupName, setGroupName] = useState("")
   // Winner gamification state (set after spin)
@@ -92,7 +92,6 @@ export default function HomePage() {
       setUser(user)
     }
     getUser()
-    setSavedGroups(loadGroups())
   }, [])
 
   // Cloud sync — runs once when user state becomes non-null (i.e. after auth check on mount)
