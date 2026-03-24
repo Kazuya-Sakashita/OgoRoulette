@@ -67,7 +67,12 @@ export async function POST(request: Request) {
     const { data: { user } } = await supabase.auth.getUser()
 
     const body = await request.json()
-    const { name, maxMembers = 10, guestNickname } = body
+    const { name, maxMembers = 10, guestNickname, isPersistent = false } = body
+
+    // ISSUE-014: 常設グループはログインユーザーのみ作成可能
+    if (isPersistent && !user) {
+      return NextResponse.json({ error: "常設グループはログインが必要です" }, { status: 401 })
+    }
 
     // maxMembers バリデーション
     if (typeof maxMembers !== "number" || !Number.isInteger(maxMembers) || maxMembers < 2 || maxMembers > 20) {
@@ -118,7 +123,9 @@ export async function POST(request: Request) {
           name: trimmedName || "新しいルーム",
           inviteCode,
           maxMembers,
-          expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+          isPersistent: isPersistent === true,
+          // 常設グループは無期限（expiresAt=null）、通常は24時間
+          expiresAt: isPersistent ? null : new Date(Date.now() + 24 * 60 * 60 * 1000),
           members: {
             create: {
               profileId: user.id,

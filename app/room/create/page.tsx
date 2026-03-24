@@ -40,6 +40,7 @@ export default function CreateRoomPage() {
   const [guestNickname, setGuestNickname] = useState("")
   const [roomName, setRoomName] = useState("")
   const [maxMembers, setMaxMembers] = useState(8)
+  const [isPersistent, setIsPersistent] = useState(false)  // ISSUE-014: 常設グループ
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -88,7 +89,8 @@ export default function CreateRoomPage() {
         body: JSON.stringify({
           name: roomName || undefined,
           maxMembers,
-          guestNickname: currentUser ? undefined : guestNickname.trim()
+          guestNickname: currentUser ? undefined : guestNickname.trim(),
+          isPersistent: currentUser ? isPersistent : false,
         })
       })
 
@@ -481,6 +483,30 @@ export default function CreateRoomPage() {
                 ))}
               </div>
             </div>
+
+            {/* ISSUE-014: 常設グループトグル（ログイン済みのみ表示） */}
+            {currentUser && (
+              <div className="mb-6">
+                <button
+                  onClick={() => setIsPersistent(v => !v)}
+                  className={`w-full flex items-center justify-between px-4 py-3 rounded-xl border transition-all ${
+                    isPersistent
+                      ? "bg-primary/10 border-primary/40 text-primary"
+                      : "bg-secondary border-white/10 text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <div className="text-left">
+                    <p className="text-sm font-medium">常設グループとして保存</p>
+                    <p className="text-xs opacity-60 mt-0.5">
+                      {isPersistent ? "有効期限なし・繰り返し使える" : "通常ルーム（24時間有効）"}
+                    </p>
+                  </div>
+                  <div className={`w-11 h-6 rounded-full transition-colors relative shrink-0 ${isPersistent ? "bg-primary" : "bg-white/20"}`}>
+                    <div className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${isPersistent ? "translate-x-5" : "translate-x-0.5"}`} />
+                  </div>
+                </button>
+              </div>
+            )}
 
             {/* Error Message */}
             {error && (
