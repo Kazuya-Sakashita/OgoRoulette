@@ -6,7 +6,7 @@ import { Confetti } from "@/components/confetti"
 import { WinnerCard } from "@/components/winner-card"
 import { CountdownOverlay } from "@/components/countdown-overlay"
 import { QrCode, Sparkles, Plus, X as XIcon, History, ChevronDown, ChevronUp, Calculator, LogOut, Bookmark, Trash2 } from "lucide-react"
-import { useState, useEffect, useCallback, useRef } from "react"
+import { useState, useEffect, useRef } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { createClient } from "@/lib/supabase/client"
@@ -170,7 +170,7 @@ export default function HomePage() {
     ]
   }
 
-  const handleSpinComplete = useCallback((winnerName: string, winnerIndex: number) => {
+  const handleSpinComplete = (winnerName: string, winnerIndex: number) => {
     setIsSpinning(false)
     setWinner({ name: winnerName, index: winnerIndex })
     setShowConfetti(true)
@@ -208,7 +208,7 @@ export default function HomePage() {
         // Silently ignore — session save failure must not interrupt the spin experience
       })
     }
-  }, [user, hasBillInput, totalBill, treatAmount, splitAmount, participants])
+  }
 
   const closeWinnerCard = () => {
     setWinner(null)

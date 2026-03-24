@@ -36,7 +36,8 @@ export function ShareSheet({ blob, winner, winnerColor, onClose, onRespin }: Sha
 
   useEffect(() => {
     const url = URL.createObjectURL(blob)
-    setVideoUrl(url)
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setVideoUrl(url)  // blob URL は副作用生成のため effect 内でしか扱えない
     return () => URL.revokeObjectURL(url)
   }, [blob])
 
