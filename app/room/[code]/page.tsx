@@ -26,6 +26,7 @@ interface Room {
   inviteCode: string
   status: string
   maxMembers: number
+  expiresAt?: string | null
   members: Member[]
   owner: {
     id: string
@@ -233,6 +234,27 @@ export default function RoomPage({ params }: { params: Promise<{ code: string }>
             <RefreshCw className="w-5 h-5" />
           </Button>
         </header>
+
+        {/* ISSUE-010: 有効期限バナー */}
+        {room.expiresAt && (() => {
+          const expiresMs = new Date(room.expiresAt!).getTime()
+          const isExpired = expiresMs < Date.now()
+          const isExpiringSoon = !isExpired && expiresMs - Date.now() < 24 * 60 * 60 * 1000
+          if (isExpired) return (
+            <div className="mb-4 px-3 py-2 rounded-xl bg-red-500/15 border border-red-500/30 flex items-center justify-between gap-2">
+              <p className="text-xs text-red-400 font-medium">このルームは有効期限が切れています</p>
+              <Link href="/room/create" className="text-xs text-red-400 underline shrink-0">新しいルームを作る</Link>
+            </div>
+          )
+          if (isExpiringSoon) return (
+            <div className="mb-4 px-3 py-2 rounded-xl bg-yellow-500/10 border border-yellow-500/25">
+              <p className="text-xs text-yellow-400">
+                有効期限: {new Date(expiresMs).toLocaleDateString("ja-JP", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" })}
+              </p>
+            </div>
+          )
+          return null
+        })()}
 
         {/* QR Code Section - Main Focus for Owner */}
         <section className="mb-6">
