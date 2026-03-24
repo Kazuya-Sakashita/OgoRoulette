@@ -81,6 +81,11 @@ export default function HomePage() {
   )
 
   useEffect(() => {
+    // /home に到達した時点で訪問フラグをセット。
+    // Google/LINE のみで使ってきたユーザーはログアウト後 WelcomePage に
+    // 閉じ込められる問題を防ぐ（WelcomePage は user || hasVisited で /home へ転送する）。
+    localStorage.setItem('ogoroulette_visited', 'true')
+
     const supabase = createClient()
     const getUser = async () => {
       const { data: { user } } = await supabase.auth.getUser()
