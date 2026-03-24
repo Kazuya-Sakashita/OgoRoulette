@@ -79,13 +79,23 @@ export default function RoomPage({ params }: { params: Promise<{ code: string }>
     }
   }
 
-  // Poll for updates every 3 seconds; stops once room is COMPLETED
+  // Poll for updates every 3 seconds; stops once room is COMPLETED.
+  // Uses recursive setTimeout instead of setInterval so each request waits for the previous to complete,
+  // preventing concurrent overlapping requests when the API response takes > 3 s.
   useEffect(() => {
-    fetchRoom()
-    const interval = setInterval(() => {
-      if (!isCompletedRef.current) fetchRoom()
-    }, 3000)
-    return () => clearInterval(interval)
+    let timeoutId: ReturnType<typeof setTimeout> | null = null
+    let cancelled = false
+
+    const poll = async () => {
+      await fetchRoom()
+      if (!cancelled && !isCompletedRef.current) timeoutId = setTimeout(poll, 3000)
+    }
+
+    poll()
+    return () => {
+      cancelled = true
+      if (timeoutId !== null) clearTimeout(timeoutId)
+    }
   }, [code]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const copyInviteLink = async () => {

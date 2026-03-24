@@ -208,11 +208,23 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
     }
   }
 
-  // Always poll — phase-based detection (spinScheduledRef / prevSessionIdRef) prevents re-triggering
+  // Always poll — phase-based detection (spinScheduledRef / prevSessionIdRef) prevents re-triggering.
+  // Uses recursive setTimeout instead of setInterval so each request waits for the previous to complete,
+  // preventing concurrent overlapping requests when the API response takes > 3 s.
   useEffect(() => {
-    fetchRoom()
-    const interval = setInterval(() => fetchRoom(), 3000)
-    return () => clearInterval(interval)
+    let timeoutId: ReturnType<typeof setTimeout> | null = null
+    let cancelled = false
+
+    const poll = async () => {
+      await fetchRoom()
+      if (!cancelled) timeoutId = setTimeout(poll, 3000)
+    }
+
+    poll()
+    return () => {
+      cancelled = true
+      if (timeoutId !== null) clearTimeout(timeoutId)
+    }
   }, [code]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => () => clearTimeout(confettiTimerRef.current ?? undefined), [])
