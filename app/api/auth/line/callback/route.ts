@@ -39,7 +39,6 @@ export async function GET(request: NextRequest) {
 
   // ユーザーが LINE 認可をキャンセルした場合
   if (lineError) {
-    console.log("[LINE callback] user cancelled:", lineError)
     return NextResponse.redirect(`${origin}/auth/login`)
   }
 
@@ -103,10 +102,6 @@ export async function GET(request: NextRequest) {
     }
 
     const lineProfile = (await profileRes.json()) as LineProfile
-    console.log("[LINE callback] step=profile_fetch OK", {
-      userId: lineProfile.userId,
-      displayName: lineProfile.displayName,
-    })
 
     // 4. Supabase ユーザー upsert
     // LINE ユーザーには仮想メールアドレスを割り当てる（LINE はメール未公開のため）
@@ -136,7 +131,6 @@ export async function GET(request: NextRequest) {
         console.error("[LINE callback] step=user_update FAILED", { message: updateError.message })
         return NextResponse.redirect(`${origin}/auth/error`)
       }
-      console.log("[LINE callback] step=user_update OK (existing user)")
     } else {
       // 新規ユーザー: Supabase Auth ユーザー作成
       const { data: { user }, error: createError } = await supabaseAdmin.auth.admin.createUser({
@@ -156,7 +150,6 @@ export async function GET(request: NextRequest) {
       }
 
       supabaseUserId = user.id
-      console.log("[LINE callback] step=user_create OK (new user)")
     }
 
     // 5. Magic link を生成し、verifyOtp でセッション cookie を設定
@@ -169,8 +162,6 @@ export async function GET(request: NextRequest) {
       console.error("[LINE callback] step=generate_link FAILED", { message: linkError?.message })
       return NextResponse.redirect(`${origin}/auth/error`)
     }
-
-    console.log("[LINE callback] step=generate_link OK")
 
     // ミドルウェアと同じパターン: verifyOtp が呼ぶ setAll でリダイレクトレスポンスに cookie をセット
     // 複数回 setAll が呼ばれても全 cookie を蓄積し、最後にまとめて適用する
@@ -208,8 +199,6 @@ export async function GET(request: NextRequest) {
       redirectResponse.cookies.set(name, value, options)
     )
 
-    console.log("[LINE callback] step=verify_otp OK → session established")
-
     // 6. Prisma profile upsert（ログインのたびに name / avatarUrl を同期）
     await prisma.profile.upsert({
       where: { id: supabaseUserId },
@@ -230,7 +219,6 @@ export async function GET(request: NextRequest) {
 
     // 7. state cookie を削除してリダイレクト
     redirectResponse.cookies.delete("line_oauth_state")
-    console.log("[LINE callback] step=complete → redirecting to /home")
     return redirectResponse
 
   } catch (error) {
