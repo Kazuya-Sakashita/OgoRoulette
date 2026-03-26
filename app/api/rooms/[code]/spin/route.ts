@@ -98,25 +98,35 @@ export async function POST(
       }
     } else {
       // ゲストルーム: X-Guest-Host-Token を HMAC で検証
+      // profileId: null でフィルタすることで、認証メンバーが混在するルームでも
+      // 正しくゲストホストメンバーを特定する（spin-complete / reset と同パターン）
       const guestToken = request.headers.get("X-Guest-Host-Token")
-      const hostMember = room.members.find(m => m.isHost)
+      const hostMember = room.members.find(m => m.isHost && m.profileId === null)
       if (!guestToken || !hostMember || !verifyGuestToken(guestToken, hostMember.id, code.toUpperCase())) {
         return NextResponse.json({ error: "オーナーのみスピンできます" }, { status: 403 })
       }
     }
 
     // Ensure host profile exists (authenticated only)
+    // email は upsert の create パスでのみ設定 — update: {} で既存プロフィールは変更しない
+    // email の @unique 制約違反は無視して続行（プロフィールが別ルートで既に作成済みの場合）
     if (user) {
-      await prisma.profile.upsert({
-        where: { id: user.id },
-        update: {},
-        create: {
-          id: user.id,
-          email: user.email,
-          name: user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split("@")[0] || null,
-          avatarUrl: user.user_metadata?.avatar_url || null,
-        },
-      })
+      try {
+        await prisma.profile.upsert({
+          where: { id: user.id },
+          update: {},
+          create: {
+            id: user.id,
+            email: user.email ?? null,
+            name: user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split("@")[0] || null,
+            avatarUrl: user.user_metadata?.avatar_url || null,
+          },
+        })
+      } catch (upsertErr) {
+        // email ユニーク制約違反など — プロフィールが既に存在するケースは続行
+        // 存在しない場合はトランザクション内の FK 検証で検出される
+        console.warn("[spin] profile upsert skipped:", (upsertErr as Error).message)
+      }
     }
 
     // DB メンバーから参加者リストを構築（クライアント送信値は使わない）
@@ -206,7 +216,7 @@ export async function POST(
     if (statusCode) {
       return NextResponse.json({ error: (error as Error).message }, { status: statusCode })
     }
-    console.error("Error in spin:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    console.error("[spin] unexpected error:", error instanceof Error ? error.stack : String(error))
+    return NextResponse.json({ error: "予期せぬエラーが発生しました。時間をおいて再試行してください" }, { status: 500 })
   }
 }

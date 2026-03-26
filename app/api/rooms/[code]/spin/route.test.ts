@@ -126,8 +126,10 @@ describe('POST /api/rooms/[code]/spin', () => {
     })
 
     test('DB メンバーの name（nickname → profile.name → "ゲスト" の順）が使われる', async () => {
+      // ゲストルーム（ownerId: null）ではホストの profileId は常に null。
+      // profile オブジェクトは Prisma の include で結合されるもので profileId が null でも返せる。
       mockWaitingRoomWithMembers([
-        { id: 'host-member-uuid', isHost: true,  nickname: null,          color: '#F97316', profileId: 'p1', profile: { id: 'p1', name: 'ProfileName' } },
+        { id: 'host-member-uuid', isHost: true,  nickname: null,          color: '#F97316', profileId: null, profile: { id: 'p1', name: 'ProfileName' } },
         { id: 'member-2',         isHost: false, nickname: 'HasNickname', color: '#EC4899', profileId: null, profile: null },
         { id: 'member-3',         isHost: false, nickname: null,          color: '#8B5CF6', profileId: null, profile: null }, // → "ゲスト"
       ])
@@ -268,6 +270,26 @@ describe('POST /api/rooms/[code]/spin', () => {
       })
       // verifyGuestToken が false を返す = 無効なトークン
       vi.mocked(verifyGuestToken).mockReturnValueOnce(false)
+      const { POST } = await import('./route')
+
+      const res = await POST(makeRequest({ totalAmount: null, treatAmount: null }), {
+        params: Promise.resolve({ code: 'TEST01' }),
+      })
+      expect(res.status).toBe(403)
+    })
+
+    test('isHost=true でも profileId が null でないメンバーはゲストホストと見なさず 403 を返す（ISSUE-020）', async () => {
+      // ゲストルームのはずだが、ホストが profileId を持つ不整合データ
+      // → profileId: null フィルタにより hostMember が見つからず 403 になることを確認
+      mockPrisma.room.findUnique.mockResolvedValue({
+        id: 'room-uuid',
+        status: 'WAITING',
+        ownerId: null,
+        members: [
+          { id: 'host-uuid', isHost: true,  nickname: 'Alice', color: '#F97316', profileId: 'auth-user-id', profile: null },
+          { id: 'member-2', isHost: false, nickname: 'Bob',   color: '#EC4899', profileId: null,           profile: null },
+        ],
+      })
       const { POST } = await import('./route')
 
       const res = await POST(makeRequest({ totalAmount: null, treatAmount: null }), {
