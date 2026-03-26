@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useRef } from "react"
-import { Plus, Check, Pencil, Trash2, X as XIcon, Play } from "lucide-react"
+import { Plus, Check, Pencil, Trash2, X as XIcon, Play, Users } from "lucide-react"
 import type { SavedGroup } from "@/lib/group-storage"
 
 interface GroupListProps {
@@ -10,6 +10,7 @@ interface GroupListProps {
   selectedGroupId: string | null
   onSelect: (id: string) => void
   onSpin?: (id: string) => void
+  onCreateRoom?: (id: string) => void
   onUpdate: (id: string, data: { name?: string; participants?: string[] }) => void
   onDelete: (id: string) => void
   onNew: () => void
@@ -38,6 +39,7 @@ export function GroupList({
   selectedGroupId,
   onSelect,
   onSpin,
+  onCreateRoom,
   onUpdate,
   onDelete,
   onNew,
@@ -205,6 +207,15 @@ export function GroupList({
               {/* Long-press action menu */}
               {menuOpen && !isEditing && (
                 <div className="absolute right-0 top-full mt-1 z-20 flex gap-1 p-1 rounded-xl glass-card border border-white/15 shadow-lg">
+                  {onCreateRoom && (
+                    <button
+                      onClick={() => { setOpenMenuId(null); onCreateRoom(group.id) }}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-foreground hover:bg-white/10 transition-colors"
+                    >
+                      <Users className="w-3.5 h-3.5" />
+                      ルームを作る
+                    </button>
+                  )}
                   <button
                     onClick={() => startEdit(group)}
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-foreground hover:bg-white/10 transition-colors"

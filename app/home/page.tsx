@@ -155,6 +155,37 @@ export default function HomePage() {
     startSpin(members.length)
   }
 
+  // ISSUE-023: グループからルームを作成 — ログインユーザー専用
+  // グループのメンバー名をプリセットとしてルームを作成し、QRコードロビーへ遷移
+  const handleCreateRoomWithGroup = async (id: string) => {
+    if (!user) return
+    const group = savedGroups.find((g) => g.id === id)
+    if (!group) return
+
+    try {
+      const ownerName =
+        user.user_metadata?.name ??
+        user.user_metadata?.full_name ??
+        user.user_metadata?.display_name ??
+        ""
+      const res = await fetch("/api/rooms", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: group.name,
+          maxMembers: Math.max(10, group.participants.length + 2),
+          presetMemberNames: group.participants.filter((n) => n !== ownerName),
+        }),
+      })
+      const data = await res.json()
+      if (res.ok && data.inviteCode) {
+        router.push(`/room/${data.inviteCode}`)
+      }
+    } catch {
+      // Silently ignore — user can still create a room via the regular flow
+    }
+  }
+
   const handleSpinComplete = (winnerName: string, winnerIndex: number) => {
     setIsSpinning(false)
     setWinner({ name: winnerName, index: winnerIndex })
@@ -547,6 +578,7 @@ export default function HomePage() {
           selectedGroupId={selectedGroupId}
           onSelect={handleSelectGroup}
           onSpin={handleSpinWithGroup}
+          onCreateRoom={user ? handleCreateRoomWithGroup : undefined}
           onUpdate={updateGroup}
           onDelete={deleteGroup}
           onNew={openSaveInput}

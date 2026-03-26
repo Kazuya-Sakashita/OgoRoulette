@@ -71,6 +71,7 @@
 |----|--------|------|----------|
 | [ISSUE-019](./issue-019-fix-hydration-group-list.md) | Hydrationエラー（GroupList）の修正 | `useGroups` の `useState` lazy initializer が `localStorage` を直接読み取り、SSR（`[]`）と CSR hydration（保存データ）で DOM が不一致になる | ✅ 完了 |
 | [ISSUE-020](./issue-020-spin-route-guest-host-bug.md) | spin/route.ts — ゲストホスト検証の不整合と 500 エラー防御強化 | ゲストホスト検索に `profileId: null` フィルタが欠落し spin-complete / reset と不整合。`profile.upsert` の uncaught 例外が 500 になるリスクも修正 | ✅ 完了 |
+| [ISSUE-023](./issue-023-member-join-preset-group.md) | メンバーがいつものグループに参加できる — プリセット名前ピッカー | グループからルームを作成するとメンバー名がプリセット登録され、JOIN ページで名前をタップするだけで参加できる | ✅ 完了（要 prisma migrate dev） |
 
 ---
 
@@ -88,10 +89,10 @@
 | 優先度 | 件数 |
 |--------|------|
 | 🔴 Critical | 6 |
-| 🟠 High | 7 |
+| 🟠 High | 8 |
 | 🟡 Medium | 8 |
 | ⚪ Low | 1 |
-| **合計** | **22** |
+| **合計** | **23** |
 
 ---
 
