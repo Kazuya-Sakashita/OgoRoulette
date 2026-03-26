@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useRef } from "react"
-import { Plus, Check, Pencil, Trash2, X as XIcon } from "lucide-react"
+import { Plus, Check, Pencil, Trash2, X as XIcon, Play } from "lucide-react"
 import type { SavedGroup } from "@/lib/group-storage"
 
 interface GroupListProps {
@@ -9,6 +9,7 @@ interface GroupListProps {
   loading?: boolean
   selectedGroupId: string | null
   onSelect: (id: string) => void
+  onSpin?: (id: string) => void
   onUpdate: (id: string, data: { name?: string; participants?: string[] }) => void
   onDelete: (id: string) => void
   onNew: () => void
@@ -36,6 +37,7 @@ export function GroupList({
   loading = false,
   selectedGroupId,
   onSelect,
+  onSpin,
   onUpdate,
   onDelete,
   onNew,
@@ -138,23 +140,26 @@ export function GroupList({
                 </div>
               ) : (
                 /* Normal / selected card */
-                <button
-                  onClick={() => {
-                    if (menuOpen) { setOpenMenuId(null); return }
-                    onSelect(group.id)
-                  }}
-                  onMouseDown={() => handleLongPressStart(group.id)}
-                  onMouseUp={handleLongPressEnd}
-                  onMouseLeave={handleLongPressEnd}
-                  onTouchStart={() => handleLongPressStart(group.id)}
-                  onTouchEnd={handleLongPressEnd}
-                  className={`w-full text-left px-3 py-2.5 rounded-2xl glass-card border transition-all ${
+                <div
+                  className={`flex items-center gap-2 px-3 py-2.5 rounded-2xl glass-card border transition-all ${
                     isSelected
                       ? "border-primary/60 bg-primary/10"
                       : "border-white/10 hover:border-white/25"
                   }`}
                 >
-                  <div className="flex items-center gap-2 min-w-0">
+                  {/* Left: tap to select */}
+                  <button
+                    onClick={() => {
+                      if (menuOpen) { setOpenMenuId(null); return }
+                      onSelect(group.id)
+                    }}
+                    onMouseDown={() => handleLongPressStart(group.id)}
+                    onMouseUp={handleLongPressEnd}
+                    onMouseLeave={handleLongPressEnd}
+                    onTouchStart={() => handleLongPressStart(group.id)}
+                    onTouchEnd={handleLongPressEnd}
+                    className="flex items-center gap-2 flex-1 min-w-0 text-left"
+                  >
                     {/* Selection indicator */}
                     <div
                       className={`w-5 h-5 rounded-full shrink-0 flex items-center justify-center transition-all ${
@@ -179,8 +184,22 @@ export function GroupList({
                         {group.participants.join(" · ")}
                       </p>
                     </div>
-                  </div>
-                </button>
+                  </button>
+
+                  {/* Right: spin immediately with this group */}
+                  {onSpin && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        onSpin(group.id)
+                      }}
+                      className="shrink-0 w-8 h-8 rounded-xl bg-primary/20 hover:bg-primary/40 flex items-center justify-center text-primary transition-all active:scale-95"
+                      title={`${group.name}ですぐ回す`}
+                    >
+                      <Play className="w-3.5 h-3.5 fill-primary" />
+                    </button>
+                  )}
+                </div>
               )}
 
               {/* Long-press action menu */}

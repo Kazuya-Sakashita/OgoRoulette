@@ -127,8 +127,9 @@ export default function HomePage() {
     router.push('/')
   }
 
-  const handleSpin = () => {
-    if (isSpinning || participants.length < 2 || countdown !== null) return
+  // スピン開始の共通ロジック — participantCount を受け取ることで参加者 state に依存しない
+  const startSpin = (participantCount: number) => {
+    if (isSpinning || participantCount < 2 || countdown !== null) return
     setWinner(null)
     resetRecording()
     setRecordingPhase("countdown")
@@ -143,6 +144,15 @@ export default function HomePage() {
         startRecording()
       }, 3000),
     ]
+  }
+
+  const handleSpin = () => startSpin(participants.length)
+
+  // グループカードの「▶ 回す」ボタン — 1タップでそのグループのメンバーをセットしてスピン開始
+  const handleSpinWithGroup = (id: string) => {
+    const members = selectGroup(id)
+    setParticipants(members)
+    startSpin(members.length)
   }
 
   const handleSpinComplete = (winnerName: string, winnerIndex: number) => {
@@ -536,6 +546,7 @@ export default function HomePage() {
           loading={!groupsLoaded}
           selectedGroupId={selectedGroupId}
           onSelect={handleSelectGroup}
+          onSpin={handleSpinWithGroup}
           onUpdate={updateGroup}
           onDelete={deleteGroup}
           onNew={openSaveInput}

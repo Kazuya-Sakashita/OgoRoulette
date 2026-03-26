@@ -70,6 +70,16 @@
 | ID | タイトル | 概要 | ステータス |
 |----|--------|------|----------|
 | [ISSUE-019](./issue-019-fix-hydration-group-list.md) | Hydrationエラー（GroupList）の修正 | `useGroups` の `useState` lazy initializer が `localStorage` を直接読み取り、SSR（`[]`）と CSR hydration（保存データ）で DOM が不一致になる | ✅ 完了 |
+| [ISSUE-020](./issue-020-spin-route-guest-host-bug.md) | spin/route.ts — ゲストホスト検証の不整合と 500 エラー防御強化 | ゲストホスト検索に `profileId: null` フィルタが欠落し spin-complete / reset と不整合。`profile.upsert` の uncaught 例外が 500 になるリスクも修正 | ✅ 完了 |
+
+---
+
+## 🔴 Critical（追加 2）
+
+| ID | タイトル | 概要 | ステータス |
+|----|--------|------|----------|
+| [ISSUE-021](./issue-021-fix-room-play-participants-init-error.md) | RoomPlayPage の `participants` 初期化前参照エラー修正 | `isCurrentGroupSaved` / `handleSaveGroup` が `participants` の `useMemo` 定義より前に配置されており TDZ エラー（`Cannot access 'participants' before initialization`）が発生 | ✅ 完了 |
+| [ISSUE-022](./issue-022-group-spin-utilization.md) | グループ活用 UX の再設計 — 1タップでスピン開始 | グループを保存しても「どう使うか」の導線がなくユーザーが活用できない。GroupList の各グループカードに「▶ 回す」ボタンを追加し 1タップでそのメンバーでスピン開始 | ✅ 完了 |
 
 ---
 
@@ -77,11 +87,11 @@
 
 | 優先度 | 件数 |
 |--------|------|
-| 🔴 Critical | 5 |
-| 🟠 High | 5 |
+| 🔴 Critical | 6 |
+| 🟠 High | 7 |
 | 🟡 Medium | 8 |
 | ⚪ Low | 1 |
-| **合計** | **19** |
+| **合計** | **22** |
 
 ---
 
