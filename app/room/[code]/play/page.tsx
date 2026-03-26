@@ -133,16 +133,10 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
     reset: resetRecording,
   } = useVideoRecorder()
 
-  // Group save
+  // Group save — hook 呼び出しはここで固定（Hook の呼び出し順を安定させるため）
+  // isCurrentGroupSaved / handleSaveGroup は participants に依存するため
+  // participants の useMemo 定義後（--- Derived --- セクション末尾）に配置する
   const { groups: savedGroups, saveGroup } = useGroups(currentUser)
-  const isCurrentGroupSaved = savedGroups.some(
-    (g) =>
-      g.participants.length === participants.length &&
-      [...g.participants].sort().join() === [...participants].sort().join()
-  )
-  const handleSaveGroup = async (name: string) => {
-    await saveGroup(name, participants)
-  }
 
   // Guest host detection
   const [isGuestHost, setIsGuestHost] = useState(false)
@@ -179,6 +173,17 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
   )
 
   const quickAmounts = [5000, 10000, 15000, 20000]
+
+  // participants 依存の派生値 — participants の useMemo より後に定義する必要がある
+  // ※ 定義順を participants より前に置くと TDZ エラー（Cannot access 'participants' before initialization）
+  const isCurrentGroupSaved = savedGroups.some(
+    (g) =>
+      g.participants.length === participants.length &&
+      [...g.participants].sort().join() === [...participants].sort().join()
+  )
+  const handleSaveGroup = async (name: string) => {
+    await saveGroup(name, participants)
+  }
 
   // Aggregate win counts from completed sessions for in-room ranking
   const roomRanking = useMemo(() => {
