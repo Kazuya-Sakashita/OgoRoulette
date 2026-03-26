@@ -67,7 +67,15 @@ export async function POST(request: Request) {
     const { data: { user } } = await supabase.auth.getUser()
 
     const body = await request.json()
-    const { name, maxMembers = 10, guestNickname, isPersistent = false } = body
+    const { name, maxMembers = 10, guestNickname, isPersistent = false, presetMemberNames } = body
+
+    // ISSUE-023: 事前登録メンバー名のバリデーション
+    const validPresetNames: string[] = Array.isArray(presetMemberNames)
+      ? presetMemberNames
+          .filter((n: unknown): n is string => typeof n === "string" && n.trim().length > 0 && n.trim().length <= 20)
+          .map((n: string) => n.trim())
+          .slice(0, 19) // ホスト込み最大20人
+      : []
 
     // ISSUE-014: 常設グループはログインユーザーのみ作成可能
     if (isPersistent && !user) {
@@ -117,15 +125,19 @@ export async function POST(request: Request) {
         }
       })
 
+      // ISSUE-023: ホスト名と重複するプリセット名を除外
+      const filteredPresetNames = validPresetNames.filter(n => n !== resolvedNickname)
+
       const room = await prisma.room.create({
         data: {
           ownerId: user.id,
           name: trimmedName || "新しいルーム",
           inviteCode,
-          maxMembers,
+          maxMembers: Math.max(maxMembers, filteredPresetNames.length + 2),
           isPersistent: isPersistent === true,
           // 常設グループは無期限（expiresAt=null）、通常は24時間
           expiresAt: isPersistent ? null : new Date(Date.now() + 24 * 60 * 60 * 1000),
+          presetMemberNames: filteredPresetNames,
           members: {
             create: {
               profileId: user.id,
@@ -149,19 +161,23 @@ export async function POST(request: Request) {
     }
 
     // --- Guest flow ---
+    const guestTrimmedNickname = (guestNickname as string).trim()
+    const guestFilteredPresetNames = validPresetNames.filter(n => n !== guestTrimmedNickname)
+
     const room = await prisma.room.create({
       data: {
         ownerId: null,
         name: trimmedName || "新しいルーム",
         inviteCode,
-        maxMembers,
+        maxMembers: Math.max(maxMembers, guestFilteredPresetNames.length + 2),
         expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+        presetMemberNames: guestFilteredPresetNames,
         members: {
           create: {
             profileId: null,
             isHost: true,
             color: SEGMENT_COLORS[0],
-            nickname: (guestNickname as string).trim()
+            nickname: guestTrimmedNickname
           }
         }
       },
