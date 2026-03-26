@@ -4,6 +4,7 @@ export interface SavedGroup {
   name: string
   participants: string[]
   updatedAt: number
+  lastUsedAt?: number  // timestamp of last group selection
 }
 
 export interface TreatStats {
@@ -23,7 +24,8 @@ export interface CloudGroup {
   id: string
   name: string
   participants: string[]
-  updatedAt: string  // ISO date string
+  updatedAt: string       // ISO date string
+  lastUsedAt?: string | null
 }
 
 const GROUPS_KEY = "ogoroulette_groups"
@@ -66,6 +68,32 @@ export function deleteGroup(id: string): void {
   localStorage.setItem(GROUPS_KEY, JSON.stringify(groups))
 }
 
+/** Mark a group as used (update lastUsedAt) and re-sort the list */
+export function touchGroupLocally(id: string): void {
+  const groups = loadGroups()
+  const target = groups.find((g) => g.id === id)
+  if (!target) return
+  target.lastUsedAt = Date.now()
+  const sorted = groups.sort(
+    (a, b) => (b.lastUsedAt ?? b.updatedAt) - (a.lastUsedAt ?? a.updatedAt)
+  )
+  localStorage.setItem(GROUPS_KEY, JSON.stringify(sorted))
+}
+
+/** Update name and/or participants for a local group */
+export function updateGroupLocal(
+  id: string,
+  data: { name?: string; participants?: string[] }
+): void {
+  const groups = loadGroups()
+  const target = groups.find((g) => g.id === id)
+  if (!target) return
+  if (data.name) target.name = data.name
+  if (data.participants) target.participants = data.participants
+  target.updatedAt = Date.now()
+  localStorage.setItem(GROUPS_KEY, JSON.stringify(groups))
+}
+
 /** After POST /api/groups succeeds, store the returned cloud ID against the local group */
 export function updateGroupCloudId(localName: string, cloudId: string): void {
   const groups = loadGroups()
@@ -89,6 +117,7 @@ export function syncGroupsFromCloud(cloudGroups: CloudGroup[]): SavedGroup[] {
   for (const cloud of cloudGroups) {
     const cloudUpdatedAt = new Date(cloud.updatedAt).getTime()
     const idx = local.findIndex((lg) => lg.name === cloud.name)
+    const cloudLastUsedAt = cloud.lastUsedAt ? new Date(cloud.lastUsedAt).getTime() : undefined
     if (idx >= 0) {
       // Match by name: update cloudId; cloud wins if it's newer
       local[idx] = {
@@ -96,6 +125,7 @@ export function syncGroupsFromCloud(cloudGroups: CloudGroup[]): SavedGroup[] {
         cloudId: cloud.id,
         participants: cloudUpdatedAt > local[idx].updatedAt ? cloud.participants : local[idx].participants,
         updatedAt: Math.max(local[idx].updatedAt, cloudUpdatedAt),
+        lastUsedAt: Math.max(local[idx].lastUsedAt ?? 0, cloudLastUsedAt ?? 0) || undefined,
       }
     } else {
       // Cloud-only group: add locally
@@ -105,11 +135,14 @@ export function syncGroupsFromCloud(cloudGroups: CloudGroup[]): SavedGroup[] {
         name: cloud.name,
         participants: cloud.participants,
         updatedAt: cloudUpdatedAt,
+        lastUsedAt: cloudLastUsedAt,
       })
     }
   }
 
-  const sorted = local.sort((a, b) => b.updatedAt - a.updatedAt).slice(0, 20)
+  const sorted = local
+    .sort((a, b) => (b.lastUsedAt ?? b.updatedAt) - (a.lastUsedAt ?? a.updatedAt))
+    .slice(0, 20)
   localStorage.setItem(GROUPS_KEY, JSON.stringify(sorted))
   return sorted
 }

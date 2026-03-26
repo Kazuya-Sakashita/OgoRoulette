@@ -11,7 +11,7 @@ export async function GET() {
 
     const groups = await prisma.userGroup.findMany({
       where: { userId: user.id },
-      orderBy: { updatedAt: "desc" },
+      orderBy: [{ lastUsedAt: "desc" }, { updatedAt: "desc" }],
     })
     return NextResponse.json(groups)
   } catch (error) {

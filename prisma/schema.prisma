@@ -40,17 +40,19 @@ model Profile {
 // User-saved groups (cloud sync for logged-in users)
 // ============================================
 model UserGroup {
-  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  userId       String   @map("user_id") @db.Uuid
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId       String    @map("user_id") @db.Uuid
   name         String
   participants String[]
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  lastUsedAt   DateTime? @map("last_used_at")
 
   user Profile @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, name])
   @@index([userId])
+  @@index([userId, lastUsedAt])
   @@map("user_groups")
 }
 

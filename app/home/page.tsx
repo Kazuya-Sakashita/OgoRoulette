@@ -5,7 +5,7 @@ import { RouletteWheel } from "@/components/roulette-wheel"
 import { Confetti } from "@/components/confetti"
 import { WinnerCard } from "@/components/winner-card"
 import { CountdownOverlay } from "@/components/countdown-overlay"
-import { QrCode, Sparkles, Plus, X as XIcon, History, ChevronDown, ChevronUp, Calculator, LogOut, Bookmark, Trash2 } from "lucide-react"
+import { QrCode, Sparkles, Plus, X as XIcon, History, ChevronDown, ChevronUp, Calculator, LogOut } from "lucide-react"
 import { useState, useEffect, useRef } from "react"
 import Link from "next/link"
 import Image from "next/image"
@@ -16,18 +16,13 @@ import { SEGMENT_COLORS } from "@/lib/constants"
 import { calculateBillSplit } from "@/lib/bill-calculator"
 import { formatCurrency } from "@/lib/format"
 import {
-  loadGroups,
-  saveGroup,
-  deleteGroup,
   recordTreat,
   getTreatTitle,
   getGroupRanking,
-  syncGroupsFromCloud,
-  updateGroupCloudId,
   seedTreatStats,
-  type SavedGroup,
-  type CloudGroup,
 } from "@/lib/group-storage"
+import { useGroups } from "@/hooks/use-groups"
+import { GroupList } from "@/components/group-list"
 import { RecordingCanvas } from "@/components/recording-canvas"
 import { ShareSheet } from "@/components/share-sheet"
 import { useVideoRecorder } from "@/lib/use-video-recorder"
@@ -45,10 +40,10 @@ export default function HomePage() {
   const [user, setUser] = useState<User | null>(null)
   const router = useRouter()
 
-  // Saved groups (LocalStorage) — lazy init avoids an extra render on mount
-  const [savedGroups, setSavedGroups] = useState<SavedGroup[]>(() => loadGroups())
+  const { groups: savedGroups, selectedGroupId, selectGroup, saveGroup, updateGroup, deleteGroup } = useGroups(user)
   const [showSaveInput, setShowSaveInput] = useState(false)
-  const [groupName, setGroupName] = useState("")
+  const [newGroupName, setNewGroupName] = useState("")
+
   // Winner gamification state (set after spin)
   const [lastTreatCount, setLastTreatCount] = useState<number | undefined>(undefined)
   const [lastTreatTitle, setLastTreatTitle] = useState<string | undefined>(undefined)
@@ -94,36 +89,9 @@ export default function HomePage() {
     getUser()
   }, [])
 
-  // Cloud sync — runs once when user state becomes non-null (i.e. after auth check on mount)
+  // Sessions sync — seed treat stats in LocalStorage from cloud history
   useEffect(() => {
     if (!user) return
-
-    // 1. Groups: merge cloud groups into LocalStorage
-    fetch("/api/groups")
-      .then((r) => r.json())
-      .then((cloudGroups: CloudGroup[]) => {
-        const merged = syncGroupsFromCloud(cloudGroups)
-        setSavedGroups(merged)
-
-        // Push local-only groups (no cloudId) to cloud
-        for (const g of merged) {
-          if (!g.cloudId) {
-            fetch("/api/groups", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ name: g.name, participants: g.participants }),
-            })
-              .then((r) => r.json())
-              .then((cg: { id?: string }) => {
-                if (cg.id) updateGroupCloudId(g.name, cg.id)
-              })
-              .catch(() => {})
-          }
-        }
-      })
-      .catch(() => {})
-
-    // 2. Sessions → seed treat stats in LocalStorage
     fetch("/api/sessions")
       .then((r) => r.json())
       .then((sessions: Array<{ participants?: Array<{ isWinner: boolean; name: string }>; treatAmount?: number | null }>) => {
@@ -226,40 +194,26 @@ export default function HomePage() {
     }
   }
 
-  const handleSaveGroup = async () => {
-    if (!groupName.trim()) return
-    const name = groupName.trim()
-    saveGroup(name, participants)  // LocalStorage
+  const handleSelectGroup = (id: string) => {
+    const members = selectGroup(id)
+    setParticipants(members)
+  }
 
-    if (user) {
-      try {
-        const res = await fetch("/api/groups", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name, participants }),
-        })
-        const cg: { id?: string } = await res.json()
-        if (cg.id) updateGroupCloudId(name, cg.id)
-      } catch { /* silently fail */ }
-    }
+  const isCurrentGroupSaved = savedGroups.some(
+    (g) =>
+      g.participants.length === participants.length &&
+      [...g.participants].sort().join() === [...participants].sort().join()
+  )
 
-    setSavedGroups(loadGroups())
-    setGroupName("")
+  const handleSaveGroup = async (name: string) => {
+    await saveGroup(name, participants)
     setShowSaveInput(false)
+    setNewGroupName("")
   }
 
-  const handleLoadGroup = (group: SavedGroup) => {
-    setParticipants(group.participants)
-  }
-
-  const handleDeleteGroup = (id: string) => {
-    const group = savedGroups.find((g) => g.id === id)
-    deleteGroup(id)  // LocalStorage
-    setSavedGroups(loadGroups())
-
-    if (user && group?.cloudId) {
-      fetch(`/api/groups/${group.cloudId}`, { method: "DELETE" }).catch(() => {})
-    }
+  const closeSaveInput = () => {
+    setShowSaveInput(false)
+    setNewGroupName("")
   }
 
   const removeParticipant = (index: number) => {
@@ -317,6 +271,7 @@ export default function HomePage() {
           ranking={lastRanking}
           videoBlob={recordedBlob}
           onShareVideo={() => setShowShareSheet(true)}
+          onSaveGroup={isCurrentGroupSaved ? undefined : handleSaveGroup}
         />
       )}
 
@@ -331,6 +286,58 @@ export default function HomePage() {
           }}
           onRespin={closeWinnerCard}
         />
+      )}
+
+      {/* グループ登録モーダル — GroupList の「新しいグループを登録」から開く */}
+      {showSaveInput && (
+        <>
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
+            onClick={closeSaveInput}
+          />
+          {/* Bottom sheet */}
+          <div className="fixed inset-x-0 bottom-0 z-50 px-4 pb-8 pt-6 rounded-t-3xl bg-[#0F2236] border-t border-white/10 shadow-2xl">
+            <div className="flex justify-center mb-4">
+              <div className="w-10 h-1 rounded-full bg-white/20" />
+            </div>
+            <h3 className="text-base font-semibold text-foreground mb-1">
+              いつものメンバーを登録
+            </h3>
+            <p className="text-xs text-muted-foreground mb-4">
+              {participants.join(" · ")}（{participants.length}人）
+            </p>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={newGroupName}
+                onChange={(e) => setNewGroupName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && newGroupName.trim()) handleSaveGroup(newGroupName.trim())
+                  if (e.key === "Escape") closeSaveInput()
+                }}
+                placeholder="グループ名（例: 飲み会メンバー）"
+                maxLength={20}
+                autoFocus
+                className="flex-1 h-12 px-4 rounded-xl bg-white/10 border border-white/20 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
+              />
+              <Button
+                onClick={() => newGroupName.trim() && handleSaveGroup(newGroupName.trim())}
+                disabled={!newGroupName.trim()}
+                className="h-12 px-5 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-sm disabled:opacity-40"
+              >
+                登録
+              </Button>
+              <Button
+                onClick={closeSaveInput}
+                variant="ghost"
+                className="h-12 w-12 rounded-xl text-muted-foreground hover:text-foreground"
+              >
+                <XIcon className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+        </>
       )}
 
       {/* Mobile-first container - max 390px as per spec */}
@@ -410,6 +417,16 @@ export default function HomePage() {
             みんなで参加
           </span>
         </div>
+
+        {/* いつものメンバー — shown above roulette for 1-tap access */}
+        <GroupList
+          groups={savedGroups}
+          selectedGroupId={selectedGroupId}
+          onSelect={handleSelectGroup}
+          onUpdate={updateGroup}
+          onDelete={deleteGroup}
+          onNew={() => setShowSaveInput(true)}
+        />
 
         {/* Partial Treat Split Input */}
         <section className="mb-4">
@@ -641,79 +658,7 @@ export default function HomePage() {
             </Button>
           )}
 
-          {/* Save current group */}
-          <div className="mt-3">
-            {showSaveInput ? (
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={groupName}
-                  onChange={(e) => setGroupName(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && handleSaveGroup()}
-                  placeholder="グループ名"
-                  maxLength={20}
-                  className="flex-1 h-9 px-3 rounded-xl bg-secondary border border-white/10 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
-                  autoFocus
-                />
-                <Button
-                  onClick={handleSaveGroup}
-                  disabled={!groupName.trim()}
-                  className="h-9 px-4 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-medium text-xs"
-                >
-                  保存
-                </Button>
-                <Button
-                  onClick={() => { setShowSaveInput(false); setGroupName("") }}
-                  variant="ghost"
-                  className="h-9 w-9 rounded-xl text-muted-foreground hover:text-foreground"
-                >
-                  <XIcon className="w-3.5 h-3.5" />
-                </Button>
-              </div>
-            ) : (
-              <button
-                onClick={() => setShowSaveInput(true)}
-                className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <Bookmark className="w-3.5 h-3.5" />
-                このメンバーを保存
-              </button>
-            )}
-          </div>
         </section>
-
-        {/* Saved groups */}
-        {savedGroups.length > 0 && (
-          <section className="mt-4">
-            <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-              保存済みグループ
-            </h2>
-            <div className="space-y-2">
-              {savedGroups.map((group) => (
-                <div
-                  key={group.id}
-                  className="flex items-center gap-2 px-3 py-2.5 rounded-xl glass-card border border-white/10 hover:border-primary/20 transition-all"
-                >
-                  <button
-                    onClick={() => handleLoadGroup(group)}
-                    className="flex-1 text-left min-w-0"
-                  >
-                    <p className="text-sm font-medium text-foreground truncate">{group.name}</p>
-                    <p className="text-xs text-muted-foreground truncate">
-                      {group.participants.join(" · ")}
-                    </p>
-                  </button>
-                  <button
-                    onClick={() => handleDeleteGroup(group.id)}
-                    className="w-7 h-7 rounded-lg bg-destructive/10 flex items-center justify-center text-destructive/60 hover:bg-destructive/20 hover:text-destructive transition-all shrink-0"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
 
         {/* Bottom Actions */}
         <section className="mt-6 space-y-3">

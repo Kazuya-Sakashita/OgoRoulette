@@ -112,7 +112,6 @@ describe('canRecord', () => {
     expect(canRecord()).toBe(false)
 
     globalThis.MediaRecorder = original
-    // @ts-expect-error
     globalThis.window = origWindow
   })
 })

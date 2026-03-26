@@ -1,7 +1,7 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { X as XIcon, Crown, Sparkles, Calculator, RotateCcw } from "lucide-react"
+import { X as XIcon, Crown, Sparkles, Calculator, RotateCcw, Bookmark, Check } from "lucide-react"
 import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import Image from "next/image"
@@ -28,6 +28,8 @@ interface WinnerCardProps {
   // Video recording
   videoBlob?: Blob | null
   onShareVideo?: () => void
+  // Group save — pass undefined when participants are already saved
+  onSaveGroup?: (name: string) => void
 }
 
 const REACTIONS = [
@@ -54,12 +56,18 @@ export function WinnerCard({
   ranking,
   videoBlob,
   onShareVideo,
+  onSaveGroup,
 }: WinnerCardProps) {
   const color = SEGMENT_COLORS[winnerIndex % SEGMENT_COLORS.length]
   const [reaction] = useState(() => REACTIONS[Math.floor(Math.random() * REACTIONS.length)])
 
   // Phase A: cinematic reveal  Phase B: details sheet
   const [phase, setPhase] = useState<"reveal" | "details">("reveal")
+
+  // Save group inline state
+  const [showSaveGroup, setShowSaveGroup] = useState(false)
+  const [saveGroupName, setSaveGroupName] = useState("")
+  const [savedThisSession, setSavedThisSession] = useState(false)
 
   // Phase A staggered reveals
   const [showCrown, setShowCrown] = useState(false)
@@ -403,6 +411,73 @@ export function WinnerCard({
                       <RotateCcw className="w-4 h-4 mr-2" />
                       もう一回！
                     </Button>
+                  )}
+
+                  {/* ISSUE-017: このメンバーを登録 — shown when group is not yet saved */}
+                  {onSaveGroup && !savedThisSession && (
+                    <div className="mb-4">
+                      {showSaveGroup ? (
+                        <div className="flex gap-2">
+                          <input
+                            type="text"
+                            value={saveGroupName}
+                            onChange={(e) => setSaveGroupName(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" && saveGroupName.trim()) {
+                                onSaveGroup(saveGroupName.trim())
+                                setSavedThisSession(true)
+                                setShowSaveGroup(false)
+                                setSaveGroupName("")
+                              }
+                              if (e.key === "Escape") {
+                                setShowSaveGroup(false)
+                                setSaveGroupName("")
+                              }
+                            }}
+                            placeholder="グループ名（例: 飲み会メンバー）"
+                            maxLength={20}
+                            autoFocus
+                            className="flex-1 h-9 px-3 rounded-xl bg-white/10 border border-white/20 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
+                          />
+                          <button
+                            onClick={() => {
+                              if (saveGroupName.trim()) {
+                                onSaveGroup(saveGroupName.trim())
+                                setSavedThisSession(true)
+                                setShowSaveGroup(false)
+                                setSaveGroupName("")
+                              }
+                            }}
+                            disabled={!saveGroupName.trim()}
+                            className="w-9 h-9 rounded-xl bg-primary/80 flex items-center justify-center text-white disabled:opacity-40"
+                          >
+                            <Check className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => { setShowSaveGroup(false); setSaveGroupName("") }}
+                            className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center text-muted-foreground"
+                          >
+                            <XIcon className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => setShowSaveGroup(true)}
+                          className="w-full flex items-center justify-center gap-2 h-11 rounded-2xl border border-primary/40 bg-primary/10 hover:bg-primary/20 text-sm font-medium text-primary transition-all"
+                        >
+                          <Bookmark className="w-4 h-4" />
+                          このメンバーを次回も使う
+                        </button>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Saved confirmation */}
+                  {savedThisSession && (
+                    <div className="mb-4 flex items-center justify-center gap-2 h-10 rounded-2xl bg-primary/15 border border-primary/30 text-sm text-primary">
+                      <Check className="w-4 h-4" />
+                      いつものメンバーに登録しました
+                    </div>
                   )}
 
                   {/* Video share CTA — shown when recording is ready */}
