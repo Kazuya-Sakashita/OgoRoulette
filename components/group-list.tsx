@@ -6,6 +6,7 @@ import type { SavedGroup } from "@/lib/group-storage"
 
 interface GroupListProps {
   groups: SavedGroup[]
+  loading?: boolean
   selectedGroupId: string | null
   onSelect: (id: string) => void
   onUpdate: (id: string, data: { name?: string; participants?: string[] }) => void
@@ -32,6 +33,7 @@ interface EditState {
 
 export function GroupList({
   groups,
+  loading = false,
   selectedGroupId,
   onSelect,
   onUpdate,
@@ -62,6 +64,11 @@ export function GroupList({
   const handleLongPressEnd = () => {
     if (longPressTimer.current) clearTimeout(longPressTimer.current)
   }
+
+  // Render nothing while hydrating — SSR produces [] and CSR initial render must match.
+  // Without this guard, the empty-state DOM rendered by the server would conflict with
+  // the group-list DOM the client wants to render, causing a Hydration error.
+  if (loading) return null
 
   if (groups.length === 0) {
     // 空状態はガイダンスのみ — 事前作成を促さない（仕様: 体験後に保存が主導線）

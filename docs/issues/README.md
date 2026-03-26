@@ -65,15 +65,23 @@
 
 ---
 
+## 🟠 High（追加）
+
+| ID | タイトル | 概要 | ステータス |
+|----|--------|------|----------|
+| [ISSUE-019](./issue-019-fix-hydration-group-list.md) | Hydrationエラー（GroupList）の修正 | `useGroups` の `useState` lazy initializer が `localStorage` を直接読み取り、SSR（`[]`）と CSR hydration（保存データ）で DOM が不一致になる | ✅ 完了 |
+
+---
+
 ## 📊 サマリ
 
 | 優先度 | 件数 |
 |--------|------|
 | 🔴 Critical | 5 |
-| 🟠 High | 4 |
+| 🟠 High | 5 |
 | 🟡 Medium | 8 |
 | ⚪ Low | 1 |
-| **合計** | **18** |
+| **合計** | **19** |
 
 ---
 

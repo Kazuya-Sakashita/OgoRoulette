@@ -40,7 +40,7 @@ export default function HomePage() {
   const [user, setUser] = useState<User | null>(null)
   const router = useRouter()
 
-  const { groups: savedGroups, selectedGroupId, selectGroup, saveGroup, updateGroup, deleteGroup } = useGroups(user)
+  const { groups: savedGroups, isLoaded: groupsLoaded, selectedGroupId, selectGroup, saveGroup, updateGroup, deleteGroup } = useGroups(user)
   const [showSaveInput, setShowSaveInput] = useState(false)
   const [newGroupName, setNewGroupName] = useState("")
 
@@ -421,6 +421,7 @@ export default function HomePage() {
         {/* いつものメンバー — shown above roulette for 1-tap access */}
         <GroupList
           groups={savedGroups}
+          loading={!groupsLoaded}
           selectedGroupId={selectedGroupId}
           onSelect={handleSelectGroup}
           onUpdate={updateGroup}

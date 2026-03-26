@@ -15,10 +15,19 @@ import {
 import type { User } from "@supabase/supabase-js"
 
 export function useGroups(user: User | null) {
-  const [groups, setGroups] = useState<SavedGroup[]>(() => loadGroups())
+  // Start with [] so SSR and CSR initial render both produce the same DOM.
+  // LocalStorage is client-only — load it in useEffect after hydration.
+  const [groups, setGroups] = useState<SavedGroup[]>([])
+  const [isLoaded, setIsLoaded] = useState(false)
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null)
 
   const refresh = useCallback(() => setGroups(loadGroups()), [])
+
+  // Hydration-safe localStorage load — fires only on the client, after hydration
+  useEffect(() => {
+    setGroups(loadGroups())
+    setIsLoaded(true)
+  }, [])
 
   // Cloud sync when user logs in
   useEffect(() => {
@@ -125,5 +134,5 @@ export function useGroups(user: User | null) {
     [user, groups, selectedGroupId, refresh]
   )
 
-  return { groups, selectedGroupId, selectGroup, saveGroup, updateGroup, deleteGroup }
+  return { groups, isLoaded, selectedGroupId, selectGroup, saveGroup, updateGroup, deleteGroup }
 }
