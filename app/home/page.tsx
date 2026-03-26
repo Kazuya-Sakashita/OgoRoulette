@@ -5,7 +5,7 @@ import { RouletteWheel } from "@/components/roulette-wheel"
 import { Confetti } from "@/components/confetti"
 import { WinnerCard } from "@/components/winner-card"
 import { CountdownOverlay } from "@/components/countdown-overlay"
-import { QrCode, Sparkles, Plus, X as XIcon, History, ChevronDown, ChevronUp, Calculator, LogOut } from "lucide-react"
+import { QrCode, Sparkles, Plus, X as XIcon, History, ChevronDown, ChevronUp, Calculator, LogOut, Check } from "lucide-react"
 import { useState, useEffect, useRef } from "react"
 import Link from "next/link"
 import Image from "next/image"
@@ -43,6 +43,13 @@ export default function HomePage() {
   const { groups: savedGroups, isLoaded: groupsLoaded, selectedGroupId, selectGroup, saveGroup, updateGroup, deleteGroup } = useGroups(user)
   const [showSaveInput, setShowSaveInput] = useState(false)
   const [newGroupName, setNewGroupName] = useState("")
+  // Modal-local participant state — initialized from home participants on open
+  const [modalParticipants, setModalParticipants] = useState<string[]>([])
+  const [saveGroupSuccess, setSaveGroupSuccess] = useState(false)
+  const [modalEditIdx, setModalEditIdx] = useState<number | null>(null)
+  const [modalEditName, setModalEditName] = useState("")
+  const [showModalAdd, setShowModalAdd] = useState(false)
+  const [modalAddName, setModalAddName] = useState("")
 
   // Winner gamification state (set after spin)
   const [lastTreatCount, setLastTreatCount] = useState<number | undefined>(undefined)
@@ -205,15 +212,27 @@ export default function HomePage() {
       [...g.participants].sort().join() === [...participants].sort().join()
   )
 
-  const handleSaveGroup = async (name: string) => {
-    await saveGroup(name, participants)
-    setShowSaveInput(false)
-    setNewGroupName("")
+  const openSaveInput = () => {
+    setModalParticipants([...participants])
+    setShowSaveInput(true)
   }
 
   const closeSaveInput = () => {
     setShowSaveInput(false)
     setNewGroupName("")
+    setSaveGroupSuccess(false)
+    setModalParticipants([])
+    setModalEditIdx(null)
+    setShowModalAdd(false)
+    setModalAddName("")
+  }
+
+  const handleSaveGroup = async (name: string) => {
+    const members = modalParticipants.filter((p) => p.trim())
+    if (members.length < 2) return
+    await saveGroup(name, members)
+    setSaveGroupSuccess(true)
+    setTimeout(closeSaveInput, 1500)
   }
 
   const removeParticipant = (index: number) => {
@@ -294,48 +313,141 @@ export default function HomePage() {
           {/* Backdrop */}
           <div
             className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
-            onClick={closeSaveInput}
+            onClick={saveGroupSuccess ? undefined : closeSaveInput}
           />
           {/* Bottom sheet */}
-          <div className="fixed inset-x-0 bottom-0 z-50 px-4 pb-8 pt-6 rounded-t-3xl bg-[#0F2236] border-t border-white/10 shadow-2xl">
+          <div className="fixed inset-x-0 bottom-0 z-50 px-4 pb-8 pt-4 rounded-t-3xl bg-[#0F2236] border-t border-white/10 shadow-2xl">
+            {/* Drag handle */}
             <div className="flex justify-center mb-4">
               <div className="w-10 h-1 rounded-full bg-white/20" />
             </div>
-            <h3 className="text-base font-semibold text-foreground mb-1">
-              いつものメンバーを登録
-            </h3>
-            <p className="text-xs text-muted-foreground mb-4">
-              {participants.join(" · ")}（{participants.length}人）
-            </p>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={newGroupName}
-                onChange={(e) => setNewGroupName(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && newGroupName.trim()) handleSaveGroup(newGroupName.trim())
-                  if (e.key === "Escape") closeSaveInput()
-                }}
-                placeholder="グループ名（例: 飲み会メンバー）"
-                maxLength={20}
-                autoFocus
-                className="flex-1 h-12 px-4 rounded-xl bg-white/10 border border-white/20 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
-              />
-              <Button
-                onClick={() => newGroupName.trim() && handleSaveGroup(newGroupName.trim())}
-                disabled={!newGroupName.trim()}
-                className="h-12 px-5 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-sm disabled:opacity-40"
-              >
-                登録
-              </Button>
-              <Button
-                onClick={closeSaveInput}
-                variant="ghost"
-                className="h-12 w-12 rounded-xl text-muted-foreground hover:text-foreground"
-              >
-                <XIcon className="w-4 h-4" />
-              </Button>
-            </div>
+
+            {/* Success state */}
+            {saveGroupSuccess ? (
+              <div className="flex flex-col items-center py-6 gap-3">
+                <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center">
+                  <Check className="w-6 h-6 text-primary" />
+                </div>
+                <p className="text-base font-semibold text-foreground">登録しました</p>
+                <p className="text-sm text-muted-foreground">「{newGroupName}」をいつものメンバーに追加しました</p>
+              </div>
+            ) : (
+              <>
+                {/* Header */}
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-base font-semibold text-foreground">いつものメンバーを登録</h3>
+                  <button
+                    onClick={closeSaveInput}
+                    className="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center text-muted-foreground hover:text-foreground"
+                  >
+                    <XIcon className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+
+                {/* Editable participant chips */}
+                <p className="text-xs text-muted-foreground mb-2">
+                  メンバー（タップして名前を変更できます）
+                </p>
+                <div className="flex flex-wrap gap-2 mb-5">
+                  {modalParticipants.map((name, idx) =>
+                    modalEditIdx === idx ? (
+                      <input
+                        key={idx}
+                        value={modalEditName}
+                        onChange={(e) => setModalEditName(e.target.value)}
+                        onBlur={() => {
+                          if (modalEditName.trim()) {
+                            const updated = [...modalParticipants]
+                            updated[idx] = modalEditName.trim()
+                            setModalParticipants(updated)
+                          }
+                          setModalEditIdx(null)
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") e.currentTarget.blur()
+                          if (e.key === "Escape") setModalEditIdx(null)
+                        }}
+                        maxLength={10}
+                        autoFocus
+                        className="w-24 h-8 px-3 rounded-full bg-primary/20 border border-primary/50 text-foreground text-sm focus:outline-none"
+                      />
+                    ) : (
+                      <button
+                        key={idx}
+                        onClick={() => { setModalEditIdx(idx); setModalEditName(name) }}
+                        className="group flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 border border-white/20 hover:border-primary/40 transition-all"
+                      >
+                        <span className="text-sm text-foreground">{name}</span>
+                        {modalParticipants.length > 2 && (
+                          <span
+                            role="button"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setModalParticipants(modalParticipants.filter((_, i) => i !== idx))
+                            }}
+                            className="text-muted-foreground hover:text-destructive transition-colors"
+                          >
+                            <XIcon className="w-3 h-3" />
+                          </span>
+                        )}
+                      </button>
+                    )
+                  )}
+                  {modalParticipants.length < 8 && (
+                    showModalAdd ? (
+                      <input
+                        value={modalAddName}
+                        onChange={(e) => setModalAddName(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" && modalAddName.trim()) {
+                            setModalParticipants([...modalParticipants, modalAddName.trim()])
+                            setModalAddName("")
+                            setShowModalAdd(false)
+                          }
+                          if (e.key === "Escape") { setShowModalAdd(false); setModalAddName("") }
+                        }}
+                        onBlur={() => { setShowModalAdd(false); setModalAddName("") }}
+                        maxLength={10}
+                        autoFocus
+                        placeholder="名前"
+                        className="w-24 h-8 px-3 rounded-full bg-white/10 border border-white/30 text-foreground placeholder:text-muted-foreground text-sm focus:outline-none"
+                      />
+                    ) : (
+                      <button
+                        onClick={() => setShowModalAdd(true)}
+                        className="flex items-center gap-1 px-3 py-1.5 rounded-full border border-dashed border-white/20 text-muted-foreground hover:text-foreground hover:border-white/40 transition-all text-sm"
+                      >
+                        <Plus className="w-3 h-3" />
+                        追加
+                      </button>
+                    )
+                  )}
+                </div>
+
+                {/* Group name input + register */}
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={newGroupName}
+                    onChange={(e) => setNewGroupName(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && newGroupName.trim()) handleSaveGroup(newGroupName.trim())
+                      if (e.key === "Escape") closeSaveInput()
+                    }}
+                    placeholder="グループ名（例: 飲み会メンバー）"
+                    maxLength={20}
+                    className="flex-1 h-12 px-4 rounded-xl bg-white/10 border border-white/20 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
+                  />
+                  <Button
+                    onClick={() => newGroupName.trim() && handleSaveGroup(newGroupName.trim())}
+                    disabled={!newGroupName.trim() || modalParticipants.filter((p) => p.trim()).length < 2}
+                    className="h-12 px-5 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-sm disabled:opacity-40"
+                  >
+                    登録
+                  </Button>
+                </div>
+              </>
+            )}
           </div>
         </>
       )}
@@ -426,7 +538,7 @@ export default function HomePage() {
           onSelect={handleSelectGroup}
           onUpdate={updateGroup}
           onDelete={deleteGroup}
-          onNew={() => setShowSaveInput(true)}
+          onNew={openSaveInput}
         />
 
         {/* Partial Treat Split Input */}
