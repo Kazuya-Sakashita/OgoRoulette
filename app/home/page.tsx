@@ -41,6 +41,8 @@ export default function HomePage() {
   const router = useRouter()
 
   const { groups: savedGroups, isLoaded: groupsLoaded, selectedGroupId, selectGroup, saveGroup, updateGroup, deleteGroup } = useGroups(user)
+  const [createRoomLoading, setCreateRoomLoading] = useState(false)
+  const [createRoomError, setCreateRoomError] = useState<string | null>(null)
   const [showSaveInput, setShowSaveInput] = useState(false)
   const [newGroupName, setNewGroupName] = useState("")
   // Modal-local participant state — initialized from home participants on open
@@ -158,9 +160,12 @@ export default function HomePage() {
   // ISSUE-023: グループからルームを作成 — ログインユーザー専用
   // グループのメンバー名をプリセットとしてルームを作成し、QRコードロビーへ遷移
   const handleCreateRoomWithGroup = async (id: string) => {
-    if (!user) return
+    if (!user || createRoomLoading) return
     const group = savedGroups.find((g) => g.id === id)
     if (!group) return
+
+    setCreateRoomLoading(true)
+    setCreateRoomError(null)
 
     try {
       const ownerName =
@@ -180,9 +185,14 @@ export default function HomePage() {
       const data = await res.json()
       if (res.ok && data.inviteCode) {
         router.push(`/room/${data.inviteCode}`)
+        // navigation/unmount が loading をクリアするため setCreateRoomLoading(false) 不要
+      } else {
+        setCreateRoomError(data.error ?? "ルームの作成に失敗しました。もう一度お試しください。")
+        setCreateRoomLoading(false)
       }
     } catch {
-      // Silently ignore — user can still create a room via the regular flow
+      setCreateRoomError("ルームの作成に失敗しました。もう一度お試しください。")
+      setCreateRoomLoading(false)
     }
   }
 
@@ -570,6 +580,24 @@ export default function HomePage() {
             みんなで参加
           </span>
         </div>
+
+        {/* ISSUE-023: ルーム作成中 / エラー通知 */}
+        {createRoomLoading && (
+          <div className="mb-3 px-4 py-2.5 rounded-2xl border border-white/10 bg-white/5 text-sm text-muted-foreground text-center">
+            ルームを作成中...
+          </div>
+        )}
+        {createRoomError && !createRoomLoading && (
+          <div className="mb-3 px-4 py-3 rounded-2xl border border-destructive/40 bg-destructive/10 text-sm text-destructive flex items-center justify-between gap-2">
+            <span>{createRoomError}</span>
+            <button
+              onClick={() => setCreateRoomError(null)}
+              className="shrink-0 text-destructive/60 hover:text-destructive"
+            >
+              <XIcon className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
 
         {/* いつものメンバー — shown above roulette for 1-tap access */}
         <GroupList

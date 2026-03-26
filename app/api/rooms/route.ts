@@ -128,34 +128,45 @@ export async function POST(request: Request) {
       // ISSUE-023: ホスト名と重複するプリセット名を除外
       const filteredPresetNames = validPresetNames.filter(n => n !== resolvedNickname)
 
-      const room = await prisma.room.create({
-        data: {
-          ownerId: user.id,
-          name: trimmedName || "新しいルーム",
-          inviteCode,
-          maxMembers: Math.max(maxMembers, filteredPresetNames.length + 2),
-          isPersistent: isPersistent === true,
-          // 常設グループは無期限（expiresAt=null）、通常は24時間
-          expiresAt: isPersistent ? null : new Date(Date.now() + 24 * 60 * 60 * 1000),
-          presetMemberNames: filteredPresetNames,
-          members: {
-            create: {
-              profileId: user.id,
-              isHost: true,
-              color: SEGMENT_COLORS[0],
-              nickname: resolvedNickname
-            }
-          }
-        },
-        include: {
-          members: {
-            include: {
-              profile: { select: { id: true, name: true, avatarUrl: true } }
-            }
+      const authRoomInclude = {
+        members: { include: { profile: { select: { id: true, name: true, avatarUrl: true } } } },
+        _count: { select: { members: true } },
+      } as const
+
+      // ISSUE-023 Fix: presetMemberNames カラムが未マイグレーションの場合は空で作成（フォールバック）
+      let room
+      try {
+        room = await prisma.room.create({
+          data: {
+            ownerId: user.id,
+            name: trimmedName || "新しいルーム",
+            inviteCode,
+            maxMembers: Math.max(maxMembers, filteredPresetNames.length + 2),
+            isPersistent: isPersistent === true,
+            expiresAt: isPersistent ? null : new Date(Date.now() + 24 * 60 * 60 * 1000),
+            presetMemberNames: filteredPresetNames,
+            members: { create: { profileId: user.id, isHost: true, color: SEGMENT_COLORS[0], nickname: resolvedNickname } }
           },
-          _count: { select: { members: true } }
-        }
-      })
+          include: authRoomInclude,
+        })
+      } catch (presetErr: unknown) {
+        const msg = String((presetErr as { message?: string })?.message ?? "")
+        const isColumnMissing = (presetErr as { code?: string })?.code === "42703" || msg.includes("preset_member_names")
+        if (!isColumnMissing) throw presetErr
+        console.warn("[rooms] preset_member_names column missing — creating room without presets. Run: npx prisma migrate dev")
+        room = await prisma.room.create({
+          data: {
+            ownerId: user.id,
+            name: trimmedName || "新しいルーム",
+            inviteCode,
+            maxMembers,
+            isPersistent: isPersistent === true,
+            expiresAt: isPersistent ? null : new Date(Date.now() + 24 * 60 * 60 * 1000),
+            members: { create: { profileId: user.id, isHost: true, color: SEGMENT_COLORS[0], nickname: resolvedNickname } }
+          },
+          include: authRoomInclude,
+        })
+      }
 
       return NextResponse.json(room, { status: 201 })
     }
@@ -164,32 +175,43 @@ export async function POST(request: Request) {
     const guestTrimmedNickname = (guestNickname as string).trim()
     const guestFilteredPresetNames = validPresetNames.filter(n => n !== guestTrimmedNickname)
 
-    const room = await prisma.room.create({
-      data: {
-        ownerId: null,
-        name: trimmedName || "新しいルーム",
-        inviteCode,
-        maxMembers: Math.max(maxMembers, guestFilteredPresetNames.length + 2),
-        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
-        presetMemberNames: guestFilteredPresetNames,
-        members: {
-          create: {
-            profileId: null,
-            isHost: true,
-            color: SEGMENT_COLORS[0],
-            nickname: guestTrimmedNickname
-          }
-        }
-      },
-      include: {
-        members: {
-          include: {
-            profile: { select: { id: true, name: true, avatarUrl: true } }
-          }
+    const guestRoomInclude = {
+      members: { include: { profile: { select: { id: true, name: true, avatarUrl: true } } } },
+      _count: { select: { members: true } },
+    } as const
+
+    // ISSUE-023 Fix: presetMemberNames カラムが未マイグレーションの場合は空で作成（フォールバック）
+    let room
+    try {
+      room = await prisma.room.create({
+        data: {
+          ownerId: null,
+          name: trimmedName || "新しいルーム",
+          inviteCode,
+          maxMembers: Math.max(maxMembers, guestFilteredPresetNames.length + 2),
+          expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+          presetMemberNames: guestFilteredPresetNames,
+          members: { create: { profileId: null, isHost: true, color: SEGMENT_COLORS[0], nickname: guestTrimmedNickname } }
         },
-        _count: { select: { members: true } }
-      }
-    })
+        include: guestRoomInclude,
+      })
+    } catch (presetErr: unknown) {
+      const msg = String((presetErr as { message?: string })?.message ?? "")
+      const isColumnMissing = (presetErr as { code?: string })?.code === "42703" || msg.includes("preset_member_names")
+      if (!isColumnMissing) throw presetErr
+      console.warn("[rooms] preset_member_names column missing (guest) — creating room without presets. Run: npx prisma migrate dev")
+      room = await prisma.room.create({
+        data: {
+          ownerId: null,
+          name: trimmedName || "新しいルーム",
+          inviteCode,
+          maxMembers,
+          expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+          members: { create: { profileId: null, isHost: true, color: SEGMENT_COLORS[0], nickname: guestTrimmedNickname } }
+        },
+        include: guestRoomInclude,
+      })
+    }
 
     // ゲストホストトークンを HMAC で署名してクライアントに返す
     // クライアントはこのトークンを localStorage に保存し、spin / reset / spin-complete で使用する
