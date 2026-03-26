@@ -84,15 +84,54 @@
 
 ---
 
+## 🔴 Critical — デプロイ前評価（2026-03-27）
+
+| ID | タイトル | 概要 | ステータス |
+|----|--------|------|----------|
+| [ISSUE-025](./issue-025-qr-camera-stub.md) | QRスキャンカメラが「実装中」表示 | カメラ起動ボタンが stub で「実装中」メッセージを出す。初見ユーザーの第一印象を破壊する | 🔴 未着手 |
+| [ISSUE-026](./issue-026-missing-rate-limit-room-spin.md) | ルーム作成・spin に rate limit なし | POST /api/rooms と spin エンドポイントが無制限。DB DoS リスク | 🔴 未着手 |
+| [ISSUE-028](./issue-028-auth-callback-open-redirect.md) | auth/callback の open redirect 脆弱性 | x-forwarded-host を無検証で使用。OAuth後に任意ドメインへリダイレクト可能 | 🔴 未着手 |
+| [ISSUE-029](./issue-029-guest-room-zombie-on-secret-missing.md) | GUEST_HOST_SECRET 未設定時にゾンビルームが作成される | DB 書き込み後に 500 返却、ロールバックなしでゾンビルームが量産される | 🔴 未着手 |
+
+---
+
+## 🟠 High — デプロイ前評価（2026-03-27）
+
+| ID | タイトル | 概要 | ステータス |
+|----|--------|------|----------|
+| [ISSUE-024](./issue-024-guest-double-join-race.md) | ゲスト二重参加でルーレットに同一ユーザーが複数追加される | ダブル送信競合で同一 nickname の RoomMember が複数作成される | 🔴 未着手 |
+| [ISSUE-027](./issue-027-realtime-filter-column-name.md) | Realtime フィルターのカラム名誤りで常時無効化 | inviteCode → invite_code の 1文字修正漏れで Realtime が全滅 | 🔴 未着手 |
+| [ISSUE-030](./issue-030-scan-page-broken-login-link.md) | scan ページのフッターリンク /auth/login が 404 | ルートが存在せずログイン導線が死んでいる | 🔴 未着手 |
+| [ISSUE-031](./issue-031-in-memory-rate-limiter-multi-instance.md) | インメモリ rate limiter が Vercel 複数インスタンスで無効 | Serverless 複数インスタンス間でカウンターが共有されない | 🔴 未着手 |
+
+---
+
+## 🟡 Medium — デプロイ前評価（2026-03-27）
+
+| ID | タイトル | 概要 | ステータス |
+|----|--------|------|----------|
+| [ISSUE-032](./issue-032-images-unoptimized.md) | images.unoptimized:true で画像最適化が無効 | モバイルで画像が重く、LCP スコア悪化 | 🔴 未着手 |
+| [ISSUE-033](./issue-033-default-participants-placeholder.md) | デフォルト参加者が ["A","B","C","D"] でプレースホルダー丸出し | 初見ユーザーに「作りかけ感」を与える | 🔴 未着手 |
+
+---
+
+## ⚪ Low — デプロイ前評価（2026-03-27）
+
+| ID | タイトル | 概要 | ステータス |
+|----|--------|------|----------|
+| [ISSUE-034](./issue-034-pwa-manifest-icon.md) | PWA manifest アイコン設定不備 | 512x512 アイコン不足、maskable 指定不備 | 🔴 未着手 |
+
+---
+
 ## 📊 サマリ
 
 | 優先度 | 件数 |
 |--------|------|
-| 🔴 Critical | 6 |
-| 🟠 High | 8 |
-| 🟡 Medium | 8 |
-| ⚪ Low | 1 |
-| **合計** | **23** |
+| 🔴 Critical | 10 |
+| 🟠 High | 12 |
+| 🟡 Medium | 10 |
+| ⚪ Low | 2 |
+| **合計** | **34** |
 
 ---
 
