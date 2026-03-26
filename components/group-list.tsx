@@ -71,7 +71,6 @@ export function GroupList({
   if (loading) return null
 
   if (groups.length === 0) {
-    // 空状態はガイダンスのみ — 事前作成を促さない（仕様: 体験後に保存が主導線）
     return (
       <section className="mb-5">
         <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
@@ -83,6 +82,13 @@ export function GroupList({
           </div>
           <span className="opacity-60">ルーレット後に「保存」でメンバーを登録できます</span>
         </div>
+        <button
+          onClick={onNew}
+          className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <Plus className="w-3.5 h-3.5" />
+          新しいグループを登録
+        </button>
       </section>
     )
   }
