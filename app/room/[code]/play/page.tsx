@@ -18,6 +18,7 @@ import { createClient } from "@/lib/supabase/client"
 import { SEGMENT_COLORS, SPIN_COUNTDOWN_MS } from "@/lib/constants"
 import { formatCurrency } from "@/lib/format"
 import { getTreatTitle } from "@/lib/group-storage"
+import { useGroups } from "@/hooks/use-groups"
 import { trackEvent, AnalyticsEvent } from "@/lib/analytics"
 import { RecordingCanvas } from "@/components/recording-canvas"
 import { ShareSheet } from "@/components/share-sheet"
@@ -131,6 +132,17 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
     stopRecordingAfterReveal,
     reset: resetRecording,
   } = useVideoRecorder()
+
+  // Group save
+  const { groups: savedGroups, saveGroup } = useGroups(currentUser)
+  const isCurrentGroupSaved = savedGroups.some(
+    (g) =>
+      g.participants.length === participants.length &&
+      [...g.participants].sort().join() === [...participants].sort().join()
+  )
+  const handleSaveGroup = async (name: string) => {
+    await saveGroup(name, participants)
+  }
 
   // Guest host detection
   const [isGuestHost, setIsGuestHost] = useState(false)
@@ -701,6 +713,7 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
           ranking={roomRanking}
           videoBlob={recordedBlob}
           onShareVideo={() => setShowShareSheet(true)}
+          onSaveGroup={isCurrentGroupSaved ? undefined : handleSaveGroup}
         />
       )}
 
