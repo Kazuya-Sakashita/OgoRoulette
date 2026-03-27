@@ -257,7 +257,7 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
           event: "*",
           schema: "public",
           table: "Room",
-          filter: `inviteCode=eq.${code.toUpperCase()}`,
+          filter: `invite_code=eq.${code.toUpperCase()}`,
         },
         () => { fetchRoom() }
       )
