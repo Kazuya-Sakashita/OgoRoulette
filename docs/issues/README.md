@@ -173,7 +173,7 @@
 | ID | タイトル | 概要 | ステータス |
 |----|--------|------|----------|
 | [ISSUE-043](./issue-043-join-color-collision-race.md) | JOIN 同時実行で複数メンバーが同一色になる | `room._count.members` 読み取りと `roomMember.create` の間にロックなし。同時参加で色インデックスが衝突 | ✅ 完了 |
-| [ISSUE-045](./issue-045-play-page-beforeunload-room-stuck.md) | ブラウザをアニメーション中に閉じると room が IN_SESSION で永続停止 | `beforeunload` ハンドラ未実装。オーナーが離脱すると `spin-complete` が呼ばれず常設グループが永久ロックされる | 🔴 未着手 |
+| [ISSUE-045](./issue-045-play-page-beforeunload-room-stuck.md) | ブラウザをアニメーション中に閉じると room が IN_SESSION で永続停止 | `beforeunload` ハンドラ未実装。オーナーが離脱すると `spin-complete` が呼ばれず常設グループが永久ロックされる | ✅ 完了（Phase 1: pagehide + sendBeacon） |
 
 ---
 
@@ -181,9 +181,9 @@
 
 | ID | タイトル | 概要 | ステータス |
 |----|--------|------|----------|
-| [ISSUE-044](./issue-044-winner-card-guest-cta-room-context-lost.md) | WinnerCard ゲスト CTA — ログイン後にルームコンテキストが失われる | 登録ボタンが `window.location.href = "/"` でナビゲート。ログイン後 `/home` に飛び、元のルームに戻れない | 🔴 未着手 |
-| [ISSUE-046](./issue-046-expired-room-returns-http-400.md) | 期限切れルームへの GET が HTTP 400 を返す | セマンティクス不正確（410 Gone が正しい）。クライアントが `expired` フラグ未処理で「ルームが見つかりません」と誤表示 | 🔴 未着手 |
-| [ISSUE-047](./issue-047-room-ranking-limited-to-5-sessions.md) | roomRanking が直近5セッションのみ参照し長期利用ルームで奢り回数が過少表示 | `take: 5` で取得したセッションからランキング算出。常設グループで6回以上スピンすると不正確になる | 🔴 未着手 |
+| [ISSUE-044](./issue-044-winner-card-guest-cta-room-context-lost.md) | WinnerCard ゲスト CTA — ログイン後にルームコンテキストが失われる | 登録ボタンが `window.location.href = "/"` でナビゲート。ログイン後 `/home` に飛び、元のルームに戻れない | ✅ 完了 |
+| [ISSUE-046](./issue-046-expired-room-returns-http-400.md) | 期限切れルームへの GET が HTTP 400 を返す | セマンティクス不正確（410 Gone が正しい）。クライアントが `expired` フラグ未処理で「ルームが見つかりません」と誤表示 | ✅ 完了 |
+| [ISSUE-047](./issue-047-room-ranking-limited-to-5-sessions.md) | roomRanking が直近5セッションのみ参照し長期利用ルームで奢り回数が過少表示 | `take: 5` で取得したセッションからランキング算出。常設グループで6回以上スピンすると不正確になる | ✅ 完了 |
 | [ISSUE-048](./issue-048-join-max-members-race-condition.md) | JOIN の maxMembers チェックが非アトミック — 同時参加でルームが定員超過 | SELECT と INSERT の間にトランザクションなし。QR スキャン同時多発で定員を超えてメンバーが作成される | ✅ 完了 |
 
 ---
