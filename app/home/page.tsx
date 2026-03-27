@@ -342,6 +342,7 @@ export default function HomePage() {
           videoBlob={recordedBlob}
           onShareVideo={() => setShowShareSheet(true)}
           onSaveGroup={isCurrentGroupSaved ? undefined : handleSaveGroup}
+          isGuest={!user}
         />
       )}
 
