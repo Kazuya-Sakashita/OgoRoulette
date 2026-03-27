@@ -7,6 +7,7 @@ import Link from "next/link"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
 import QRCode from "react-qr-code"
+import { createClient } from "@/lib/supabase/client"
 
 interface Member {
   id: string
@@ -46,6 +47,7 @@ export default function RoomPage({ params }: { params: Promise<{ code: string }>
   const [error, setError] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
   const [showQRFull, setShowQRFull] = useState(false)
+  const [isOwner, setIsOwner] = useState(false)
   // Stops polling once room is COMPLETED (ref avoids stale closure in setInterval)
   const isCompletedRef = useRef(false)
 
@@ -98,6 +100,32 @@ export default function RoomPage({ params }: { params: Promise<{ code: string }>
       if (timeoutId !== null) clearTimeout(timeoutId)
     }
   }, [code]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ISSUE-036: オーナー判定 — 認証ユーザー or ゲストホスト（localStorage）
+  useEffect(() => {
+    if (!room) return
+    const checkOwner = async () => {
+      // ゲストホスト: localStorage の招待コードリストで確認
+      try {
+        const hostedRooms: string[] = JSON.parse(
+          localStorage.getItem("ogoroulette_host_rooms") || "[]"
+        )
+        if (hostedRooms.includes(room.inviteCode)) {
+          setIsOwner(true)
+          return
+        }
+      } catch {
+        // localStorage parse error — ignore
+      }
+      // 認証ユーザー: Supabase から取得して host メンバーと照合
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      const isHost = room.members.some(m => m.isHost && m.profile?.id === user.id)
+      setIsOwner(isHost)
+    }
+    checkOwner()
+  }, [room])
 
   const copyInviteLink = async () => {
     const url = `${window.location.origin}/join/${room?.inviteCode}`
@@ -378,24 +406,35 @@ export default function RoomPage({ params }: { params: Promise<{ code: string }>
           )}
         </section>
 
-        {/* Start Roulette Button */}
+        {/* Start Roulette Button — オーナーのみ操作可、メンバーは待機メッセージ */}
         <section className="mt-6 space-y-3">
-          <Button 
-            onClick={() => router.push(`/room/${code}/play`)}
-            className="w-full h-14 text-lg font-bold rounded-2xl bg-gradient-accent hover:opacity-90 text-primary-foreground press-effect"
-            disabled={room._count.members < 2}
-          >
-            {room._count.members < 2 ? (
-              "2人以上で開始できます"
-            ) : (
-              "ルーレットを回す"
-            )}
-          </Button>
-          
-          {room._count.members < 2 && (
-            <p className="text-xs text-muted-foreground text-center">
-              あと{2 - room._count.members}人の参加が必要です
-            </p>
+          {isOwner ? (
+            <>
+              <Button
+                onClick={() => router.push(`/room/${code}/play`)}
+                className="w-full h-14 text-lg font-bold rounded-2xl bg-gradient-accent hover:opacity-90 text-primary-foreground press-effect"
+                disabled={room._count.members < 2}
+              >
+                {room._count.members < 2 ? "2人以上で開始できます" : "ルーレットを回す"}
+              </Button>
+              {room._count.members < 2 && (
+                <p className="text-xs text-muted-foreground text-center">
+                  あと{2 - room._count.members}人の参加が必要です
+                </p>
+              )}
+            </>
+          ) : (
+            <>
+              <Button
+                onClick={() => router.push(`/room/${code}/play`)}
+                className="w-full h-14 text-lg font-bold rounded-2xl bg-secondary hover:bg-white/10 text-foreground press-effect"
+              >
+                ルーレットを見る
+              </Button>
+              <p className="text-xs text-muted-foreground text-center">
+                ホストがルーレットを開始すると自動で始まります
+              </p>
+            </>
           )}
         </section>
       </div>
