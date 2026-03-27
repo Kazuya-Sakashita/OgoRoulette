@@ -5,6 +5,7 @@ import { calculateBillSplit } from "@/lib/bill-calculator"
 import { randomInt } from "crypto"
 import { SPIN_COUNTDOWN_MS } from "@/lib/constants"
 import { verifyGuestToken } from "@/lib/guest-token"
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
 
 // POST /api/rooms/[code]/spin
 // WHAT: オーナー専用。サーバーが当選者を決定し、全クライアントが使う spinStartedAt を返す。
@@ -20,6 +21,16 @@ export async function POST(
   request: Request,
   { params }: { params: Promise<{ code: string }> }
 ) {
+  // ISSUE-026: レート制限 — 同一 IP から 1分間に 10スピンまで
+  const ip = getClientIp(request.headers)
+  const { allowed, resetAt } = checkRateLimit(ip, "spin", 10, 60_000)
+  if (!allowed) {
+    return NextResponse.json(
+      { error: "リクエストが多すぎます。しばらくしてからお試しください。" },
+      { status: 429, headers: { "Retry-After": String(Math.ceil((resetAt - Date.now()) / 1000)) } }
+    )
+  }
+
   try {
     const { code } = await params
     const supabase = await createClient()
