@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server"
 import { SEGMENT_COLORS } from "@/lib/constants"
 import { randomInt } from "crypto"
 import { signGuestToken } from "@/lib/guest-token"
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
 
 // Generate random invite code (6 characters, avoids confusing chars)
 function generateInviteCode(): string {
@@ -62,6 +63,22 @@ export async function GET() {
 
 // POST /api/rooms - Create a new room (authenticated or guest)
 export async function POST(request: Request) {
+  // ISSUE-029: フェイルファスト — DB 書き込み前に必須環境変数を確認
+  if (!process.env.GUEST_HOST_SECRET) {
+    console.error("[rooms] GUEST_HOST_SECRET is not configured")
+    return NextResponse.json({ error: "サーバー設定エラーが発生しました" }, { status: 500 })
+  }
+
+  // ISSUE-026: レート制限 — 同一 IP から 1分間に 5ルームまで
+  const ip = getClientIp(request.headers)
+  const { allowed, resetAt } = checkRateLimit(ip, "room-create", 5, 60_000)
+  if (!allowed) {
+    return NextResponse.json(
+      { error: "リクエストが多すぎます。しばらくしてからお試しください。" },
+      { status: 429, headers: { "Retry-After": String(Math.ceil((resetAt - Date.now()) / 1000)) } }
+    )
+  }
+
   try {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
