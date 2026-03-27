@@ -43,6 +43,12 @@ vi.mock('@/lib/guest-token', () => ({
   signGuestToken: vi.fn().mockReturnValue('signed-test-token'),
 }))
 
+// --- rate-limit モック（テスト間の累積カウントを防止） ---
+vi.mock('@/lib/rate-limit', () => ({
+  checkRateLimit: vi.fn().mockReturnValue({ allowed: true, remaining: 9, resetAt: Date.now() + 60_000 }),
+  getClientIp: vi.fn().mockReturnValue('127.0.0.1'),
+}))
+
 // --- crypto.randomInt を確定値にする ---
 
 vi.mock('crypto', async (importOriginal) => {
