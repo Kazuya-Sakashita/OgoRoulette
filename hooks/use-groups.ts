@@ -29,6 +29,15 @@ export function useGroups(user: User | null) {
     setIsLoaded(true)
   }, [])
 
+  // user が null になったとき（ログアウト）は React state もリセット
+  // localStorage は handleLogout 側でクリア済みなので再読込でクリーンになる
+  useEffect(() => {
+    if (user === null && isLoaded) {
+      setGroups(loadGroups())
+      setSelectedGroupId(null)
+    }
+  }, [user, isLoaded])
+
   // Cloud sync when user logs in
   useEffect(() => {
     if (!user) return

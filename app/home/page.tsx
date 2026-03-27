@@ -20,6 +20,7 @@ import {
   getTreatTitle,
   getGroupRanking,
   seedTreatStats,
+  clearUserGroupData,
 } from "@/lib/group-storage"
 import { useGroups } from "@/hooks/use-groups"
 import { GroupList } from "@/components/group-list"
@@ -125,6 +126,8 @@ export default function HomePage() {
 
   const handleLogout = async () => {
     const supabase = createClient()
+    // ユーザー依存の localStorage データをクリアしてから signOut
+    clearUserGroupData()
     await supabase.auth.signOut()
     router.push('/')
   }

@@ -31,6 +31,24 @@ export interface CloudGroup {
 const GROUPS_KEY = "ogoroulette_groups"
 const STATS_KEY = "ogoroulette_treat_stats"
 
+/**
+ * ログアウト時にユーザー由来のグループデータを localStorage から削除する。
+ * cloudId を持つグループ（クラウド同期済み）を削除し、ローカルのみのグループは残す。
+ * treat stats はユーザー単位のデータなので常に全クリアする。
+ */
+export function clearUserGroupData(): void {
+  if (typeof window === "undefined") return
+  // cloudId のないローカルのみグループは残す（ゲスト利用データは保護）
+  const localOnly = loadGroups().filter((g) => !g.cloudId)
+  if (localOnly.length > 0) {
+    localStorage.setItem(GROUPS_KEY, JSON.stringify(localOnly))
+  } else {
+    localStorage.removeItem(GROUPS_KEY)
+  }
+  // treat stats はユーザー依存なので全削除
+  localStorage.removeItem(STATS_KEY)
+}
+
 // --- Groups ---
 
 export function loadGroups(): SavedGroup[] {
