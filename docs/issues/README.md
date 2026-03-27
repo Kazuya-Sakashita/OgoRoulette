@@ -192,7 +192,7 @@
 
 | ID | タイトル | 概要 | ステータス |
 |----|--------|------|----------|
-| [ISSUE-049](./issue-049-create-page-dead-code-qr-view.md) | `app/room/create/page.tsx` の QR・メンバーリスト UI がデッドコード | ルーム作成直後に `router.replace()` でナビゲートされるため `setRoom` が呼ばれず、230行以上の UI が一切表示されない | 🔴 未着手 |
+| [ISSUE-049](./issue-049-create-page-dead-code-qr-view.md) | `app/room/create/page.tsx` の QR・メンバーリスト UI がデッドコード | ルーム作成直後に `router.replace()` でナビゲートされるため `setRoom` が呼ばれず、230行以上の UI が一切表示されない | ✅ 完了 |
 
 ---
 
