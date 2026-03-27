@@ -29,7 +29,7 @@ import { useVideoRecorder } from "@/lib/use-video-recorder"
 
 export default function HomePage() {
   const [isSpinning, setIsSpinning] = useState(false)
-  const [participants, setParticipants] = useState(["A", "B", "C", "D"])
+  const [participants, setParticipants] = useState(["さくら", "たろう", "はな", "けんた"])
   const [showAddInput, setShowAddInput] = useState(false)
   const [newName, setNewName] = useState("")
   const [winner, setWinner] = useState<{ name: string; index: number } | null>(null)
