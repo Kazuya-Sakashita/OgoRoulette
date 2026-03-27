@@ -88,19 +88,30 @@ export async function POST(request: Request) {
         }
       })
 
-      // Assign color based on member count
-      const colorIndex = room._count.members % SEGMENT_COLORS.length
-
-      // Join room
-      await prisma.roomMember.create({
-        data: {
-          roomId: room.id,
-          profileId: user.id,
-          isHost: false,
-          color: SEGMENT_COLORS[colorIndex],
-          nickname: resolvedNickname
+      // アトミック: 現在のメンバー数を再確認 → 色決定 → メンバー作成
+      // ISSUE-043: 同時参加での色衝突防止 / ISSUE-048: 定員超過防止
+      try {
+        await prisma.$transaction(async (tx) => {
+          const currentCount = await tx.roomMember.count({ where: { roomId: room.id } })
+          if (currentCount >= room.maxMembers) {
+            throw Object.assign(new Error("ルームが満員です"), { statusCode: 400 })
+          }
+          return tx.roomMember.create({
+            data: {
+              roomId: room.id,
+              profileId: user.id,
+              isHost: false,
+              color: SEGMENT_COLORS[currentCount % SEGMENT_COLORS.length],
+              nickname: resolvedNickname,
+            },
+          })
+        })
+      } catch (txErr) {
+        if ((txErr as { statusCode?: number }).statusCode === 400) {
+          return NextResponse.json({ error: (txErr as Error).message }, { status: 400 })
         }
-      })
+        throw txErr
+      }
 
       return NextResponse.json({
         success: true,
@@ -132,17 +143,30 @@ export async function POST(request: Request) {
       })
     }
 
-    const colorIndex = room._count.members % SEGMENT_COLORS.length
-
-    await prisma.roomMember.create({
-      data: {
-        roomId: room.id,
-        profileId: null,
-        isHost: false,
-        color: SEGMENT_COLORS[colorIndex],
-        nickname: trimmedGuestName
+    // アトミック: 現在のメンバー数を再確認 → 色決定 → メンバー作成
+    // ISSUE-043: 同時参加での色衝突防止 / ISSUE-048: 定員超過防止
+    try {
+      await prisma.$transaction(async (tx) => {
+        const currentCount = await tx.roomMember.count({ where: { roomId: room.id } })
+        if (currentCount >= room.maxMembers) {
+          throw Object.assign(new Error("ルームが満員です"), { statusCode: 400 })
+        }
+        return tx.roomMember.create({
+          data: {
+            roomId: room.id,
+            profileId: null,
+            isHost: false,
+            color: SEGMENT_COLORS[currentCount % SEGMENT_COLORS.length],
+            nickname: trimmedGuestName,
+          },
+        })
+      })
+    } catch (txErr) {
+      if ((txErr as { statusCode?: number }).statusCode === 400) {
+        return NextResponse.json({ error: (txErr as Error).message }, { status: 400 })
       }
-    })
+      throw txErr
+    }
 
     return NextResponse.json({
       success: true,
