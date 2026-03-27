@@ -148,15 +148,33 @@
 
 ---
 
+## 🟠 High — デプロイ前評価（2026-03-27 第3回）
+
+| ID | タイトル | 概要 | ステータス |
+|----|--------|------|----------|
+| [ISSUE-039](./issue-039-supabase-realtime-rls-not-documented.md) | Supabase Realtime テーブル設定・RLS がデプロイ手順に未記載 | Realtime 未設定のまま本番デプロイすると 10秒ポーリングのみで動作し、リアルタイム体験が消失する | 🔴 未着手 |
+| [ISSUE-040](./issue-040-line-login-button-missing.md) | LINE ログインボタンがウェルカムページに存在しない | LINE OAuth バックエンドは実装済みだが UI のエントリーポイントがない。ユーザーが LINE でログインできない | ✅ 完了 |
+
+---
+
+## 🟡 Medium — デプロイ前評価（2026-03-27 第3回）
+
+| ID | タイトル | 概要 | ステータス |
+|----|--------|------|----------|
+| [ISSUE-041](./issue-041-guest-host-secret-length-validation.md) | GUEST_HOST_SECRET の最小長・強度検証がない | 存在確認のみで長さ検証なし。弱いシークレット設定でも起動してしまい HMAC 安全性が担保されない | ✅ 完了 |
+| [ISSUE-042](./issue-042-line-callback-profile-upsert-silent-failure.md) | LINE callback の profile upsert サイレント失敗 | upsert 失敗を .catch() で飲み込みログイン成功扱いにする。profile なしでログイン後、ルーム作成等が FK エラーで壊れる | ✅ 完了 |
+
+---
+
 ## 📊 サマリ
 
 | 優先度 | 件数 |
 |--------|------|
 | 🔴 Critical | 12 |
-| 🟠 High | 12 |
-| 🟡 Medium | 10 |
+| 🟠 High | 14 |
+| 🟡 Medium | 12 |
 | ⚪ Low | 4 |
-| **合計** | **38** |
+| **合計** | **42** |
 
 ---
 
