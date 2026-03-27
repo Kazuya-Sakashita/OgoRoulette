@@ -12,7 +12,6 @@ export default function ScanPage() {
   const [mode, setMode] = useState<"scan" | "manual">("manual") // Default to manual since camera requires permissions
   const [inviteCode, setInviteCode] = useState("")
   const [error, setError] = useState<string | null>(null)
-  const [cameraNotice, setCameraNotice] = useState<string | null>(null)
 
   const handleManualJoin = () => {
     if (!inviteCode.trim()) {
@@ -87,20 +86,9 @@ export default function ScanPage() {
                   </p>
                 </div>
 
-                {cameraNotice && (
-                  <p className="text-sm text-muted-foreground text-center mb-4 px-2">
-                    {cameraNotice}
-                  </p>
-                )}
-                <Button
-                  onClick={() => {
-                    setCameraNotice("カメラ機能は実装中です。コード入力をお使いください。")
-                  }}
-                  className="bg-gradient-accent text-primary-foreground rounded-xl press-effect"
-                >
-                  <Camera className="w-4 h-4 mr-2" />
-                  カメラを起動
-                </Button>
+                <p className="text-sm text-muted-foreground text-center px-4">
+                  コード入力タブから招待コードを入力してご参加ください
+                </p>
               </div>
             </>
           ) : (
@@ -168,7 +156,7 @@ export default function ScanPage() {
         {/* Footer */}
         <footer className="mt-6 pt-4 border-t border-white/5">
           <p className="text-xs text-muted-foreground text-center">
-            新しいルームを作成したい場合は<Link href="/auth/login" className="text-primary hover:underline">ログイン</Link>してください
+            新しいルームを作成したい場合は<Link href="/" className="text-primary hover:underline">ホームへ</Link>戻ってください
           </p>
         </footer>
       </div>
