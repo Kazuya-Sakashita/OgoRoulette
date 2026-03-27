@@ -343,12 +343,13 @@ export default function RoomPage({ params }: { params: Promise<{ code: string }>
                     style={{ backgroundColor: member.color }}
                   >
                     {member.profile?.avatarUrl ? (
-                      <Image 
-                        src={member.profile.avatarUrl} 
-                        alt={member.nickname || member.profile?.name || "User"} 
-                        width={40} 
+                      <Image
+                        src={member.profile.avatarUrl}
+                        alt={member.nickname || member.profile?.name || "User"}
+                        width={40}
                         height={40}
                         className="rounded-full"
+                        unoptimized
                       />
                     ) : (
                       (member.nickname || member.profile?.name || "?").charAt(0).toUpperCase()
