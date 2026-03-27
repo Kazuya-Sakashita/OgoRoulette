@@ -140,15 +140,23 @@
 
 ---
 
+## 🔴 Critical — LINE ログインバグ調査（2026-03-27）
+
+| ID | タイトル | 概要 | ステータス |
+|----|--------|------|----------|
+| [ISSUE-038](./issue-038-line-login-already-registered.md) | LINE ログイン "already registered" エラー | 初回ログイン途中失敗後、Supabase Auth にユーザーが残るが Prisma profile が作成されず、次回ログイン時に createUser が "already registered" で /auth/error になる | ✅ 完了 |
+
+---
+
 ## 📊 サマリ
 
 | 優先度 | 件数 |
 |--------|------|
-| 🔴 Critical | 11 |
+| 🔴 Critical | 12 |
 | 🟠 High | 12 |
 | 🟡 Medium | 10 |
 | ⚪ Low | 4 |
-| **合計** | **37** |
+| **合計** | **38** |
 
 ---
 
