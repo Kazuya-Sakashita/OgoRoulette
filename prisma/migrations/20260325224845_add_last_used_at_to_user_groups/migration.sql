@@ -1,3 +1,8 @@
+-- NOTE: このファイルの名前は誤り（ISSUE-037）。
+-- 実際の変更内容は room_members / rooms / roulette_sessions の外部キーを NULL 許容に変更するもの。
+-- lastUsedAt の追加は 20260326000000_add_last_used_at_to_user_groups で実施済み。
+-- リネームは _prisma_migrations テーブルとの不整合リスクがあるため名前はそのまま保持。
+
 -- DropForeignKey
 ALTER TABLE "room_members" DROP CONSTRAINT "room_members_profile_id_fkey";
 
