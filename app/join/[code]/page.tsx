@@ -184,7 +184,7 @@ export default function JoinRoomPage({ params }: { params: Promise<{ code: strin
                 {room?.name || "ルーレットルーム"}
               </h1>
               <p className="text-sm text-muted-foreground">
-                {room?.owner?.name ?? "ゲスト"}さんがあなたを招待しています
+                {room?.owner?.name ?? room?.members.find(m => m.isHost)?.nickname ?? "ゲスト"}さんがあなたを招待しています
               </p>
             </div>
 
