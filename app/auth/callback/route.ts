@@ -33,16 +33,10 @@ export async function GET(request: Request) {
         })
       }
 
-      const forwardedHost = request.headers.get("x-forwarded-host")
-      const isLocalEnv = process.env.NODE_ENV === "development"
-
-      if (isLocalEnv) {
-        return NextResponse.redirect(`${origin}${next}`)
-      } else if (forwardedHost) {
-        return NextResponse.redirect(`https://${forwardedHost}${next}`)
-      } else {
-        return NextResponse.redirect(`${origin}${next}`)
-      }
+      // ISSUE-028: next を相対パスに限定し、x-forwarded-host は信頼しない
+      const safeNext = next.startsWith("/") ? next : "/home"
+      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? origin
+      return NextResponse.redirect(`${siteUrl}${safeNext}`)
     }
   }
 
