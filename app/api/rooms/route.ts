@@ -63,9 +63,14 @@ export async function GET() {
 
 // POST /api/rooms - Create a new room (authenticated or guest)
 export async function POST(request: Request) {
-  // ISSUE-029: フェイルファスト — DB 書き込み前に必須環境変数を確認
-  if (!process.env.GUEST_HOST_SECRET) {
+  // ISSUE-029/041: フェイルファスト — 必須環境変数の存在・強度を確認
+  const guestHostSecret = process.env.GUEST_HOST_SECRET
+  if (!guestHostSecret) {
     console.error("[rooms] GUEST_HOST_SECRET is not configured")
+    return NextResponse.json({ error: "サーバー設定エラーが発生しました" }, { status: 500 })
+  }
+  if (guestHostSecret.length < 32) {
+    console.error(`[rooms] GUEST_HOST_SECRET is too short (${guestHostSecret.length} chars). Minimum 32 required. Generate with: openssl rand -hex 32`)
     return NextResponse.json({ error: "サーバー設定エラーが発生しました" }, { status: 500 })
   }
 
