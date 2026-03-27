@@ -11,6 +11,8 @@ import { createAdminClient } from "@/lib/supabase/admin"
 //       2. LINE アクセストークン取得
 //       3. LINE プロフィール取得
 //       4. Supabase Admin でユーザー upsert（仮想メール: line_{userId}@line.ogoroulette.app）
+//          - createUser を楽観的に試みる
+//          - "already registered" の場合は generateLink でユーザー ID+トークンを取得（再ログイン対応）
 //       5. generateLink → verifyOtp でセッション cookie を設定
 //       6. Prisma profile upsert
 //       7. /home にリダイレクト
@@ -103,64 +105,79 @@ export async function GET(request: NextRequest) {
 
     const lineProfile = (await profileRes.json()) as LineProfile
 
-    // 4. Supabase ユーザー upsert
+    // 4. Supabase ユーザー upsert（楽観的 create → already-exists フォールバック）
     // LINE ユーザーには仮想メールアドレスを割り当てる（LINE はメール未公開のため）
     const lineEmail = `line_${lineProfile.userId}@line.ogoroulette.app`
     const supabaseAdmin = createAdminClient()
 
-    // 既存 LINE ユーザーの確認（Prisma profile の email で判定）
-    const existingProfile = await prisma.profile.findUnique({
-      where: { email: lineEmail },
-      select: { id: true },
-    })
-
-    let supabaseUserId: string
-
-    if (existingProfile) {
-      // 既存ユーザー: メタデータのみ更新
-      supabaseUserId = existingProfile.id
-      const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(supabaseUserId, {
-        user_metadata: {
-          provider: "line",
-          full_name: lineProfile.displayName,
-          avatar_url: lineProfile.pictureUrl ?? null,
-          line_user_id: lineProfile.userId,
-        },
-      })
-      if (updateError) {
-        console.error("[LINE callback] step=user_update FAILED", { message: updateError.message })
-        return NextResponse.redirect(`${origin}/auth/error`)
-      }
-    } else {
-      // 新規ユーザー: Supabase Auth ユーザー作成
-      const { data: { user }, error: createError } = await supabaseAdmin.auth.admin.createUser({
-        email: lineEmail,
-        email_confirm: true,
-        user_metadata: {
-          provider: "line",
-          full_name: lineProfile.displayName,
-          avatar_url: lineProfile.pictureUrl ?? null,
-          line_user_id: lineProfile.userId,
-        },
-      })
-
-      if (createError || !user) {
-        console.error("[LINE callback] step=user_create FAILED", { message: createError?.message })
-        return NextResponse.redirect(`${origin}/auth/error`)
-      }
-
-      supabaseUserId = user.id
+    const lineUserMeta = {
+      provider: "line",
+      full_name: lineProfile.displayName,
+      avatar_url: lineProfile.pictureUrl ?? null,
+      line_user_id: lineProfile.userId,
     }
 
-    // 5. Magic link を生成し、verifyOtp でセッション cookie を設定
-    const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
-      type: "magiclink",
+    let supabaseUserId: string
+    let hashedToken: string
+
+    // createUser を楽観的に試みる
+    // 注意: Prisma profile を存在確認に使わない。
+    //       前回ログインが途中で失敗した場合、Supabase Auth にユーザーは存在するが
+    //       Prisma profile が作られていない状態になり、次回ログイン時に
+    //       "already registered" エラーが発生する。
+    const { data: createData, error: createError } = await supabaseAdmin.auth.admin.createUser({
       email: lineEmail,
+      email_confirm: true,
+      user_metadata: lineUserMeta,
     })
 
-    if (linkError || !linkData) {
-      console.error("[LINE callback] step=generate_link FAILED", { message: linkError?.message })
-      return NextResponse.redirect(`${origin}/auth/error`)
+    if (createError) {
+      const isAlreadyExists =
+        createError.message.includes("already been registered") ||
+        createError.message.includes("already registered")
+
+      if (!isAlreadyExists) {
+        console.error("[LINE callback] step=user_create FAILED (unexpected)", { message: createError.message })
+        return NextResponse.redirect(`${origin}/auth/error`)
+      }
+
+      // Supabase Auth にユーザーが存在する（新規 or 中途失敗の再ログイン）
+      // generateLink で既存ユーザー ID とセッショントークンを同時取得
+      console.info("[LINE callback] step=user_create SKIPPED — user already exists in Supabase Auth")
+      const { data: existingLinkData, error: existingLinkError } =
+        await supabaseAdmin.auth.admin.generateLink({ type: "magiclink", email: lineEmail })
+
+      if (existingLinkError || !existingLinkData?.user?.id) {
+        console.error("[LINE callback] step=user_lookup FAILED", { message: existingLinkError?.message })
+        return NextResponse.redirect(`${origin}/auth/error`)
+      }
+
+      supabaseUserId = existingLinkData.user.id
+      hashedToken = existingLinkData.properties.hashed_token
+
+      // メタデータを最新の LINE プロフィールに更新（non-blocking）
+      supabaseAdmin.auth.admin
+        .updateUserById(supabaseUserId, { user_metadata: lineUserMeta })
+        .then(({ error }) => {
+          if (error) console.warn("[LINE callback] step=user_update WARN", { message: error.message })
+        })
+    } else {
+      if (!createData?.user?.id) {
+        console.error("[LINE callback] step=user_create no user in response")
+        return NextResponse.redirect(`${origin}/auth/error`)
+      }
+      supabaseUserId = createData.user.id
+
+      // 5. 新規ユーザー: セッション確立用 magic link 生成
+      const { data: newLinkData, error: newLinkError } =
+        await supabaseAdmin.auth.admin.generateLink({ type: "magiclink", email: lineEmail })
+
+      if (newLinkError || !newLinkData) {
+        console.error("[LINE callback] step=generate_link FAILED", { message: newLinkError?.message })
+        return NextResponse.redirect(`${origin}/auth/error`)
+      }
+
+      hashedToken = newLinkData.properties.hashed_token
     }
 
     // ミドルウェアと同じパターン: verifyOtp が呼ぶ setAll でリダイレクトレスポンスに cookie をセット
@@ -185,7 +202,7 @@ export async function GET(request: NextRequest) {
 
     // NOTE: generateLink(type: "magiclink") で生成したトークンは type: "email" で検証する
     const { error: verifyError } = await supabase.auth.verifyOtp({
-      token_hash: linkData.properties.hashed_token,
+      token_hash: hashedToken,
       type: "email",
     })
 
