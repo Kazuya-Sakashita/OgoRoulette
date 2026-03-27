@@ -217,22 +217,25 @@ export async function GET(request: NextRequest) {
     )
 
     // 6. Prisma profile upsert（ログインのたびに name / avatarUrl を同期）
-    await prisma.profile.upsert({
-      where: { id: supabaseUserId },
-      update: {
-        name: lineProfile.displayName,
-        avatarUrl: lineProfile.pictureUrl ?? null,
-      },
-      create: {
-        id: supabaseUserId,
-        email: lineEmail,
-        name: lineProfile.displayName,
-        avatarUrl: lineProfile.pictureUrl ?? null,
-      },
-    }).catch((err) => {
-      // プロフィール同期失敗はログのみ。ログインは継続する。
-      console.error("[LINE callback] step=profile_upsert FAILED (non-blocking)", err)
-    })
+    // ISSUE-042: profile がない状態でログイン成功すると後続 API が FK エラーになるため blocking に変更
+    try {
+      await prisma.profile.upsert({
+        where: { id: supabaseUserId },
+        update: {
+          name: lineProfile.displayName,
+          avatarUrl: lineProfile.pictureUrl ?? null,
+        },
+        create: {
+          id: supabaseUserId,
+          email: lineEmail,
+          name: lineProfile.displayName,
+          avatarUrl: lineProfile.pictureUrl ?? null,
+        },
+      })
+    } catch (err) {
+      console.error("[LINE callback] step=profile_upsert FAILED", err)
+      return NextResponse.redirect(`${origin}/auth/error`)
+    }
 
     // 7. state cookie を削除してリダイレクト
     redirectResponse.cookies.delete("line_oauth_state")

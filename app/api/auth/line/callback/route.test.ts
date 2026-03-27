@@ -334,5 +334,20 @@ describe('GET /api/auth/line/callback', () => {
       expect(res.status).toBe(307)
       expect(res.headers.get('location')).toContain('/auth/error')
     })
+
+    test('profile upsert 失敗は /auth/error にリダイレクト（ISSUE-042）', async () => {
+      // セッション確立は成功するが profile 保存が失敗するケース
+      mockCreateUser.mockResolvedValue({ data: { user: { id: 'new-uuid' } }, error: null })
+      mockGenerateLink.mockResolvedValue({ data: LINK_DATA_NEW, error: null })
+      mockPrisma.profile.upsert.mockRejectedValue(new Error('DB connection failed'))
+
+      const { GET } = await import('./route')
+      const res = await GET(makeRequest() )
+
+      // profile なしで /home にリダイレクトされず、/auth/error になることを確認
+      expect(res.status).toBe(307)
+      expect(res.headers.get('location')).toContain('/auth/error')
+      expect(res.headers.get('location')).not.toContain('/home')
+    })
   })
 })
