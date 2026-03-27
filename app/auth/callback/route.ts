@@ -33,9 +33,10 @@ export async function GET(request: Request) {
         })
       }
 
-      // ISSUE-028: next を相対パスに限定し、x-forwarded-host は信頼しない
+      // ISSUE-028/035: next を相対パスに限定し、x-forwarded-host は信頼しない
+      // NEXT_PUBLIC_APP_URL を既存 LINE OAuth 等と同じ変数名に統一
       const safeNext = next.startsWith("/") ? next : "/home"
-      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? origin
+      const siteUrl = process.env.NEXT_PUBLIC_APP_URL ?? origin
       return NextResponse.redirect(`${siteUrl}${safeNext}`)
     }
   }
