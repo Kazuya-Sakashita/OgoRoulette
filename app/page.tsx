@@ -20,13 +20,17 @@ export default function WelcomePage() {
     const checkUserOrVisited = async () => {
       // Check localStorage for returning guest
       const hasVisited = localStorage.getItem('ogoroulette_visited')
-      
+
       const supabase = createClient()
       const { data: { user } } = await supabase.auth.getUser()
-      
+
       // Redirect to home if logged in OR if returning visitor
       if (user || hasVisited) {
-        router.push('/home')
+        const params = new URLSearchParams(window.location.search)
+        const returnTo = params.get("returnTo")
+        // Validate: relative path only, no protocol-relative URLs
+        const safeReturn = returnTo && returnTo.startsWith("/") && !returnTo.startsWith("//") ? returnTo : "/home"
+        router.push(safeReturn)
       }
     }
     checkUserOrVisited()
@@ -43,12 +47,15 @@ export default function WelcomePage() {
     setError(null)
 
     try {
+      const params = new URLSearchParams(window.location.search)
+      const returnTo = params.get("returnTo")
+      const safeReturn = returnTo && returnTo.startsWith("/") && !returnTo.startsWith("//") ? returnTo : "/home"
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
           redirectTo:
             process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL ||
-            `${window.location.origin}/auth/callback?next=/home`,
+            `${window.location.origin}/auth/callback?next=${encodeURIComponent(safeReturn)}`,
         },
       })
       if (error) throw error

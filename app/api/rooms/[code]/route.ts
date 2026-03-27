@@ -46,10 +46,10 @@ export async function GET(
 
     // Check if expired
     if (room.expiresAt && room.expiresAt < new Date()) {
-      return NextResponse.json({ 
+      return NextResponse.json({
         error: "このルームは有効期限が切れています",
-        expired: true 
-      }, { status: 400 })
+        expired: true
+      }, { status: 410 })
     }
 
     return NextResponse.json(room)

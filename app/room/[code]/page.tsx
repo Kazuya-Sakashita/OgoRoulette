@@ -58,7 +58,7 @@ export default function RoomPage({ params }: { params: Promise<{ code: string }>
 
       if (!res.ok) {
         isCompletedRef.current = true // stop polling on error
-        setError(data.error || "ルームが見つかりません")
+        setError(data.expired ? "expired" : (data.error || "ルームが見つかりません"))
         return
       }
 
@@ -168,6 +168,7 @@ export default function RoomPage({ params }: { params: Promise<{ code: string }>
   }
 
   if (error || !room) {
+    const isExpiredError = error === "expired"
     return (
       <main className="min-h-screen bg-background">
         <div className="mx-auto max-w-[390px] min-h-screen flex flex-col px-5 py-6">
@@ -178,16 +179,27 @@ export default function RoomPage({ params }: { params: Promise<{ code: string }>
               </Link>
             </Button>
           </header>
-          
+
           <div className="flex-1 flex flex-col items-center justify-center text-center">
             <div className="w-16 h-16 rounded-full bg-destructive/20 flex items-center justify-center mb-4">
               <QrCode className="w-8 h-8 text-destructive" />
             </div>
-            <h1 className="text-xl font-bold text-foreground mb-2">ルームが見つかりません</h1>
-            <p className="text-sm text-muted-foreground mb-6">{error}</p>
-            <Button asChild className="bg-gradient-accent text-primary-foreground">
-              <Link href="/">ホームに戻る</Link>
-            </Button>
+            <h1 className="text-xl font-bold text-foreground mb-2">
+              {isExpiredError ? "ルームの有効期限が切れています" : "ルームが見つかりません"}
+            </h1>
+            <p className="text-sm text-muted-foreground mb-6">
+              {isExpiredError ? "このルームは使用できなくなりました" : error}
+            </p>
+            <div className="flex flex-col gap-3 w-full max-w-xs">
+              {isExpiredError && (
+                <Button asChild className="bg-gradient-accent text-primary-foreground">
+                  <Link href="/room/create">新しいルームを作る</Link>
+                </Button>
+              )}
+              <Button asChild variant={isExpiredError ? "outline" : "default"} className={isExpiredError ? "border-white/10 bg-secondary text-foreground" : "bg-gradient-accent text-primary-foreground"}>
+                <Link href="/home">ホームに戻る</Link>
+              </Button>
+            </div>
           </div>
         </div>
       </main>

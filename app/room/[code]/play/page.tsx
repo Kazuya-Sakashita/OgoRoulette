@@ -102,6 +102,8 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
   const [pendingWinnerIndex, setPendingWinnerIndex] = useState<number | undefined>(undefined)
   const [winner, setWinner] = useState<WinnerData | null>(null)
   const [showConfetti, setShowConfetti] = useState(false)
+  // ISSUE-047: ranking は全スピン履歴から集計した専用 API で取得
+  const [roomRanking, setRoomRanking] = useState<{ name: string; count: number }[] | undefined>(undefined)
 
   // Bill input
   const [showBillInput, setShowBillInput] = useState(false)
@@ -185,18 +187,7 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
     await saveGroup(name, participants)
   }
 
-  // Aggregate win counts from completed sessions for in-room ranking
-  const roomRanking = useMemo(() => {
-    if (!room?.sessions?.length) return undefined
-    const counts: Record<string, number> = {}
-    for (const session of room.sessions) {
-      const wp = session.participants?.find((p) => p.isWinner)
-      if (wp) counts[wp.name] = (counts[wp.name] ?? 0) + 1
-    }
-    return Object.entries(counts)
-      .map(([name, count]) => ({ name, count }))
-      .sort((a, b) => b.count - a.count)
-  }, [room?.sessions])
+  // ISSUE-047: roomRanking は API から取得 (state 宣言は上部)
 
   // --- Effects ---
 
@@ -214,7 +205,7 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
       const data = await res.json()
 
       if (!res.ok) {
-        setError(data.error || "ルームが見つかりません")
+        setError(data.expired ? "expired" : (data.error || "ルームが見つかりません"))
         return
       }
 
@@ -235,6 +226,18 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
     }
   }
 
+  // ISSUE-047: 全スピン履歴からランキングを取得
+  const fetchRanking = async () => {
+    try {
+      const res = await fetch(`/api/rooms/${code}/ranking`)
+      if (!res.ok) return
+      const data = await res.json()
+      setRoomRanking(data.ranking)
+    } catch {
+      // ランキング取得失敗は非致命的 — 無視
+    }
+  }
+
   // ISSUE-009: Supabase Realtime サブスクリプション（主系）+ ポーリング 10s フォールバック（副系）
   // Realtime が Room テーブルの変更を検知したとき fetchRoom() を呼ぶ。
   // WebSocket が切れた場合や Realtime 未設定の場合はポーリングが 10 秒ごとにデータを再取得する。
@@ -247,6 +250,7 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
 
     // 初回取得
     fetchRoom()
+    fetchRanking()
 
     // Realtime: Room テーブルの変更を購読（ポーリングより低レイテンシ）
     const channel = supabase
@@ -306,6 +310,24 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
     window.addEventListener("beforeunload", handler)
     return () => window.removeEventListener("beforeunload", handler)
   }, [phase])
+
+  // ISSUE-045: オーナーがスピン中にページを離脱したとき room を WAITING にリセットする
+  // pagehide は実際のページアンロード時のみ発火し、キャンセルダイアログには反応しない
+  // sendBeacon はカスタムヘッダーを送れないため、ゲストトークンは body で渡す
+  useEffect(() => {
+    if ((phase !== "spinning" && phase !== "preparing") || !isOwner) return
+    const handlePageHide = () => {
+      const url = `/api/rooms/${code}/reset`
+      const token = guestHostTokenRef.current
+      if (token) {
+        navigator.sendBeacon(url, new Blob([JSON.stringify({ guestToken: token })], { type: "application/json" }))
+      } else {
+        navigator.sendBeacon(url)
+      }
+    }
+    window.addEventListener("pagehide", handlePageHide)
+    return () => window.removeEventListener("pagehide", handlePageHide)
+  }, [phase, isOwner, code])
 
   // ISSUE-003: phase="spinning" タイムアウト安全網
   // アニメーション総時間（4.5秒+バウンス0.5秒）+ バッファ2.5秒 = 7.5秒
@@ -585,7 +607,10 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
               method: "POST",
               headers: buildGuestAuthHeaders(),
             })
-            if (res.ok || res.status === 404) return // 完了済み or ルームなし → 終了
+            if (res.ok || res.status === 404) {
+              if (res.ok) fetchRanking() // スピン完了後にランキング更新 (ISSUE-047)
+              return // 完了済み or ルームなし → 終了
+            }
             // 409 は別セッションがすでに COMPLETED → 終了
             if (res.status === 409) return
           } catch {
@@ -626,6 +651,7 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
   }
 
   if (error || !room) {
+    const isExpiredError = error === "expired"
     return (
       <main className="min-h-screen bg-background">
         <div className="mx-auto max-w-[390px] min-h-screen flex flex-col px-5 py-6">
@@ -637,10 +663,19 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
             </Button>
           </header>
           <div className="flex-1 flex flex-col items-center justify-center text-center">
-            <p className="text-muted-foreground mb-4">{error}</p>
-            <Button asChild>
-              <Link href={`/room/${code}`}>ルームに戻る</Link>
-            </Button>
+            <p className="text-muted-foreground mb-4">
+              {isExpiredError ? "このルームは有効期限が切れています" : error}
+            </p>
+            <div className="flex flex-col gap-3 w-full max-w-xs">
+              {isExpiredError && (
+                <Button asChild className="bg-gradient-accent text-primary-foreground">
+                  <Link href="/room/create">新しいルームを作る</Link>
+                </Button>
+              )}
+              <Button asChild variant={isExpiredError ? "outline" : "default"}>
+                <Link href="/home">ホームに戻る</Link>
+              </Button>
+            </div>
           </div>
         </div>
       </main>

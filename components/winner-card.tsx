@@ -730,7 +730,10 @@ export function WinnerCard({
                       </div>
                       <div className="flex gap-2">
                         <button
-                          onClick={() => { window.location.href = "/" }}
+                          onClick={() => {
+                            const returnTo = encodeURIComponent(window.location.pathname)
+                            window.location.href = `/?returnTo=${returnTo}`
+                          }}
                           className="flex-1 h-10 flex items-center justify-center gap-2 rounded-xl bg-white hover:bg-gray-50 active:bg-gray-100 text-gray-800 text-xs font-semibold transition-all"
                         >
                           <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24">
@@ -742,7 +745,10 @@ export function WinnerCard({
                           Googleで登録
                         </button>
                         <button
-                          onClick={() => { window.location.href = "/api/auth/line/start" }}
+                          onClick={() => {
+                            const returnTo = encodeURIComponent(window.location.pathname)
+                            window.location.href = `/api/auth/line/start?returnTo=${returnTo}`
+                          }}
                           className="flex-1 h-10 flex items-center justify-center gap-2 rounded-xl text-white text-xs font-semibold transition-all"
                           style={{ backgroundColor: "#06C755" }}
                         >

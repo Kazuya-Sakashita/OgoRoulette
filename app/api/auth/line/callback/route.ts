@@ -182,7 +182,10 @@ export async function GET(request: NextRequest) {
 
     // ミドルウェアと同じパターン: verifyOtp が呼ぶ setAll でリダイレクトレスポンスに cookie をセット
     // 複数回 setAll が呼ばれても全 cookie を蓄積し、最後にまとめて適用する
-    const redirectResponse = NextResponse.redirect(`${origin}/home`)
+    // ISSUE-044: line_oauth_return_to クッキーがあればそこに戻る
+    const rawReturnTo = request.cookies.get("line_oauth_return_to")?.value ?? ""
+    const safeReturnTo = rawReturnTo.startsWith("/") && !rawReturnTo.startsWith("//") ? rawReturnTo : "/home"
+    const redirectResponse = NextResponse.redirect(`${origin}${safeReturnTo}`)
     const pendingCookies: Array<{ name: string; value: string; options: Parameters<typeof redirectResponse.cookies.set>[2] }> = []
 
     const supabase = createServerClient(

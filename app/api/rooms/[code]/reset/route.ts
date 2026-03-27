@@ -44,7 +44,16 @@ export async function POST(
       }
     } else {
       // ゲストルーム: X-Guest-Host-Token を HMAC で検証
-      const guestToken = request.headers.get("X-Guest-Host-Token")
+      // sendBeacon はカスタムヘッダーを送れないため、body の JSON も受け入れる (ISSUE-045)
+      let guestToken = request.headers.get("X-Guest-Host-Token")
+      if (!guestToken) {
+        try {
+          const body = await request.json()
+          guestToken = body?.guestToken ?? null
+        } catch {
+          // body が空 or 非 JSON (auth user の sendBeacon) — 無視
+        }
+      }
       if (!guestToken) {
         return NextResponse.json({ error: "オーナーのみリセットできます" }, { status: 403 })
       }

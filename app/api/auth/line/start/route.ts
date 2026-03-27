@@ -37,5 +37,18 @@ export async function GET(request: NextRequest) {
     maxAge: 600, // 10分
     path: "/",
   })
+
+  // ISSUE-044: returnTo をクッキーに保存してコールバックで復元する
+  const returnTo = request.nextUrl.searchParams.get("returnTo")
+  if (returnTo && returnTo.startsWith("/") && !returnTo.startsWith("//")) {
+    response.cookies.set("line_oauth_return_to", returnTo, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 600,
+      path: "/",
+    })
+  }
+
   return response
 }
