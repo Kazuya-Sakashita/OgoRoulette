@@ -121,6 +121,17 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "名前は20文字以内で入力してください" }, { status: 400 })
     }
 
+    // ISSUE-024: 同一ニックネームの重複参加を防止
+    const duplicateGuest = room.members.find(
+      m => m.profileId === null && m.nickname === trimmedGuestName
+    )
+    if (duplicateGuest) {
+      return NextResponse.json({
+        success: true,
+        room: { id: room.id, inviteCode: room.inviteCode, name: room.name }
+      })
+    }
+
     const colorIndex = room._count.members % SEGMENT_COLORS.length
 
     await prisma.roomMember.create({
