@@ -8,6 +8,13 @@ import Image from "next/image"
 import Link from "next/link"
 import { SEGMENT_COLORS } from "@/lib/constants"
 import { startSupabaseOAuth } from "@/lib/auth"
+import {
+  SHARE_TEMPLATES,
+  buildShareUrl,
+  buildShareText,
+  shareToX,
+  shareToLine,
+} from "@/lib/share-service"
 
 interface WinnerCardProps {
   winner: string
@@ -126,58 +133,35 @@ export function WinnerCard({
     }
   }
 
-  // Build share URL pointing to /result so OGP meta tags are served
-  const buildShareUrl = () => {
-    const params = new URLSearchParams()
-    params.set("treater", winner)
-    params.set("winner", winner)
-    params.set("color", color)
-    if (hasBillInfo) {
-      params.set("total", String(bill))
-      params.set("treat", String(treat))
-      params.set("amount", String(treat))
-    }
-    if (participants.length > 0) {
-      params.set("participants", participants.join(","))
-    }
-    const origin = typeof window !== "undefined" ? window.location.origin : ""
-    return `${origin}/result?${params.toString()}`
+  // Build share payload and helpers using share-service
+  const sharePayload = {
+    winner,
+    winnerColor: color,
+    participants,
+    totalBill: hasBillInfo ? bill : undefined,
+    treatAmount: hasBillInfo ? treat : undefined,
   }
-
-  const buildShareText = () => {
-    let text = `🎰 OgoRouletteで${winner}さんが奢りに決定！ ${reaction}`
-    if (hasBillInfo) {
-      text += `\n${treatType}: ${formatCurrency(treat)} / 割り勘: ${formatCurrency(split)}`
-    }
-    return text
-  }
+  const shareUrl = buildShareUrl(sharePayload)
+  // Default template for quick-share buttons in details phase
+  const defaultTemplate = hasBillInfo ? SHARE_TEMPLATES.find((t) => t.id === "bill")! : SHARE_TEMPLATES[0]
+  const shareTextValue = buildShareText(defaultTemplate, sharePayload)
 
   const handleNativeShare = async () => {
-    const text = buildShareText()
-    const url = buildShareUrl()
     if (navigator.share) {
-      await navigator.share({ title: "OgoRoulette", text, url }).catch(() => {})
+      await navigator.share({ title: "OgoRoulette", text: shareTextValue, url: shareUrl }).catch(() => {})
     } else {
-      await navigator.clipboard.writeText(`${text}\n${url}`).catch(() => {})
+      await navigator.clipboard.writeText(`${shareTextValue}\n${shareUrl}`).catch(() => {})
       alert("リンクをコピーしました！")
     }
   }
 
   const handleShare = (platform: "x" | "line") => {
-    const text = buildShareText()
-    const url = buildShareUrl()
     switch (platform) {
       case "x":
-        window.open(
-          `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`,
-          "_blank"
-        )
+        shareToX(shareTextValue, shareUrl)
         break
       case "line":
-        window.open(
-          `https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`,
-          "_blank"
-        )
+        shareToLine(shareTextValue, shareUrl)
         break
     }
   }

@@ -268,15 +268,30 @@
 
 ---
 
+## 📱 SNS シェア強化（2026-03-28）
+
+| ID | タイトル | 概要 | ステータス |
+|----|--------|------|----------|
+| [ISSUE-066](./issue-066-sns-share-constraints.md) | SNS シェア制約の整理と共通設計方針 | X・LINE intent URL はテキスト+URLのみ。動画は Web Share API (iOS 15+ / Android Chrome) 経由。trimForX() で 280 字超過を自動トリム | ✅ 完了 |
+| [ISSUE-067](./issue-067-share-payload-design.md) | SharePayload — 共通シェアデータ構造の設計 | winner / winnerColor / participants / totalBill / treatAmount / videoBlob を統一した型に。URL 生成・テキスト生成を lib/share-service.ts に集約 | ✅ 完了 |
+| [ISSUE-068](./issue-068-share-message-templates.md) | SNS シェアメッセージテンプレートの追加 | 定番・ドラマチック・いじり・金額付き・グループの 5 テンプレートを実装。ShareSheet のチップ UI で選択可能 | ✅ 完了 |
+| [ISSUE-069](./issue-069-share-sheet-ux.md) | ShareSheet UX 改善 — テンプレート選択 + テキスト編集 | テンプレートチップ + メッセージプレビュー + 自由テキスト編集（280字カウンター）を追加 | ✅ 完了 |
+| [ISSUE-070](./issue-070-share-service-core.md) | lib/share-service.ts — シェアサービス中核実装 | buildShareUrl / buildShareText / shareToX / shareToLine / shareWithFile / downloadVideo を新規ファイルに集約 | ✅ 完了 |
+| [ISSUE-071](./issue-071-share-winner-card-integration.md) | WinnerCard クイックシェアボタンを share-service に統合 | winner-card.tsx の独自 URL 生成・テキスト生成・プラットフォーム呼び出しを share-service に委譲 | ✅ 完了 |
+| [ISSUE-072](./issue-072-share-video-ios-mp4.md) | ShareSheet 動画拡張子を blob.type から自動判定（MP4 / WebM） | `.webm` ハードコードを廃止。iOS で MP4 生成時にファイル名・MIME type が正しくなる | ✅ 完了 |
+
+---
+
 ## 📊 サマリ
 
 | 優先度 | 件数 |
 |--------|------|
 | 🔴 Critical | 18 |
-| 🟠 High | 20 |
-| 🟡 Medium | 21 |
+| 🟠 High | 22 |
+| 🟡 Medium | 23 |
 | ⚪ Low | 7 |
-| **合計** | **66** |
+| 📱 SNS Share | 7 |
+| **合計** | **77** |
 
 ---
 
