@@ -1,35 +1,29 @@
 "use client"
 
-import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import Image from "next/image"
 import { useState } from "react"
 import { ArrowLeft, QrCode } from "lucide-react"
+import { useSearchParams } from "next/navigation"
+import { startSupabaseOAuth, startLineAuth, type SupabaseOAuthProvider } from "@/lib/auth"
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [comingSoonMessage, setComingSoonMessage] = useState<string | null>(null)
+  const searchParams = useSearchParams()
 
-  const handleSocialLogin = async (provider: "google") => {
-    const supabase = createClient()
+  // returnTo: ログイン後に戻るべきパス（例: /room/ABCDEF/play）
+  const returnTo = searchParams.get("returnTo")
+
+  const handleSocialLogin = async (provider: SupabaseOAuthProvider) => {
     setIsLoading(provider)
     setError(null)
-    setComingSoonMessage(null)
 
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider,
-        options: {
-          redirectTo:
-            process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL ||
-            `${window.location.origin}/auth/callback`,
-        },
-      })
-      if (error) throw error
-    } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : "ログインに失敗しました")
+      await startSupabaseOAuth(provider, returnTo)
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "ログインに失敗しました")
       setIsLoading(null)
     }
   }
@@ -37,12 +31,7 @@ export default function LoginPage() {
   const handleLineLogin = () => {
     setIsLoading("line")
     setError(null)
-    setComingSoonMessage(null)
-    window.location.href = "/api/auth/line/start"
-  }
-
-  const handleComingSoon = (providerName: string) => {
-    setComingSoonMessage(`${providerName}ログインは近日公開予定です`)
+    startLineAuth(returnTo)
   }
 
   return (
@@ -124,32 +113,24 @@ export default function LoginPage() {
               )}
             </button>
 
-            {/* Divider - 近日公開 */}
-            <div className="flex items-center gap-3 py-1">
-              <div className="flex-1 h-px bg-white/10" />
-              <span className="text-xs text-muted-foreground">近日公開予定</span>
-              <div className="flex-1 h-px bg-white/10" />
-            </div>
-
-            {/* X (Twitter) - 未実装 */}
+            {/* X (Twitter) */}
             <button
-              onClick={() => handleComingSoon("X")}
+              onClick={() => handleSocialLogin("twitter")}
               disabled={isLoading !== null}
-              className="w-full h-14 flex items-center justify-center gap-3 rounded-2xl bg-secondary/60 hover:bg-white/10 border border-white/10 text-foreground/60 text-base font-semibold press-effect transition-all disabled:opacity-50"
+              className="w-full h-14 flex items-center justify-center gap-3 rounded-2xl bg-black hover:bg-gray-900 active:bg-gray-800 text-white text-base font-semibold press-effect transition-all shadow-soft disabled:opacity-50"
             >
-              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-              </svg>
-              Xで続ける
+              {isLoading === "twitter" ? (
+                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <>
+                  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                  </svg>
+                  Xで続ける
+                </>
+              )}
             </button>
           </div>
-
-          {/* Coming Soon Message */}
-          {comingSoonMessage && (
-            <div className="mt-4 p-3 bg-muted/30 border border-white/10 rounded-xl text-sm text-muted-foreground text-center">
-              {comingSoonMessage}
-            </div>
-          )}
 
           {/* Error Message */}
           {error && (

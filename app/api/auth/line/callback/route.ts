@@ -240,8 +240,9 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(`${origin}/auth/error`)
     }
 
-    // 7. state cookie を削除してリダイレクト
+    // 7. state / return_to cookie を削除してリダイレクト
     redirectResponse.cookies.delete("line_oauth_state")
+    redirectResponse.cookies.delete("line_oauth_return_to")
     return redirectResponse
 
   } catch (error) {

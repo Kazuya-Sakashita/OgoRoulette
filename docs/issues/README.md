@@ -205,15 +205,41 @@
 
 ---
 
+## 🟠 High — 認証共通化・X ログイン追加（2026-03-28）
+
+| ID | タイトル | 概要 | ステータス |
+|----|--------|------|----------|
+| [ISSUE-052](./issue-052-auth-x-login-implementation.md) | X（Twitter）ログインの実装 | X ボタンが `handleComingSoon` のみ。Supabase ネイティブ `provider: "twitter"` で実装、`lib/auth.ts` で型を `"google" \| "twitter"` に統一 | ✅ 完了 |
+| [ISSUE-053](./issue-053-auth-login-page-missing-return-to.md) | `/auth/login` 経由のログインで returnTo が機能しない | `login/page.tsx` の Google が `?next=` を callback に渡さない。LINE も `?returnTo=` なし。LINE callback の `line_oauth_return_to` cookie 削除漏れも修正 | ✅ 完了 |
+
+---
+
+## 🟡 Medium — 認証共通化・X ログイン追加（2026-03-28）
+
+| ID | タイトル | 概要 | ステータス |
+|----|--------|------|----------|
+| [ISSUE-054](./issue-054-auth-login-logic-duplication.md) | Google / LINE ログインロジックが2ページに重複実装 | `app/page.tsx` と `login/page.tsx` に OAuth 開始処理が重複。`lib/auth.ts` に共通化し実装差異を解消 | ✅ 完了 |
+| [ISSUE-055](./issue-055-auth-error-page-missing-rate-limit-ui.md) | `/auth/error` がレートリミットエラーを一般エラーとして表示 | `reason=rate_limit` パラメータを読まず常に「認証エラー」表示。時計アイコン＋残り時間表示に対応 | ✅ 完了 |
+
+---
+
+## 🔴 Critical — 認証デプロイ前作業（2026-03-28）
+
+| ID | タイトル | 概要 | ステータス |
+|----|--------|------|----------|
+| [ISSUE-056](./issue-056-auth-x-supabase-setup-required.md) | X ログインには Supabase ダッシュボード設定が必要 | Twitter Developer Portal でアプリ作成 + Supabase ダッシュボードで OAuth 有効化が必要。設定なしでは X ログインが OAuth エラーになる | 🔴 未着手 |
+
+---
+
 ## 📊 サマリ
 
 | 優先度 | 件数 |
 |--------|------|
-| 🔴 Critical | 14 |
-| 🟠 High | 16 |
-| 🟡 Medium | 16 |
+| 🔴 Critical | 16 |
+| 🟠 High | 18 |
+| 🟡 Medium | 18 |
 | ⚪ Low | 5 |
-| **合計** | **51** |
+| **合計** | **57** |
 
 ---
 

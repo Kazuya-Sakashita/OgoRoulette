@@ -1,8 +1,20 @@
+"use client"
+
 import { Button } from "@/components/ui/button"
-import { Gift, AlertCircle } from "lucide-react"
+import { Gift, AlertCircle, Clock } from "lucide-react"
 import Link from "next/link"
+import { useSearchParams } from "next/navigation"
 
 export default function AuthErrorPage() {
+  const searchParams = useSearchParams()
+  const reason = searchParams.get("reason")
+  const retryAfterStr = searchParams.get("retry_after")
+  const isRateLimit = reason === "rate_limit"
+
+  const retryMinutes = retryAfterStr
+    ? Math.ceil(Number(retryAfterStr) / 60)
+    : null
+
   return (
     <main className="min-h-screen bg-background flex flex-col">
       {/* Background decorations */}
@@ -26,33 +38,48 @@ export default function AuthErrorPage() {
         {/* Error Card */}
         <div className="w-full max-w-sm">
           <div className="bg-card border border-border rounded-3xl p-6 md:p-8 shadow-xl text-center">
-            <div className="w-16 h-16 rounded-2xl bg-destructive/10 flex items-center justify-center mx-auto mb-6">
-              <AlertCircle className="w-8 h-8 text-destructive" />
+            <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6 ${isRateLimit ? "bg-amber-500/10" : "bg-destructive/10"}`}>
+              {isRateLimit
+                ? <Clock className="w-8 h-8 text-amber-500" />
+                : <AlertCircle className="w-8 h-8 text-destructive" />
+              }
             </div>
-            
+
             <h2 className="text-2xl font-black text-foreground mb-2">
-              ログインエラー
+              {isRateLimit ? "しばらくお待ちください" : "ログインエラー"}
             </h2>
             <p className="text-muted-foreground mb-8">
-              認証中にエラーが発生しました。
-              <br />
-              もう一度お試しください。
+              {isRateLimit ? (
+                <>
+                  ログイン試行が多すぎます。
+                  <br />
+                  {retryMinutes
+                    ? `約${retryMinutes}分後にもう一度お試しください。`
+                    : "しばらく経ってからもう一度お試しください。"}
+                </>
+              ) : (
+                <>
+                  認証中にエラーが発生しました。
+                  <br />
+                  もう一度お試しください。
+                </>
+              )}
             </p>
 
             <div className="flex flex-col gap-3">
-              <Button 
+              <Button
                 asChild
-                size="lg" 
+                size="lg"
                 className="w-full h-14 text-lg font-bold rounded-2xl bg-primary hover:bg-primary/90 text-primary-foreground"
               >
                 <Link href="/auth/login">
                   ログインに戻る
                 </Link>
               </Button>
-              
-              <Button 
+
+              <Button
                 asChild
-                size="lg" 
+                size="lg"
                 variant="outline"
                 className="w-full h-14 text-lg font-bold rounded-2xl border-2 border-muted-foreground/30 bg-card hover:bg-secondary text-foreground"
               >

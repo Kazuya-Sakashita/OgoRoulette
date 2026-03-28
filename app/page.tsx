@@ -6,6 +6,7 @@ import Link from "next/link"
 import Image from "next/image"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
+import { startSupabaseOAuth, startLineAuth } from "@/lib/auth"
 
 export default function WelcomePage() {
   const [isLoading, setIsLoading] = useState<string | null>(null)
@@ -36,31 +37,24 @@ export default function WelcomePage() {
     checkUserOrVisited()
   }, [router])
 
+  const getReturnTo = () => {
+    const params = new URLSearchParams(window.location.search)
+    return params.get("returnTo")
+  }
+
   const handleLineLogin = () => {
     setIsLoading("line")
-    window.location.href = "/api/auth/line/start"
+    startLineAuth(getReturnTo())
   }
 
   const handleGoogleLogin = async () => {
-    const supabase = createClient()
     setIsLoading("google")
     setError(null)
 
     try {
-      const params = new URLSearchParams(window.location.search)
-      const returnTo = params.get("returnTo")
-      const safeReturn = returnTo && returnTo.startsWith("/") && !returnTo.startsWith("//") ? returnTo : "/home"
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          redirectTo:
-            process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL ||
-            `${window.location.origin}/auth/callback?next=${encodeURIComponent(safeReturn)}`,
-        },
-      })
-      if (error) throw error
-    } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : "ログインに失敗しました")
+      await startSupabaseOAuth("google", getReturnTo())
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "ログインに失敗しました")
       setIsLoading(null)
     }
   }
