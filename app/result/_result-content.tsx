@@ -192,9 +192,11 @@ function ResultInner() {
           <Button
             onClick={() => {
               const text = `OgoRouletteで${treaterName}さんが奢り!`
+              const url = window.location.href
               window.open(
-                `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`,
-                "_blank"
+                `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`,
+                "_blank",
+                "noopener,noreferrer"
               )
             }}
             variant="outline"
@@ -208,9 +210,11 @@ function ResultInner() {
           <Button
             onClick={() => {
               const text = `OgoRouletteで${treaterName}さんが奢り!`
+              const url = window.location.href
               window.open(
-                `https://social-plugins.line.me/lineit/share?text=${encodeURIComponent(text)}`,
-                "_blank"
+                `https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`,
+                "_blank",
+                "noopener,noreferrer"
               )
             }}
             variant="outline"

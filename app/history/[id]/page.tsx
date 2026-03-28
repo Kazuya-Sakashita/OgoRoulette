@@ -295,7 +295,8 @@ export default function HistoryDetailPage({ params }: { params: Promise<{ id: st
           <Button
             onClick={() => {
               const text = `OgoRouletteで${winner?.name ?? ""}さんが奢り!`
-              window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`, "_blank")
+              const url = `${window.location.origin}/result?treater=${encodeURIComponent(winner?.name ?? "")}&winner=${encodeURIComponent(winner?.name ?? "")}${session?.totalAmount ? `&total=${session.totalAmount}` : ""}${session?.treatAmount ? `&treat=${session.treatAmount}` : ""}`
+              window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`, "_blank", "noopener,noreferrer")
             }}
             variant="outline"
             className="flex-1 h-12 rounded-2xl border-white/10 bg-secondary hover:bg-secondary/80 text-foreground font-medium"
@@ -308,7 +309,8 @@ export default function HistoryDetailPage({ params }: { params: Promise<{ id: st
           <Button
             onClick={() => {
               const text = `OgoRouletteで${winner?.name ?? ""}さんが奢り!`
-              window.open(`https://social-plugins.line.me/lineit/share?text=${encodeURIComponent(text)}`, "_blank")
+              const url = `${window.location.origin}/result?treater=${encodeURIComponent(winner?.name ?? "")}&winner=${encodeURIComponent(winner?.name ?? "")}${session?.totalAmount ? `&total=${session.totalAmount}` : ""}${session?.treatAmount ? `&treat=${session.treatAmount}` : ""}`
+              window.open(`https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`, "_blank", "noopener,noreferrer")
             }}
             variant="outline"
             className="flex-1 h-12 rounded-2xl border-white/10 bg-secondary hover:bg-secondary/80 text-foreground font-medium"

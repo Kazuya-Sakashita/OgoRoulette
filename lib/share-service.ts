@@ -76,6 +76,8 @@ export const SHARE_TEMPLATES: ShareTemplate[] = [
 export function buildShareUrl(payload: SharePayload): string {
   if (typeof window === "undefined") return ""
   const params = new URLSearchParams()
+  // result/_result-content.tsx reads "treater"; OGP metadata reads "winner" || "treater"
+  params.set("treater", payload.winner)
   params.set("winner", payload.winner)
   if (payload.winnerColor) params.set("color", payload.winnerColor)
   if (payload.participants?.length) params.set("participants", payload.participants.join(","))
