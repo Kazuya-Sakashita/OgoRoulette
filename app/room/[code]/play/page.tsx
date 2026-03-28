@@ -102,6 +102,8 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
   const [pendingWinnerIndex, setPendingWinnerIndex] = useState<number | undefined>(undefined)
   const [winner, setWinner] = useState<WinnerData | null>(null)
   const [showConfetti, setShowConfetti] = useState(false)
+  // Increment to remount Confetti and trigger a fresh burst (e.g. Phase A → B transition)
+  const [confettiBurstKey, setConfettiBurstKey] = useState(0)
   // ISSUE-047: ranking は全スピン履歴から集計した専用 API で取得
   const [roomRanking, setRoomRanking] = useState<{ name: string; count: number }[] | undefined>(undefined)
 
@@ -282,6 +284,15 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
   }, [code]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => () => clearTimeout(confettiTimerRef.current ?? undefined), [])
+
+  // Called when WinnerCard transitions from Phase A (cinematic reveal) → Phase B (details sheet).
+  // Remounts Confetti with a fresh lighter burst so the details sheet feels celebratory.
+  const handleDetailsPhase = () => {
+    setConfettiBurstKey((k) => k + 1)
+    setShowConfetti(true)
+    clearTimeout(confettiTimerRef.current ?? undefined)
+    confettiTimerRef.current = setTimeout(() => setShowConfetti(false), 3000)
+  }
 
   // Drive countdown display from spinStartedAtMs while in preparing phase.
   // Polls at 200 ms for smooth second-level accuracy.
@@ -596,7 +607,8 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
       vibrate(HapticPattern.result)
       setShowConfetti(true)
       clearTimeout(confettiTimerRef.current ?? undefined)
-      confettiTimerRef.current = setTimeout(() => setShowConfetti(false), 4000)
+      // 6000ms matches the Confetti component's internal intense-mode timer (intense ? 6000 : 4000)
+      confettiTimerRef.current = setTimeout(() => setShowConfetti(false), 6000)
       // ISSUE-005: ルームとセッションを COMPLETED にする（retry 付き）
       // 失敗すると room が IN_SESSION のまま残り次スピンが 409 になるため retry する
       ;(async () => {
@@ -635,7 +647,7 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
         vibrate(HapticPattern.result)
         setShowConfetti(true)
         clearTimeout(confettiTimerRef.current ?? undefined)
-        confettiTimerRef.current = setTimeout(() => setShowConfetti(false), 4000)
+        confettiTimerRef.current = setTimeout(() => setShowConfetti(false), 6000)
       }
     }
   }
@@ -717,8 +729,9 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
       )}
 
       <Confetti
+        key={confettiBurstKey}
         active={showConfetti}
-        intense={!!winner}
+        intense={confettiBurstKey === 0 && !!winner}
         winnerColor={winner ? SEGMENT_COLORS[winner.index % SEGMENT_COLORS.length] : undefined}
       />
 
@@ -755,6 +768,7 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
           onShareVideo={() => setShowShareSheet(true)}
           onSaveGroup={isCurrentGroupSaved ? undefined : handleSaveGroup}
           isGuest={!currentUser}
+          onAdvanceToDetails={handleDetailsPhase}
         />
       )}
 

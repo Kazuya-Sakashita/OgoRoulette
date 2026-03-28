@@ -60,7 +60,7 @@ export function Confetti({ active, intense = false, winnerColor }: ConfettiProps
   if (!active || pieces.length === 0) return null
 
   return (
-    // z-[70]: above WinnerCard (z-50) so confetti shows over the full-screen reveal
+    // z-70: above WinnerCard (z-50) so confetti shows over the full-screen reveal
     <div className="fixed inset-0 pointer-events-none z-70 overflow-hidden">
       {pieces.map((piece) => (
         <div
