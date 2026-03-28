@@ -115,11 +115,11 @@ export default function LoginPage() {
 
             {/* X (Twitter) */}
             <button
-              onClick={() => handleSocialLogin("twitter")}
+              onClick={() => handleSocialLogin("x")}
               disabled={isLoading !== null}
               className="w-full h-14 flex items-center justify-center gap-3 rounded-2xl bg-black hover:bg-gray-900 active:bg-gray-800 text-white text-base font-semibold press-effect transition-all shadow-soft disabled:opacity-50"
             >
-              {isLoading === "twitter" ? (
+              {isLoading === "x" ? (
                 <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
               ) : (
                 <>

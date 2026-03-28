@@ -8,7 +8,7 @@
 import { createClient } from "@/lib/supabase/client"
 
 /** Supabase ネイティブ OAuth で使用できるプロバイダー */
-export type SupabaseOAuthProvider = "google" | "twitter"
+export type SupabaseOAuthProvider = "google" | "x"
 
 /**
  * Supabase OAuth の redirectTo URL を組み立てる。
