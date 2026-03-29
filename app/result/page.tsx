@@ -16,7 +16,7 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
   const color = params.color || "#F97316"
   const amount = params.amount || ""
 
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://ogo-roulette.vercel.app"
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
   const ogImageUrl = `${baseUrl}/api/og?winner=${encodeURIComponent(winner)}&color=${encodeURIComponent(color)}${amount ? `&amount=${encodeURIComponent(amount)}` : ""}`
 
   const title = winner
