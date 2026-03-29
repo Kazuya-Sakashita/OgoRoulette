@@ -9,6 +9,7 @@
 
 | ID | タイトル | 概要 | ステータス |
 |----|--------|------|----------|
+| [ISSUE-073](./issue-073-spin-button-initially-disabled.md) | home 画面 SPIN ボタンが初回押せない（overlay CSS バグ） | `roulette-wheel.tsx` の ambient glow `motion.div` に `pointer-events: none` がなく、ボタン上部 72% へのクリックを奪っていた | ✅ 完了 |
 | [ISSUE-001](./issue-001-spin-button-isowner-flicker.md) | ゲストホスト `isOwner` フリッカーによる SPIN ボタン永続無効化 | `isGuestHost` が非同期ロードされる間に `isOwner=false` でメンバーエフェクトが誤発火。`phase` が "preparing" に固まり SPIN が押せなくなる | ✅ 完了 |
 | [ISSUE-002](./issue-002-spin-scheduled-ref-race.md) | `spinScheduledRef` 競合による `setPhase("spinning")` ブロック | ISSUE-001 の副作用として `spinScheduledRef.current=true` が残り、`setPhase("spinning")` が永続ブロックされる | ✅ 完了（ISSUE-001 修正により解消） |
 | [ISSUE-003](./issue-003-spinning-phase-timeout.md) | `phase="spinning"` / `"preparing"` で永続停止したときの自動回復機構がない | タイムアウト安全網なし。フェーズが永続停止したときのリカバリ手段がページリロードのみ | ✅ 完了 |
@@ -291,7 +292,7 @@
 | 🟡 Medium | 23 |
 | ⚪ Low | 7 |
 | 📱 SNS Share | 7 |
-| **合計** | **77** |
+| **合計** | **78** |
 
 ---
 

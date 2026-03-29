@@ -184,10 +184,10 @@ export function RouletteWheel({
 
   return (
     <div className="relative" style={{ width: size, height: size }}>
-      {/* Ambient glow */}
-      <motion.div 
-        className="absolute inset-[-25%] rounded-full"
-        style={{ 
+      {/* Ambient glow — pointer-events: none to prevent blocking elements below the wheel */}
+      <motion.div
+        className="absolute inset-[-25%] rounded-full pointer-events-none"
+        style={{
           background: `radial-gradient(circle, rgba(249, 115, 22, ${glowIntensity}) 0%, rgba(236, 72, 153, ${glowIntensity * 0.5}) 30%, transparent 55%)`,
           filter: 'blur(40px)',
         }}
