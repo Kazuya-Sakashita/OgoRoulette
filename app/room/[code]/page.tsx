@@ -8,6 +8,7 @@ import Image from "next/image"
 import { useRouter } from "next/navigation"
 import QRCode from "react-qr-code"
 import { createClient } from "@/lib/supabase/client"
+import { getDisplayName } from "@/lib/display-name"
 
 interface Member {
   id: string
@@ -17,6 +18,7 @@ interface Member {
   profile: {
     id: string
     name: string | null
+    displayName: string | null
     avatarUrl: string | null
   } | null
 }
@@ -385,20 +387,20 @@ export default function RoomPage({ params }: { params: Promise<{ code: string }>
                     {member.profile?.avatarUrl ? (
                       <Image
                         src={member.profile.avatarUrl}
-                        alt={member.nickname || member.profile?.name || "User"}
+                        alt={member.nickname || (member.profile ? getDisplayName(member.profile) : "User")}
                         width={40}
                         height={40}
                         className="rounded-full"
                         unoptimized
                       />
                     ) : (
-                      (member.nickname || member.profile?.name || "?").charAt(0).toUpperCase()
+                      (member.nickname || (member.profile ? getDisplayName(member.profile) : "?")).charAt(0).toUpperCase()
                     )}
                   </div>
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
                       <span className="font-medium text-foreground">
-                        {member.nickname || member.profile?.name || "ゲスト"}
+                        {member.nickname || (member.profile ? getDisplayName(member.profile) : "ゲスト")}
                       </span>
                       {member.isHost && (
                         <Crown className="w-4 h-4 text-primary" />

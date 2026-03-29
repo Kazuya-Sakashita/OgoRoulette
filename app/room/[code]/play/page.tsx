@@ -15,6 +15,7 @@ import { WinnerCard } from "@/components/winner-card"
 import { Confetti } from "@/components/confetti"
 import { CountdownOverlay } from "@/components/countdown-overlay"
 import { createClient } from "@/lib/supabase/client"
+import { getDisplayName } from "@/lib/display-name"
 import { SEGMENT_COLORS, SPIN_COUNTDOWN_MS } from "@/lib/constants"
 import { formatCurrency } from "@/lib/format"
 import { getTreatTitle } from "@/lib/group-storage"
@@ -39,7 +40,7 @@ interface Member {
   nickname: string | null
   color: string
   isHost: boolean
-  profile: { id: string; name: string | null; avatarUrl: string | null } | null
+  profile: { id: string; name: string | null; displayName: string | null; avatarUrl: string | null } | null
 }
 
 interface SessionWinner {
@@ -81,8 +82,9 @@ interface WinnerData {
 
 // --- Helpers ---
 
+// ISSUE-090: profile.name（プロバイダ由来名）は使わない。公開名を優先する。
 function getMemberName(member: Member): string {
-  return member.nickname || member.profile?.name || "ゲスト"
+  return member.nickname || (member.profile ? getDisplayName(member.profile) : "ゲスト")
 }
 
 // --- Component ---

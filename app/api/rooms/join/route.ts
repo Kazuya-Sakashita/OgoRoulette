@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma"
 import { createClient } from "@/lib/supabase/server"
 import { SEGMENT_COLORS } from "@/lib/constants"
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
+import { getDisplayName } from "@/lib/display-name"
 
 // POST /api/rooms/join - Join a room with invite code
 export async function POST(request: Request) {
@@ -71,22 +72,27 @@ export async function POST(request: Request) {
       }
 
       // Ensure profile exists
-      const resolvedNickname =
+      // ISSUE-090: provider由来名は Profile.name（内部保持用）にのみ保存する
+      // nickname には getDisplayName() で得た公開名を使う
+      const providerName =
         user.user_metadata?.name ||
         user.user_metadata?.full_name ||
         user.user_metadata?.display_name ||
-        "LINEユーザー"
+        "ユーザー"
 
-      await prisma.profile.upsert({
+      const profile = await prisma.profile.upsert({
         where: { id: user.id },
         update: {},
         create: {
           id: user.id,
           email: user.email,
-          name: resolvedNickname,
+          name: providerName,
           avatarUrl: user.user_metadata?.avatar_url
-        }
+        },
+        select: { id: true, displayName: true }
       })
+
+      const resolvedNickname = getDisplayName({ id: profile.id, displayName: profile.displayName })
 
       // アトミック: 現在のメンバー数を再確認 → 色決定 → メンバー作成
       // ISSUE-043: 同時参加での色衝突防止 / ISSUE-048: 定員超過防止
