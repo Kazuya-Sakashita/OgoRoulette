@@ -1,19 +1,40 @@
 "use client"
 
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft, Camera, Keyboard } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
+import { QrScanner } from "@/components/qr-scanner"
+
+const HINT_DELAY_MS = 5000
 
 export default function ScanPage() {
   const router = useRouter()
-  const [mode, setMode] = useState<"scan" | "manual">("manual") // Default to manual since camera requires permissions
+  const [mode, setMode] = useState<"scan" | "manual">("manual")
   const [inviteCode, setInviteCode] = useState("")
   const [error, setError] = useState<string | null>(null)
+  const [showManualHint, setShowManualHint] = useState(false)
   // ISSUE-081: IME composition 中の state 更新を防ぐ
   const isComposing = useRef(false)
+  const hintTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // 5秒間スキャン未検出で手動入力を促すヒントを表示
+  useEffect(() => {
+    if (mode === "scan") {
+      setShowManualHint(false)
+      hintTimerRef.current = setTimeout(() => {
+        setShowManualHint(true)
+      }, HINT_DELAY_MS)
+    } else {
+      if (hintTimerRef.current) clearTimeout(hintTimerRef.current)
+      setShowManualHint(false)
+    }
+    return () => {
+      if (hintTimerRef.current) clearTimeout(hintTimerRef.current)
+    }
+  }, [mode])
 
   const handleManualJoin = () => {
     const code = inviteCode.replace(/[^a-zA-Z0-9]/g, "").toUpperCase()
@@ -22,6 +43,24 @@ export default function ScanPage() {
       return
     }
     router.push(`/join/${code}`)
+  }
+
+  const handleQrScan = (data: string) => {
+    // QRコードのデータから招待コードを抽出する
+    // 形式1: /join/XXXXXX の URL
+    // 形式2: 6桁の英数字コードのみ
+    const urlMatch = data.match(/\/join\/([A-Z0-9]{6})/i)
+    if (urlMatch) {
+      router.push(`/join/${urlMatch[1].toUpperCase()}`)
+      return
+    }
+    const codeMatch = data.match(/^([A-Z0-9]{6})$/i)
+    if (codeMatch) {
+      router.push(`/join/${codeMatch[1].toUpperCase()}`)
+      return
+    }
+    // 無効なQRコードはヒントを早める
+    setShowManualHint(true)
   }
 
   return (
@@ -38,10 +77,10 @@ export default function ScanPage() {
             <h1 className="text-lg font-bold text-foreground">QRで参加</h1>
           </div>
           <div className="flex items-center gap-2">
-            <Image 
-              src="/images/logo-icon.png" 
-              alt="OgoRoulette" 
-              width={28} 
+            <Image
+              src="/images/logo-icon.png"
+              alt="OgoRoulette"
+              width={28}
               height={28}
               className="w-7 h-7"
             />
@@ -53,8 +92,8 @@ export default function ScanPage() {
           <button
             onClick={() => setMode("scan")}
             className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg text-sm font-medium transition-all ${
-              mode === "scan" 
-                ? "bg-gradient-accent text-primary-foreground" 
+              mode === "scan"
+                ? "bg-gradient-accent text-primary-foreground"
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
@@ -64,8 +103,8 @@ export default function ScanPage() {
           <button
             onClick={() => setMode("manual")}
             className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg text-sm font-medium transition-all ${
-              mode === "manual" 
-                ? "bg-gradient-accent text-primary-foreground" 
+              mode === "manual"
+                ? "bg-gradient-accent text-primary-foreground"
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
@@ -77,21 +116,32 @@ export default function ScanPage() {
         {/* Content based on mode */}
         <div className="flex-1 flex flex-col">
           {mode === "scan" ? (
-            <>
-              {/* QR Scanner Placeholder */}
-              <div className="flex-1 flex flex-col items-center justify-center">
-                <div className="w-64 h-64 rounded-3xl bg-secondary border-2 border-dashed border-white/20 flex flex-col items-center justify-center mb-6">
-                  <Camera className="w-12 h-12 text-muted-foreground mb-3" />
-                  <p className="text-sm text-muted-foreground text-center px-4">
-                    カメラへのアクセスを許可して<br />QRコードをスキャン
-                  </p>
-                </div>
+            <div className="flex-1 flex flex-col">
+              {/* QR Scanner */}
+              <QrScanner
+                active={mode === "scan"}
+                onScan={handleQrScan}
+              />
 
-                <p className="text-sm text-muted-foreground text-center px-4">
-                  コード入力タブから招待コードを入力してご参加ください
-                </p>
-              </div>
-            </>
+              <p className="text-sm text-muted-foreground text-center mt-4">
+                QRコードをカメラに向けてください
+              </p>
+
+              {/* 5秒後に手動入力を促すバナー */}
+              {showManualHint && (
+                <div className="mt-4 p-4 rounded-2xl bg-secondary border border-white/10 text-center">
+                  <p className="text-sm text-muted-foreground mb-2">
+                    うまく読み取れませんか？
+                  </p>
+                  <button
+                    onClick={() => setMode("manual")}
+                    className="text-sm font-medium text-primary hover:underline"
+                  >
+                    コードを手動で入力する →
+                  </button>
+                </div>
+              )}
+            </div>
           ) : (
             <>
               {/* Manual Code Entry */}
