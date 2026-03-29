@@ -80,9 +80,14 @@ export async function PATCH(request: Request) {
     // ISSUE-078: 初回シェア確認済みフラグ
     if (displayNameConfirmedAt !== undefined) data.displayNameConfirmedAt = displayNameConfirmedAt
 
-    const profile = await prisma.profile.update({
+    const profile = await prisma.profile.upsert({
       where: { id: user.id },
-      data,
+      update: data,
+      create: {
+        id: user.id,
+        email: user.email ?? null,
+        ...data,
+      },
     })
 
     return NextResponse.json(profile)
