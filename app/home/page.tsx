@@ -27,6 +27,7 @@ import { GroupList } from "@/components/group-list"
 import { RecordingCanvas } from "@/components/recording-canvas"
 import { ShareSheet } from "@/components/share-sheet"
 import { useVideoRecorder } from "@/lib/use-video-recorder"
+import { getDisplayName } from "@/lib/display-name"
 
 export default function HomePage() {
   const [isSpinning, setIsSpinning] = useState(false)
@@ -39,6 +40,7 @@ export default function HomePage() {
   const [countdown, setCountdown] = useState<number | null>(null)
   const countdownTimersRef = useRef<ReturnType<typeof setTimeout>[]>([])
   const [user, setUser] = useState<User | null>(null)
+  const [profile, setProfile] = useState<{ id: string; displayName: string | null } | null>(null)
   const router = useRouter()
 
   const { groups: savedGroups, isLoaded: groupsLoaded, selectedGroupId, selectGroup, saveGroup, updateGroup, deleteGroup } = useGroups(user)
@@ -95,6 +97,14 @@ export default function HomePage() {
     const getUser = async () => {
       const { data: { user } } = await supabase.auth.getUser()
       setUser(user)
+      if (user) {
+        const { data } = await supabase
+          .from("profiles")
+          .select("id, display_name")
+          .eq("id", user.id)
+          .single()
+        if (data) setProfile({ id: data.id, displayName: data.display_name })
+      }
     }
     getUser()
   }, [])
@@ -171,11 +181,7 @@ export default function HomePage() {
     setCreateRoomError(null)
 
     try {
-      const ownerName =
-        user.user_metadata?.name ??
-        user.user_metadata?.full_name ??
-        user.user_metadata?.display_name ??
-        ""
+      const ownerName = profile ? getDisplayName(profile) : ""
       const res = await fetch("/api/rooms", {
         method: "POST",
         headers: { "Content-Type": "application/json" },

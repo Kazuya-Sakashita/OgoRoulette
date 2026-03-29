@@ -14,10 +14,15 @@ datasource db {
 model Profile {
   id        String   @id @db.Uuid
   email     String?  @unique
-  name      String?
+  name      String?  // provider_name — 内部保持のみ。公開表示には displayName を使うこと
   avatarUrl String?  @map("avatar_url")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
+
+  // 公開表示名（SNS共有・結果画面など外部公開箇所で使用する）
+  // NULL の場合は getDisplayName() が "ユーザー" + id末尾4文字 を返す
+  displayName            String?   @map("display_name")
+  displayNameConfirmedAt DateTime? @map("display_name_confirmed_at")
 
   // Stats (denormalized for quick access)
   totalTreated     Int @default(0) @map("total_treated")      // Times treated others

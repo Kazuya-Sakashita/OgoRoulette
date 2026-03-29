@@ -1,7 +1,7 @@
 # ISSUE-077: シェア・公開箇所の表示名を display_name に切り替える
 
 ## ステータス
-🔴 未対応
+✅ 完了
 
 ## 優先度
 Critical
@@ -33,7 +33,14 @@ Frontend / Privacy
 ヘッダーのウェルカム文は外部に出ないため `provider_name` のままでよい。
 
 ## 受け入れ条件
-- [ ] シェアテキストに本名が含まれない
-- [ ] OGP 画像・URL に本名が含まれない
-- [ ] 招待ページのオーナー名が display_name（またはfallback）になっている
-- [ ] ウェルカム文は変更しない
+- [x] シェアテキストに本名が含まれない
+- [x] OGP 画像・URL に本名が含まれない
+- [x] 招待ページのオーナー名が display_name（またはfallback）になっている
+- [x] ウェルカム文は変更しない
+
+## 実装内容
+
+- `app/api/rooms/[code]/route.ts` — owner/profile select に `displayName` 追加
+- `app/api/rooms/route.ts` — room 作成時の nickname を `getDisplayName()` に変更（provider_name → display_name fallback）
+- `app/join/[code]/page.tsx` — `Room.owner` 型に `displayName` 追加、表示を `getDisplayName(room.owner)` に変更
+- `app/home/page.tsx` — profile を Supabase から取得し、ownerName フィルタを `getDisplayName(profile)` に変更

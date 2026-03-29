@@ -6,6 +6,7 @@ import { ArrowLeft, Users, Loader2, Plus } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
+import { getDisplayName } from "@/lib/display-name"
 
 interface Member {
   id: string
@@ -18,7 +19,9 @@ interface Room {
   name: string | null
   inviteCode: string
   owner: {
+    id: string
     name: string | null
+    displayName: string | null
     avatarUrl: string | null
   } | null
   _count: {
@@ -184,7 +187,7 @@ export default function JoinRoomPage({ params }: { params: Promise<{ code: strin
                 {room?.name || "ルーレットルーム"}
               </h1>
               <p className="text-sm text-muted-foreground">
-                {room?.owner?.name ?? room?.members.find(m => m.isHost)?.nickname ?? "ゲスト"}さんがあなたを招待しています
+                {room?.owner ? getDisplayName(room.owner) : (room?.members.find(m => m.isHost)?.nickname ?? "ゲスト")}さんがあなたを招待しています
               </p>
             </div>
 

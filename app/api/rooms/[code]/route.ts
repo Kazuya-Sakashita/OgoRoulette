@@ -13,12 +13,12 @@ export async function GET(
       where: { inviteCode: code.toUpperCase() },
       include: {
         owner: {
-          select: { id: true, name: true, avatarUrl: true }
+          select: { id: true, name: true, displayName: true, avatarUrl: true }
         },
         members: {
           include: {
             profile: {
-              select: { id: true, name: true, avatarUrl: true }
+              select: { id: true, name: true, displayName: true, avatarUrl: true }
             }
           },
           orderBy: { joinedAt: 'asc' }

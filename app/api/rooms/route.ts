@@ -5,6 +5,7 @@ import { SEGMENT_COLORS } from "@/lib/constants"
 import { randomInt } from "crypto"
 import { signGuestToken } from "@/lib/guest-token"
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
+import { getDisplayName } from "@/lib/display-name"
 
 // Generate random invite code (6 characters, avoids confusing chars)
 function generateInviteCode(): string {
@@ -130,22 +131,26 @@ export async function POST(request: Request) {
 
     if (user) {
       // --- Authenticated flow ---
-      const resolvedNickname =
+      const providerName =
         user.user_metadata?.name ||
         user.user_metadata?.full_name ||
         user.user_metadata?.display_name ||
         "LINEユーザー"
 
-      await prisma.profile.upsert({
+      const profile = await prisma.profile.upsert({
         where: { id: user.id },
         update: {},
         create: {
           id: user.id,
           email: user.email,
-          name: resolvedNickname,
+          name: providerName,
           avatarUrl: user.user_metadata?.avatar_url
-        }
+        },
+        select: { id: true, displayName: true }
       })
+
+      // ISSUE-077: 公開表示名は provider_name ではなく display_name を使う
+      const resolvedNickname = getDisplayName({ id: profile.id, displayName: profile.displayName })
 
       // ISSUE-023: ホスト名と重複するプリセット名を除外
       const filteredPresetNames = validPresetNames.filter(n => n !== resolvedNickname)
