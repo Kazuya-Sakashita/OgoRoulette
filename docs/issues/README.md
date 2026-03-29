@@ -9,6 +9,11 @@
 
 | ID | タイトル | 概要 | ステータス |
 |----|--------|------|----------|
+| [ISSUE-074](./issue-074-safe-display-name-spec.md) | SNS共有時の表示名安全仕様（設計・親Issue） | Google/LINEログイン由来のフルネームがそのままSNS共有される。display_name を分離し安全名のみ公開する | 🔴 未対応 |
+| [ISSUE-075](./issue-075-display-name-db-migration.md) | Profile に display_name フィールド追加（DB migration） | `profiles` テーブルに `display_name` / `display_name_confirmed_at` を追加 | 🔴 未対応 |
+| [ISSUE-076](./issue-076-get-display-name-util.md) | getDisplayName() ユーティリティ実装 | `lib/display-name.ts` に表示名ロジックを集約。fallback は `"ユーザー" + id末尾4文字` | 🔴 未対応 |
+| [ISSUE-077](./issue-077-replace-share-name-with-display-name.md) | シェア・公開箇所の表示名を display_name に切り替え | result / history / share-service / 招待ページのオーナー名を display_name に変更 | 🔴 未対応 |
+| [ISSUE-078](./issue-078-display-name-confirmation-sheet.md) | 初回シェア前の「公開名確認」ボトムシート実装 | 初回シェアアクション時に1回だけ公開名を確認するUIを追加 | 🔴 未対応 |
 | [ISSUE-073](./issue-073-spin-button-initially-disabled.md) | home 画面 SPIN ボタンが初回押せない（overlay CSS バグ） | `roulette-wheel.tsx` の ambient glow `motion.div` に `pointer-events: none` がなく、ボタン上部 72% へのクリックを奪っていた | ✅ 完了 |
 | [ISSUE-001](./issue-001-spin-button-isowner-flicker.md) | ゲストホスト `isOwner` フリッカーによる SPIN ボタン永続無効化 | `isGuestHost` が非同期ロードされる間に `isOwner=false` でメンバーエフェクトが誤発火。`phase` が "preparing" に固まり SPIN が押せなくなる | ✅ 完了 |
 | [ISSUE-002](./issue-002-spin-scheduled-ref-race.md) | `spinScheduledRef` 競合による `setPhase("spinning")` ブロック | ISSUE-001 の副作用として `spinScheduledRef.current=true` が残り、`setPhase("spinning")` が永続ブロックされる | ✅ 完了（ISSUE-001 修正により解消） |
@@ -292,7 +297,13 @@
 | 🟡 Medium | 23 |
 | ⚪ Low | 7 |
 | 📱 SNS Share | 7 |
-| **合計** | **78** |
+## 🔒 プライバシー・表示名安全化（2026-03-29）
+
+| ID | タイトル | 概要 | ステータス |
+|----|--------|------|----------|
+| [ISSUE-079](./issue-079-profile-edit-display-name.md) | プロフィール編集導線の追加（display_name 変更） | ログインユーザーが公開名をいつでも変更できる UI を追加 | 🔴 未対応 |
+
+| **合計** | **83** |
 
 ---
 
