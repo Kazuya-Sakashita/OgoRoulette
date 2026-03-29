@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft, Camera, Keyboard } from "lucide-react"
 import Link from "next/link"
@@ -12,15 +12,16 @@ export default function ScanPage() {
   const [mode, setMode] = useState<"scan" | "manual">("manual") // Default to manual since camera requires permissions
   const [inviteCode, setInviteCode] = useState("")
   const [error, setError] = useState<string | null>(null)
+  // ISSUE-081: IME composition 中の state 更新を防ぐ
+  const isComposing = useRef(false)
 
   const handleManualJoin = () => {
-    if (!inviteCode.trim()) {
+    const code = inviteCode.replace(/[^a-zA-Z0-9]/g, "").toUpperCase()
+    if (code.length < 6) {
       setError("招待コードを入力してください")
       return
     }
-    
-    // Navigate to join page with the code
-    router.push(`/join/${inviteCode.toUpperCase()}`)
+    router.push(`/join/${code}`)
   }
 
   return (
@@ -111,7 +112,20 @@ export default function ScanPage() {
                     <input
                       type="text"
                       value={inviteCode}
+                      onCompositionStart={() => {
+                        isComposing.current = true
+                      }}
+                      onCompositionEnd={(e) => {
+                        isComposing.current = false
+                        const val = e.currentTarget.value
+                          .replace(/[^a-zA-Z0-9]/g, "")
+                          .toUpperCase()
+                          .slice(0, 6)
+                        setInviteCode(val)
+                        setError(null)
+                      }}
                       onChange={(e) => {
+                        if (isComposing.current) return
                         setInviteCode(e.target.value.toUpperCase().slice(0, 6))
                         setError(null)
                       }}
@@ -136,7 +150,7 @@ export default function ScanPage() {
                   {/* Join Button */}
                   <Button
                     onClick={handleManualJoin}
-                    disabled={inviteCode.length < 6}
+                    disabled={inviteCode.replace(/[^a-zA-Z0-9]/g, "").length < 6}
                     className="w-full h-14 text-lg font-bold rounded-xl bg-gradient-accent hover:opacity-90 text-primary-foreground press-effect disabled:opacity-50"
                   >
                     参加する
