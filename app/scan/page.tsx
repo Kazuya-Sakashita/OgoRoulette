@@ -125,8 +125,13 @@ export default function ScanPage() {
                         setError(null)
                       }}
                       onChange={(e) => {
-                        if (isComposing.current) return
-                        setInviteCode(e.target.value.toUpperCase().slice(0, 6))
+                        if (isComposing.current) {
+                          // ISSUE-082: composition 中は raw 値で state を更新し React と DOM を同期させる
+                          // return のみだと React が input.value を旧 state に強制リセットし IME バッファが破壊される
+                          setInviteCode(e.target.value.slice(0, 10))
+                          return
+                        }
+                        setInviteCode(e.target.value.replace(/[^a-zA-Z0-9]/g, "").toUpperCase().slice(0, 6))
                         setError(null)
                       }}
                       placeholder="XXXXXX"
