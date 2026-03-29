@@ -13,15 +13,26 @@ interface QrScannerProps {
   active?: boolean
 }
 
+// ISSUE-089: <video> は常に DOM に存在させる。
+// setStatus("loading") した瞬間に <video> が消えると videoRef.current = null になり、
+// getUserMedia 成功後に srcObject を設定できず「起動中」のまま固着する。
+// loading / error / scanning をオーバーレイで重ねる構造にして videoRef を常に有効にする。
+
 export function QrScanner({ onScan, onError, active = true }: QrScannerProps) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
   const rafRef = useRef<number | null>(null)
   const scannedRef = useRef(false)
+  const statusRef = useRef<"idle" | "loading" | "scanning" | "error">("idle")
 
   const [status, setStatus] = useState<"idle" | "loading" | "scanning" | "error">("idle")
   const [errorType, setErrorType] = useState<QrError | null>(null)
+
+  const setStatusBoth = useCallback((s: "idle" | "loading" | "scanning" | "error") => {
+    statusRef.current = s
+    setStatus(s)
+  }, [])
 
   const stopCamera = useCallback(() => {
     if (rafRef.current !== null) {
@@ -75,27 +86,53 @@ export function QrScanner({ onScan, onError, active = true }: QrScannerProps) {
 
   const startCamera = useCallback(async () => {
     scannedRef.current = false
-    setStatus("loading")
+    setStatusBoth("loading")
     setErrorType(null)
 
+    // タイムアウト: 10秒以上 loading のままなら error に落とす
+    const timeoutId = setTimeout(() => {
+      if (statusRef.current === "loading") {
+        setStatusBoth("error")
+        setErrorType("unknown")
+        stopCamera()
+      }
+    }, 10_000)
+
     try {
+      // ISSUE-089: facingMode は exact 指定を避け ideal にする
+      // "environment" の exact 指定は一部端末で OverconstrainedError を起こす
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "environment" },
+        video: { facingMode: { ideal: "environment" } },
         audio: false,
       })
       streamRef.current = stream
 
       const video = videoRef.current
       if (!video) {
+        // ISSUE-089: video が null のときは error state に落とす（以前はサイレントリターン）
         stopCamera()
+        setStatusBoth("error")
+        setErrorType("unknown")
         return
       }
 
       video.srcObject = stream
-      video.setAttribute("playsinline", "true")
-      await video.play()
 
-      setStatus("scanning")
+      try {
+        await video.play()
+      } catch (playErr) {
+        const e = playErr as DOMException
+        // ISSUE-089: iOS Safari の autoplay ポリシーで AbortError が発生する場合がある
+        // 短い待機の後に再試行する
+        if (e.name === "AbortError") {
+          await new Promise((r) => setTimeout(r, 150))
+          await video.play()
+        } else {
+          throw e
+        }
+      }
+
+      setStatusBoth("scanning")
       rafRef.current = requestAnimationFrame(scan)
     } catch (err) {
       const error = err as DOMException
@@ -106,104 +143,112 @@ export function QrScanner({ onScan, onError, active = true }: QrScannerProps) {
         type = "no_camera"
       }
       setErrorType(type)
-      setStatus("error")
+      setStatusBoth("error")
+      stopCamera()
       onError?.(type)
+    } finally {
+      clearTimeout(timeoutId)
     }
-  }, [scan, stopCamera, onError])
+  }, [scan, stopCamera, onError, setStatusBoth])
 
   useEffect(() => {
     if (active) {
       startCamera()
     } else {
       stopCamera()
-      setStatus("idle")
+      setStatusBoth("idle")
     }
 
     return () => {
       stopCamera()
     }
-  }, [active, startCamera, stopCamera])
+  }, [active, startCamera, stopCamera, setStatusBoth])
 
-  if (status === "loading") {
-    return (
-      <div className="flex flex-col items-center justify-center w-full aspect-square rounded-3xl bg-secondary border border-white/10">
-        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full mb-3" />
-        <p className="text-sm text-muted-foreground">カメラを起動中...</p>
-      </div>
-    )
-  }
-
-  if (status === "error") {
-    return (
-      <div className="flex flex-col items-center justify-center w-full aspect-square rounded-3xl bg-secondary border border-white/10 px-6 text-center">
-        <div className="w-14 h-14 rounded-full bg-destructive/10 flex items-center justify-center mb-4">
-          <Camera className="w-7 h-7 text-destructive" />
-        </div>
-        {errorType === "permission_denied" ? (
-          <>
-            <p className="text-sm font-medium text-foreground mb-2">
-              カメラへのアクセスが許可されていません
-            </p>
-            <p className="text-xs text-muted-foreground mb-4">
-              設定アプリ &gt; Safari（またはChrome）&gt; カメラ から許可してください
-            </p>
-          </>
-        ) : errorType === "no_camera" ? (
-          <>
-            <p className="text-sm font-medium text-foreground mb-2">
-              カメラが見つかりません
-            </p>
-            <p className="text-xs text-muted-foreground mb-4">
-              コード入力タブからルームに参加できます
-            </p>
-          </>
-        ) : (
-          <>
-            <p className="text-sm font-medium text-foreground mb-2">
-              カメラを起動できませんでした
-            </p>
-            <p className="text-xs text-muted-foreground mb-4">
-              もう一度お試しください
-            </p>
-          </>
-        )}
-        {errorType !== "permission_denied" && (
-          <Button
-            onClick={startCamera}
-            variant="outline"
-            size="sm"
-            className="border-white/10 bg-white/5 text-foreground"
-          >
-            <RefreshCw className="w-4 h-4 mr-2" />
-            再試行
-          </Button>
-        )}
-      </div>
-    )
-  }
-
+  // ISSUE-089: <video> は常に DOM にマウントし、status に応じてオーバーレイを重ねる。
+  // 以前は status ごとに別 UI を return していたため、loading/error 時に video 要素が
+  // DOM から消えて videoRef.current = null になり、stream を設定できなかった。
   return (
     <div className="relative w-full aspect-square rounded-3xl overflow-hidden bg-black">
+      {/* video は常にマウント — status が何であっても videoRef が有効 */}
       <video
         ref={videoRef}
         className="absolute inset-0 w-full h-full object-cover"
         playsInline
         muted
         autoPlay
+        style={{ display: status === "scanning" ? "block" : "none" }}
       />
       {/* Hidden canvas for decoding */}
       <canvas ref={canvasRef} className="hidden" />
 
-      {/* Viewfinder overlay */}
+      {/* ローディングオーバーレイ */}
+      {(status === "loading" || status === "idle") && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-secondary rounded-3xl">
+          {status === "loading" && (
+            <>
+              <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full mb-3" />
+              <p className="text-sm text-muted-foreground">カメラを起動中...</p>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* エラーオーバーレイ */}
+      {status === "error" && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-secondary rounded-3xl px-6 text-center">
+          <div className="w-14 h-14 rounded-full bg-destructive/10 flex items-center justify-center mb-4">
+            <Camera className="w-7 h-7 text-destructive" />
+          </div>
+          {errorType === "permission_denied" ? (
+            <>
+              <p className="text-sm font-medium text-foreground mb-2">
+                カメラへのアクセスが許可されていません
+              </p>
+              <p className="text-xs text-muted-foreground mb-4">
+                設定アプリ &gt; Safari（またはChrome）&gt; カメラ から許可してください
+              </p>
+            </>
+          ) : errorType === "no_camera" ? (
+            <>
+              <p className="text-sm font-medium text-foreground mb-2">
+                カメラが見つかりません
+              </p>
+              <p className="text-xs text-muted-foreground mb-4">
+                コード入力タブからルームに参加できます
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="text-sm font-medium text-foreground mb-2">
+                カメラを起動できませんでした
+              </p>
+              <p className="text-xs text-muted-foreground mb-4">
+                もう一度お試しください
+              </p>
+            </>
+          )}
+          {errorType !== "permission_denied" && (
+            <Button
+              onClick={startCamera}
+              variant="outline"
+              size="sm"
+              className="border-white/10 bg-white/5 text-foreground"
+            >
+              <RefreshCw className="w-4 h-4 mr-2" />
+              再試行
+            </Button>
+          )}
+        </div>
+      )}
+
+      {/* ビューファインダー（スキャン中のみ） */}
       {status === "scanning" && (
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="relative w-52 h-52">
-            {/* Corner brackets */}
             <span className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-primary rounded-tl-lg" />
             <span className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-primary rounded-tr-lg" />
             <span className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-primary rounded-bl-lg" />
             <span className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-primary rounded-br-lg" />
-            {/* Scan line animation */}
             <div className="absolute top-0 left-0 right-0 h-0.5 bg-primary/70 animate-scan-line" />
           </div>
         </div>
