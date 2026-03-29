@@ -117,8 +117,12 @@ export default function ScanPage() {
                       }}
                       placeholder="XXXXXX"
                       maxLength={6}
-                      className="w-full h-16 px-6 text-center text-2xl font-mono font-bold tracking-[0.3em] text-foreground bg-secondary rounded-xl border border-white/10 focus:outline-none focus:ring-2 focus:ring-primary/50 placeholder:text-muted-foreground/30 uppercase"
-                      autoFocus
+                      autoCapitalize="characters"
+                      autoCorrect="off"
+                      autoComplete="off"
+                      spellCheck={false}
+                      enterKeyHint="go"
+                      className="w-full h-16 px-6 text-center text-2xl font-mono font-bold tracking-[0.3em] text-foreground bg-secondary rounded-xl border border-white/10 focus:outline-none focus:ring-2 focus:ring-primary/50 placeholder:text-muted-foreground/30"
                     />
                   </div>
 
