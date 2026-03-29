@@ -1,7 +1,7 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { X as XIcon, Crown, Sparkles, Calculator, RotateCcw, Bookmark, Check, LogIn } from "lucide-react"
+import { X as XIcon, Crown, Calculator, RotateCcw, Bookmark, Check, LogIn } from "lucide-react"
 import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import Image from "next/image"
@@ -373,7 +373,7 @@ export function WinnerCard({
 
                 <div className="px-6 pb-8 pt-2">
                   {/* Winner mini-header */}
-                  <div className="flex items-center gap-3 mb-6">
+                  <div className="flex items-center gap-3 mb-5">
                     <div
                       className="w-12 h-12 rounded-full flex items-center justify-center text-xl font-black shrink-0"
                       style={{
@@ -399,18 +399,73 @@ export function WinnerCard({
                     />
                   </div>
 
-                  {/* ISSUE-008: もう一回！を上部に配置してスクロール不要で見える位置に */}
+                  {/* ── Primary CTA: Video share ────────────────────── */}
+                  {videoBlob && onShareVideo && (
+                    <motion.button
+                      onClick={onShareVideo}
+                      className="w-full h-14 rounded-2xl mb-3 font-bold text-base text-white flex items-center justify-center gap-2 active:scale-95 transition-all"
+                      style={{
+                        background: `linear-gradient(135deg, ${color}, #EC4899)`,
+                        boxShadow: `0 4px 28px ${color}60`,
+                      }}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.15 }}
+                    >
+                      🎬 動画でシェア
+                    </motion.button>
+                  )}
+
+                  {/* ── Secondary share: text + URL ─────────────────── */}
+                  <div className="flex gap-2 mb-5">
+                    <Button
+                      onClick={handleNativeShare}
+                      variant="outline"
+                      size="sm"
+                      className="flex-1 h-10 rounded-xl border-white/10 bg-white/5 hover:bg-white/10 text-white text-xs"
+                    >
+                      <svg className="w-3.5 h-3.5 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <circle cx="18" cy="5" r="3" /><circle cx="6" cy="12" r="3" /><circle cx="18" cy="19" r="3" />
+                        <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" /><line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+                      </svg>
+                      シェア
+                    </Button>
+                    <Button
+                      onClick={() => handleShare("x")}
+                      variant="outline"
+                      size="sm"
+                      className="flex-1 h-10 rounded-xl border-white/10 bg-white/5 hover:bg-white/10 text-white text-xs"
+                    >
+                      <svg className="w-3.5 h-3.5 mr-1" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                      </svg>
+                      X
+                    </Button>
+                    <Button
+                      onClick={() => handleShare("line")}
+                      variant="outline"
+                      size="sm"
+                      className="flex-1 h-10 rounded-xl border-white/10 bg-white/5 hover:bg-white/10 text-white text-xs"
+                    >
+                      <svg className="w-3.5 h-3.5 mr-1" viewBox="0 0 24 24" fill="#06C755">
+                        <path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.627-.63h2.386c.349 0 .63.285.63.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.627-.63.349 0 .631.285.631.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.349 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.281.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314" />
+                      </svg>
+                      LINE
+                    </Button>
+                  </div>
+
+                  {/* ── Re-spin ──────────────────────────────────────── */}
                   {isOwner && onRespin && (
                     <Button
                       onClick={onRespin}
-                      className="w-full h-12 rounded-2xl bg-gradient-accent hover:opacity-90 text-white font-semibold text-sm transition-all mb-4"
+                      className="w-full h-11 rounded-2xl bg-gradient-accent hover:opacity-90 text-white font-semibold text-sm transition-all mb-4"
                     >
                       <RotateCcw className="w-4 h-4 mr-2" />
                       もう一回！
                     </Button>
                   )}
 
-                  {/* ISSUE-017: このメンバーを登録 — shown when group is not yet saved */}
+                  {/* ── Save group ───────────────────────────────────── */}
                   {onSaveGroup && !savedThisSession && (
                     <div className="mb-4">
                       {showSaveGroup ? (
@@ -475,23 +530,6 @@ export function WinnerCard({
                       <Check className="w-4 h-4" />
                       いつものメンバーに登録しました
                     </div>
-                  )}
-
-                  {/* Video share CTA — shown when recording is ready */}
-                  {videoBlob && onShareVideo && (
-                    <motion.button
-                      onClick={onShareVideo}
-                      className="w-full h-14 rounded-2xl mb-5 font-bold text-base text-white flex items-center justify-center gap-2 hover:opacity-90 active:scale-95 transition-all"
-                      style={{
-                        background: `linear-gradient(135deg, ${color}, #EC4899)`,
-                        boxShadow: `0 4px 24px ${color}50`,
-                      }}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.2 }}
-                    >
-                      🎬 動画でシェア
-                    </motion.button>
                   )}
 
                   {/* Treat count badge + title */}
@@ -633,72 +671,6 @@ export function WinnerCard({
                       </div>
                     </div>
                   )}
-
-                  {/* Share section */}
-                  <div className="mb-6">
-                    <div className="flex items-center gap-2 mb-3">
-                      <Sparkles className="w-3.5 h-3.5 text-primary" />
-                      <p className="text-xs text-muted-foreground uppercase tracking-wider">
-                        この瞬間をシェア
-                      </p>
-                    </div>
-                    <div className="flex gap-2">
-                      {/* Native share */}
-                      <Button
-                        onClick={handleNativeShare}
-                        variant="outline"
-                        size="sm"
-                        className="flex-1 h-11 rounded-xl border-white/10 bg-white/5 hover:bg-white/10 text-white text-xs"
-                      >
-                        <svg
-                          className="w-4 h-4 mr-1.5"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                        >
-                          <circle cx="18" cy="5" r="3" />
-                          <circle cx="6" cy="12" r="3" />
-                          <circle cx="18" cy="19" r="3" />
-                          <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
-                          <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
-                        </svg>
-                        シェア
-                      </Button>
-                      {/* X */}
-                      <Button
-                        onClick={() => handleShare("x")}
-                        variant="outline"
-                        size="sm"
-                        className="flex-1 h-11 rounded-xl border-white/10 bg-white/5 hover:bg-white/10 text-white text-xs"
-                      >
-                        <svg
-                          className="w-4 h-4 mr-1.5"
-                          viewBox="0 0 24 24"
-                          fill="currentColor"
-                        >
-                          <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-                        </svg>
-                        X
-                      </Button>
-                      {/* LINE */}
-                      <Button
-                        onClick={() => handleShare("line")}
-                        variant="outline"
-                        size="sm"
-                        className="flex-1 h-11 rounded-xl border-white/10 bg-white/5 hover:bg-white/10 text-white text-xs"
-                      >
-                        <svg
-                          className="w-4 h-4 mr-1.5"
-                          viewBox="0 0 24 24"
-                          fill="#06C755"
-                        >
-                          <path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.627-.63h2.386c.349 0 .63.285.63.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.627-.63.349 0 .631.285.631.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.349 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.281.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314" />
-                        </svg>
-                        LINE
-                      </Button>
-                    </div>
-                  </div>
 
                   {/* Guest→Login conversion CTA */}
                   {isGuest && (
