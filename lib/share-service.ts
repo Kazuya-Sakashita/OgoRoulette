@@ -18,6 +18,8 @@ export interface SharePayload {
   treatAmount?: number
   roomName?: string
   videoBlob?: Blob | null
+  // ISSUE-094: room code so /result page can offer "join this group" CTA
+  roomCode?: string
 }
 
 export interface ShareTemplate {
@@ -83,6 +85,7 @@ export function buildShareUrl(payload: SharePayload): string {
   if (payload.participants?.length) params.set("participants", payload.participants.join(","))
   if (payload.totalBill) params.set("total", String(payload.totalBill))
   if (payload.treatAmount) params.set("treat", String(payload.treatAmount))
+  if (payload.roomCode) params.set("room", payload.roomCode)
   return `${window.location.origin}/result?${params.toString()}`
 }
 

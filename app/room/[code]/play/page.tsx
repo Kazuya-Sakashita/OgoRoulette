@@ -773,6 +773,7 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
           ranking={roomRanking}
           videoBlob={recordedBlob}
           onShareVideo={() => setShowShareSheet(true)}
+          recordingCanvasRef={recordingCanvasRef}
           onSaveGroup={isCurrentGroupSaved ? undefined : handleSaveGroup}
           isGuest={!currentUser}
           onAdvanceToDetails={handleDetailsPhase}

@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button"
 import { Confetti } from "@/components/confetti"
-import { ArrowLeft, Share2, Crown, Sparkles, Copy, Check } from "lucide-react"
+import { ArrowLeft, Share2, Crown, Sparkles, Copy, Check, Users } from "lucide-react"
 import { useState, useEffect, Suspense } from "react"
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
@@ -11,11 +11,14 @@ function ResultInner() {
   const searchParams = useSearchParams()
   const [showConfetti, setShowConfetti] = useState(true)
   const [copied, setCopied] = useState(false)
+  // ISSUE-094: room join CTA — check if the source room is still active
+  const [roomActive, setRoomActive] = useState<"loading" | "active" | "inactive">("loading")
 
   const totalBill = Number(searchParams.get("total")) || 30000
   const treatAmount = Number(searchParams.get("treat")) || 20000
   const treaterName = searchParams.get("treater") || "A"
   const participantNames = (searchParams.get("participants") || "A,B,C,D,E").split(",")
+  const roomCode = searchParams.get("room") || ""
 
   const remainingAmount = Math.max(0, totalBill - treatAmount)
   const nonTreaters = participantNames.filter((name) => name !== treaterName)
@@ -32,6 +35,20 @@ function ResultInner() {
     const timer = setTimeout(() => setShowConfetti(false), 4000)
     return () => clearTimeout(timer)
   }, [])
+
+  // ISSUE-094: Check if the source room is still joinable
+  useEffect(() => {
+    if (!roomCode) {
+      setRoomActive("inactive")
+      return
+    }
+    fetch(`/api/rooms/${roomCode}`)
+      .then((res) => {
+        if (res.ok) setRoomActive("active")
+        else setRoomActive("inactive")
+      })
+      .catch(() => setRoomActive("inactive"))
+  }, [roomCode])
 
   const handleShare = () => {
     const text = `OgoRouletteで${treaterName}さんが${formatCurrency(treatAmount)}奢り!\n残り${formatCurrency(remainingAmount)}は${nonTreaters.length}人で割り勘 → 1人${formatCurrency(splitAmount)}`
@@ -106,6 +123,50 @@ function ResultInner() {
             <p className="text-white/80 text-lg">ごちそうさまです!</p>
           </div>
         </div>
+
+        {/* ISSUE-094: Conversion CTA — join active room or discover the app */}
+        {roomActive === "active" ? (
+          <div className="rounded-3xl overflow-hidden border border-white/10 bg-white/5">
+            <div className="px-5 py-4">
+              <p className="text-sm text-muted-foreground mb-3">
+                このグループはまだルーレット中かも 🎡
+              </p>
+              <Button
+                asChild
+                className="w-full h-12 rounded-2xl bg-linear-to-r from-orange-500 to-pink-500 hover:opacity-90 text-white font-semibold text-base shadow-md shadow-orange-500/30 transition-all active:scale-[0.98] mb-2"
+              >
+                <Link href={`/join/${roomCode}`}>
+                  <Users className="w-4 h-4 mr-2" />
+                  このグループに参加する
+                </Link>
+              </Button>
+              <Button
+                asChild
+                variant="ghost"
+                className="w-full h-10 rounded-2xl text-sm text-muted-foreground hover:text-foreground"
+              >
+                <Link href="/home">自分のグループを作る →</Link>
+              </Button>
+            </div>
+          </div>
+        ) : roomActive === "inactive" ? (
+          <div className="rounded-3xl bg-linear-to-br from-orange-500 via-pink-500 to-purple-500 p-px">
+            <div className="bg-background rounded-[23px] px-6 py-5 text-center">
+              <p className="text-base font-bold text-foreground mb-1">
+                あなたも試してみよう 🎰
+              </p>
+              <p className="text-sm text-muted-foreground mb-4">
+                「誰が奢る？」をルーレットで即決。無料・登録30秒。
+              </p>
+              <Button
+                asChild
+                className="w-full h-12 rounded-2xl bg-linear-to-r from-orange-500 to-pink-500 hover:opacity-90 text-white font-semibold text-base shadow-md shadow-orange-500/30 transition-all active:scale-[0.98]"
+              >
+                <Link href="/home">OgoRouletteを無料で試す</Link>
+              </Button>
+            </div>
+          </div>
+        ) : null}
 
         {/* Bill Split Summary Card */}
         <div className="glass-card rounded-3xl overflow-hidden border border-white/10">
@@ -219,24 +280,6 @@ function ResultInner() {
             </svg>
             LINEで共有
           </Button>
-        </div>
-
-        {/* Conversion CTA for new visitors */}
-        <div className="rounded-3xl bg-linear-to-br from-orange-500 via-pink-500 to-purple-500 p-px">
-          <div className="bg-background rounded-[23px] px-6 py-5 text-center">
-            <p className="text-base font-bold text-foreground mb-1">
-              あなたも試してみよう 🎰
-            </p>
-            <p className="text-sm text-muted-foreground mb-4">
-              「誰が奢る？」をルーレットで即決。無料・登録30秒。
-            </p>
-            <Button
-              asChild
-              className="w-full h-12 rounded-2xl bg-linear-to-r from-orange-500 to-pink-500 hover:opacity-90 text-white font-semibold text-base shadow-md shadow-orange-500/30 transition-all active:scale-[0.98]"
-            >
-              <Link href="/home">OgoRouletteを無料で試す</Link>
-            </Button>
-          </div>
         </div>
 
         {/* Action Buttons */}

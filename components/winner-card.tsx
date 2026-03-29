@@ -1,8 +1,8 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { X as XIcon, Crown, Calculator, RotateCcw, Bookmark, Check, LogIn } from "lucide-react"
-import { useState, useEffect } from "react"
+import { X as XIcon, Crown, Calculator, RotateCcw, Bookmark, Check, LogIn, Share2 } from "lucide-react"
+import { useState, useEffect, useCallback, RefObject } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import Image from "next/image"
 import Link from "next/link"
@@ -36,6 +36,8 @@ interface WinnerCardProps {
   // Video recording
   videoBlob?: Blob | null
   onShareVideo?: () => void
+  // ISSUE-093: canvas ref for instant image capture at peak emotion
+  recordingCanvasRef?: RefObject<HTMLCanvasElement | null>
   // Group save — pass undefined when participants are already saved
   onSaveGroup?: (name: string) => void
   // Guest→login conversion CTA
@@ -68,6 +70,7 @@ export function WinnerCard({
   ranking,
   videoBlob,
   onShareVideo,
+  recordingCanvasRef,
   onSaveGroup,
   isGuest = false,
   onAdvanceToDetails,
@@ -88,6 +91,9 @@ export function WinnerCard({
   const [showName, setShowName] = useState(false)
   const [showReaction, setShowReaction] = useState(false)
   const [showHint, setShowHint] = useState(false)
+  // ISSUE-093: instant share button appears 1.5 s into Phase A
+  const [showInstantShare, setShowInstantShare] = useState(false)
+  const [instantShareDone, setInstantShareDone] = useState(false)
 
   const hasBillInfo = typeof totalBill === "number" && totalBill > 0
   const treat = treatAmount ?? 0
@@ -110,9 +116,11 @@ export function WinnerCard({
     const t1 = setTimeout(() => setShowCrown(true), 300)
     const t2 = setTimeout(() => setShowName(true), 650)
     const t3 = setTimeout(() => setShowReaction(true), 1150)
-    const t4 = setTimeout(() => setShowHint(true), 2300)
+    // ISSUE-093: instant share button appears 1.5 s after reveal
+    const t4 = setTimeout(() => setShowInstantShare(true), 1500)
+    const t5 = setTimeout(() => setShowHint(true), 2300)
     // Auto-advance to Phase B after 4 seconds
-    const t5 = setTimeout(() => {
+    const t6 = setTimeout(() => {
       setPhase("details")
       onAdvanceToDetails?.()
     }, 4000)
@@ -123,8 +131,9 @@ export function WinnerCard({
       clearTimeout(t3)
       clearTimeout(t4)
       clearTimeout(t5)
+      clearTimeout(t6)
     }
-  }, [])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const advanceToDetails = () => {
     if (phase === "reveal") {
@@ -140,11 +149,52 @@ export function WinnerCard({
     participants,
     totalBill: hasBillInfo ? bill : undefined,
     treatAmount: hasBillInfo ? treat : undefined,
+    roomCode,
   }
   const shareUrl = buildShareUrl(sharePayload)
   // Default template for quick-share buttons in details phase
   const defaultTemplate = hasBillInfo ? SHARE_TEMPLATES.find((t) => t.id === "bill")! : SHARE_TEMPLATES[0]
   const shareTextValue = buildShareText(defaultTemplate, sharePayload)
+
+  /**
+   * ISSUE-093: Capture the current recording canvas frame as a PNG and share it.
+   * If the video is already ready, open the share sheet instead (best quality).
+   * Falls back through: video share → image share → URL share → clipboard.
+   */
+  const handleInstantShare = useCallback(async (e: React.MouseEvent) => {
+    e.stopPropagation()
+
+    // If video is ready, jump to the share sheet (video > image)
+    if (videoBlob && onShareVideo) {
+      onShareVideo()
+      return
+    }
+
+    const canvas = recordingCanvasRef?.current
+    let imageFile: File | undefined
+
+    if (canvas) {
+      const blob = await new Promise<Blob | null>((res) => canvas.toBlob(res, "image/png"))
+      if (blob) {
+        imageFile = new File([blob], `ogoroulette_${winner}.png`, { type: "image/png" })
+      }
+    }
+
+    const text = `🎰 OgoRouletteで${winner}さんが奢りに決定！ #OgoRoulette`
+
+    try {
+      if (imageFile && navigator.canShare?.({ files: [imageFile] })) {
+        await navigator.share({ files: [imageFile], text, url: shareUrl })
+      } else if (navigator.share) {
+        await navigator.share({ text, url: shareUrl })
+      } else {
+        await navigator.clipboard.writeText(`${text}\n${shareUrl}`)
+      }
+      setInstantShareDone(true)
+    } catch {
+      // User cancelled or share failed — silently ignore
+    }
+  }, [videoBlob, onShareVideo, recordingCanvasRef, winner, shareUrl]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleNativeShare = async () => {
     if (navigator.share) {
@@ -304,6 +354,34 @@ export function WinnerCard({
             >
               <XIcon className="w-4 h-4" />
             </button>
+
+            {/* ISSUE-093: Instant share button — fades in 1.5 s after reveal */}
+            <AnimatePresence>
+              {showInstantShare && (
+                <motion.button
+                  className="absolute bottom-28 flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold text-white"
+                  style={{
+                    background: instantShareDone
+                      ? "rgba(255,255,255,0.15)"
+                      : `linear-gradient(135deg, ${color}CC, ${color}88)`,
+                    border: "1px solid rgba(255,255,255,0.25)",
+                    backdropFilter: "blur(8px)",
+                  }}
+                  initial={{ opacity: 0, y: 10, scale: 0.92 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.9 }}
+                  transition={{ duration: 0.35, ease: "easeOut" }}
+                  onClick={handleInstantShare}
+                >
+                  <Share2 className="w-4 h-4" />
+                  {instantShareDone
+                    ? "シェア済み ✓"
+                    : videoBlob
+                      ? "動画でシェア 🎬"
+                      : "今すぐシェア 📸"}
+                </motion.button>
+              )}
+            </AnimatePresence>
 
             {/* Hint at bottom */}
             <motion.p
