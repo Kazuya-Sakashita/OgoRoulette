@@ -100,19 +100,16 @@ export function trimForX(text: string): string {
 
 export function shareToX(text: string, url: string): void {
   const trimmed = trimForX(text)
-  window.open(
-    `https://twitter.com/intent/tweet?text=${encodeURIComponent(trimmed)}&url=${encodeURIComponent(url)}`,
-    "_blank",
-    "noopener,noreferrer"
-  )
+  // ISSUE-083: window.open(_blank) はモバイル Chrome で about:blank タブを残す。
+  // location.href で同一タブ遷移にすることでユーザーが「戻る」で元ページへ戻れる。
+  window.location.href =
+    `https://twitter.com/intent/tweet?text=${encodeURIComponent(trimmed)}&url=${encodeURIComponent(url)}`
 }
 
 export function shareToLine(text: string, url: string): void {
-  window.open(
-    `https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`,
-    "_blank",
-    "noopener,noreferrer"
-  )
+  // ISSUE-083: 同上
+  window.location.href =
+    `https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`
 }
 
 export type ShareWithFileResult = "success" | "fallback_url" | "fallback_clipboard" | "cancelled"

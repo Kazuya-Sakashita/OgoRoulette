@@ -193,11 +193,9 @@ function ResultInner() {
             onClick={() => {
               const text = `OgoRouletteで${treaterName}さんが奢り!`
               const url = window.location.href
-              window.open(
-                `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`,
-                "_blank",
-                "noopener,noreferrer"
-              )
+              // ISSUE-083: window.open(_blank) → location.href に変更
+              window.location.href =
+                `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`
             }}
             variant="outline"
             className="flex-1 h-12 rounded-2xl border-gray-200 bg-white hover:bg-gray-50 text-gray-700 font-medium"
@@ -211,11 +209,9 @@ function ResultInner() {
             onClick={() => {
               const text = `OgoRouletteで${treaterName}さんが奢り!`
               const url = window.location.href
-              window.open(
-                `https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`,
-                "_blank",
-                "noopener,noreferrer"
-              )
+              // ISSUE-083: window.open(_blank) → location.href に変更
+              window.location.href =
+                `https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`
             }}
             variant="outline"
             className="flex-1 h-12 rounded-2xl border-gray-200 bg-white hover:bg-gray-50 text-gray-700 font-medium"

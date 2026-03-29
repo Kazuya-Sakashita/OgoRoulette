@@ -296,7 +296,8 @@ export default function HistoryDetailPage({ params }: { params: Promise<{ id: st
             onClick={() => {
               const text = `OgoRouletteで${winner?.name ?? ""}さんが奢り!`
               const url = `${window.location.origin}/result?treater=${encodeURIComponent(winner?.name ?? "")}&winner=${encodeURIComponent(winner?.name ?? "")}${session?.totalAmount ? `&total=${session.totalAmount}` : ""}${session?.treatAmount ? `&treat=${session.treatAmount}` : ""}`
-              window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`, "_blank", "noopener,noreferrer")
+              // ISSUE-083: window.open(_blank) → location.href に変更
+              window.location.href = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`
             }}
             variant="outline"
             className="flex-1 h-12 rounded-2xl border-white/10 bg-secondary hover:bg-secondary/80 text-foreground font-medium"
@@ -310,7 +311,8 @@ export default function HistoryDetailPage({ params }: { params: Promise<{ id: st
             onClick={() => {
               const text = `OgoRouletteで${winner?.name ?? ""}さんが奢り!`
               const url = `${window.location.origin}/result?treater=${encodeURIComponent(winner?.name ?? "")}&winner=${encodeURIComponent(winner?.name ?? "")}${session?.totalAmount ? `&total=${session.totalAmount}` : ""}${session?.treatAmount ? `&treat=${session.treatAmount}` : ""}`
-              window.open(`https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`, "_blank", "noopener,noreferrer")
+              // ISSUE-083: window.open(_blank) → location.href に変更
+              window.location.href = `https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`
             }}
             variant="outline"
             className="flex-1 h-12 rounded-2xl border-white/10 bg-secondary hover:bg-secondary/80 text-foreground font-medium"
