@@ -235,6 +235,70 @@ function drawPointer(ctx: CanvasRenderingContext2D) {
   ctx.restore()
 }
 
+/**
+ * ISSUE-092: Participants intro overlay — shown for the first 1.5 s of countdown recording.
+ * Gives SNS viewers context ("who's spinning?") before the tension builds.
+ * elapsed: seconds since countdown phase started (0 → 1.5)
+ */
+function drawParticipantsIntro(
+  ctx: CanvasRenderingContext2D,
+  participants: string[],
+  elapsed: number
+) {
+  // Fade in 0→0.3s, hold 0.3→1.2s, fade out 1.2→1.5s
+  let alpha = 1
+  if (elapsed < 0.3) alpha = elapsed / 0.3
+  else if (elapsed > 1.2) alpha = 1 - (elapsed - 1.2) / 0.3
+  alpha = Math.max(0, Math.min(1, alpha))
+
+  ctx.save()
+  ctx.globalAlpha = alpha
+
+  // Dark overlay
+  ctx.fillStyle = "rgba(11,27,43,0.92)"
+  ctx.fillRect(0, 0, W, H)
+
+  const cx = W / 2
+  const titleY = 200
+
+  // "今日の参加者" title
+  ctx.font         = "bold 28px sans-serif"
+  ctx.fillStyle    = "rgba(255,255,255,0.62)"
+  ctx.textAlign    = "center"
+  ctx.textBaseline = "middle"
+  ctx.fillText("今日の参加者", cx, titleY)
+
+  // Divider line
+  ctx.strokeStyle = "rgba(249,115,22,0.35)"
+  ctx.lineWidth   = 1
+  ctx.beginPath()
+  ctx.moveTo(cx - 80, titleY + 22)
+  ctx.lineTo(cx + 80, titleY + 22)
+  ctx.stroke()
+
+  // Participant list (max 8)
+  const shown    = participants.slice(0, 8)
+  const lineH    = 52
+  const listTopY = titleY + 52
+  const colors   = ["#F97316", "#EC4899", "#8B5CF6", "#3B82F6", "#22C55E", "#FBBF24", "#EF4444", "#06B6D4"]
+
+  for (let i = 0; i < shown.length; i++) {
+    const y = listTopY + i * lineH
+    ctx.font      = `bold ${shown.length > 5 ? 30 : 34}px sans-serif`
+    ctx.fillStyle = colors[i % colors.length]
+    ctx.textAlign = "center"
+    ctx.fillText(shown[i], cx, y)
+  }
+
+  // Bottom tagline
+  ctx.font      = "bold 22px sans-serif"
+  ctx.fillStyle = "rgba(255,165,0,0.7)"
+  ctx.textAlign = "center"
+  ctx.fillText("〜 誰が奢る？ 〜", cx, H - 130)
+
+  ctx.restore()
+}
+
 function drawCountdownOverlay(ctx: CanvasRenderingContext2D, countdown: number) {
   ctx.fillStyle = "rgba(11,27,43,0.88)"
   ctx.fillRect(0, 0, W, H)
@@ -273,10 +337,19 @@ function drawReveal(
   ctx: CanvasRenderingContext2D,
   winner: string,
   winnerColor: string,
-  revealSec: number
+  revealSec: number,
+  participantCount: number,
 ) {
   const p = Math.min(revealSec / 0.65, 1)
   if (p <= 0) return
+
+  // ISSUE-091: White flash at the instant of reveal (t=0 → t=0.2s)
+  // Gives a "決定！" moment before the name appears.
+  if (revealSec < 0.2) {
+    const flashAlpha = 0.7 * (1 - revealSec / 0.2)
+    ctx.fillStyle = `rgba(255,255,255,${flashAlpha.toFixed(3)})`
+    ctx.fillRect(0, 0, W, H)
+  }
 
   // Glow burst behind wheel during reveal
   const burstR = WR * (1 + p * 0.5)
@@ -299,19 +372,24 @@ function drawReveal(
   ctx.fillText("👑", W / 2, baseY + 4)
   ctx.restore()
 
-  // Winner name (scale in from 40% to 100%)
-  const scale   = 0.4 + p * 0.6
-  const nameSz  = Math.round(66 * scale)
-  const nameY   = baseY + 80
+  // ISSUE-092: Winner name — larger, stronger double-glow for SNS readability
+  const scale  = 0.4 + p * 0.6
+  const nameSz = Math.round(76 * scale)  // 66 → 76
+  const nameY  = baseY + 84
 
   ctx.save()
-  ctx.globalAlpha = p
-  ctx.font         = `900 ${nameSz}px sans-serif`
-  ctx.textAlign    = "center"
-  ctx.textBaseline = "middle"
-  ctx.fillStyle    = "white"
-  ctx.shadowBlur   = 52 * p
+  ctx.globalAlpha    = p
+  ctx.font           = `900 ${nameSz}px sans-serif`
+  ctx.textAlign      = "center"
+  ctx.textBaseline   = "middle"
+  ctx.fillStyle      = "white"
+  // Outer glow
+  ctx.shadowBlur   = 72 * p
   ctx.shadowColor  = winnerColor
+  ctx.fillText(`${winner}さん`, W / 2, nameY)
+  // Inner glow (second pass for intensity)
+  ctx.shadowBlur   = 28 * p
+  ctx.shadowColor  = "rgba(255,255,255,0.9)"
   ctx.fillText(`${winner}さん`, W / 2, nameY)
   ctx.shadowBlur = 0
   ctx.restore()
@@ -325,22 +403,27 @@ function drawReveal(
     ctx.textAlign    = "center"
     ctx.textBaseline = "middle"
     ctx.fillStyle    = winnerColor
-    ctx.fillText("本日の奢り担当！", W / 2, nameY + 56)
+    ctx.fillText("本日の奢り担当！", W / 2, nameY + 60)
     ctx.restore()
   }
 
-  // Reaction text
+  // ISSUE-092: Reaction text — varied by participant count
   if (revealSec > 1.4) {
     const reactP = Math.min((revealSec - 1.4) / 0.3, 1)
-    const reactions = ["ごちそうさまです！", "太っ腹！", "今日のヒーロー！"]
+    const reactions =
+      participantCount >= 6
+        ? ["みんなありがとう...🙏", "大人数の中から選ばれし者！", `${participantCount}人中1人の悲劇...`]
+        : participantCount >= 3
+        ? ["ごちそうさまです！", "今日のヒーロー！", "太っ腹！！"]
+        : ["一騎討ち...負けた😅", "50%の悲劇！", "次は勝つ！"]
     const rx = reactions[winner.charCodeAt(0) % reactions.length]
     ctx.save()
-    ctx.globalAlpha  = reactP * 0.65
-    ctx.font         = "22px sans-serif"
+    ctx.globalAlpha  = reactP * 0.72
+    ctx.font         = "bold 22px sans-serif"
     ctx.textAlign    = "center"
     ctx.textBaseline = "middle"
-    ctx.fillStyle    = "rgba(255,255,255,0.75)"
-    ctx.fillText(rx, W / 2, nameY + 100)
+    ctx.fillStyle    = "rgba(255,255,255,0.85)"
+    ctx.fillText(rx, W / 2, nameY + 106)
     ctx.restore()
   }
 }
@@ -417,24 +500,33 @@ export function RecordingCanvas({
     winnerIndex,
     winner,
     winnerColor,
-    revealStartMs: null as number | null,
+    revealStartMs:    null as number | null,
+    countdownStartMs: null as number | null,
   })
 
   const prevPhaseRef = useRef<RecordingPhase>(phase)
 
   useEffect(() => {
-    stateRef.current.phase       = phase
-    stateRef.current.countdown   = countdown
-    stateRef.current.participants= participants
-    stateRef.current.winnerIndex = winnerIndex
-    stateRef.current.winner      = winner
-    stateRef.current.winnerColor = winnerColor
+    stateRef.current.phase        = phase
+    stateRef.current.countdown    = countdown
+    stateRef.current.participants = participants
+    stateRef.current.winnerIndex  = winnerIndex
+    stateRef.current.winner       = winner
+    stateRef.current.winnerColor  = winnerColor
 
     if (phase === "reveal" && prevPhaseRef.current !== "reveal") {
       stateRef.current.revealStartMs = Date.now()
     } else if (phase !== "reveal" && phase !== "done") {
       stateRef.current.revealStartMs = null
     }
+
+    // ISSUE-091/092: Track when countdown starts so the intro overlay has its own timer
+    if (phase === "countdown" && prevPhaseRef.current !== "countdown") {
+      stateRef.current.countdownStartMs = Date.now()
+    } else if (phase !== "countdown") {
+      stateRef.current.countdownStartMs = null
+    }
+
     prevPhaseRef.current = phase
   }, [phase, countdown, participants, winnerIndex, winner, winnerColor])
 
@@ -464,13 +556,21 @@ export function RecordingCanvas({
       drawWheel(ctx, rotDeg, s.participants, s.winnerIndex, s.phase)
       drawPointer(ctx)
 
-      if (s.phase === "countdown" && s.countdown !== null) {
-        drawCountdownOverlay(ctx, s.countdown)
+      if (s.phase === "countdown") {
+        // ISSUE-091/092: Show participant intro for first 1.5 s, then countdown number.
+        const countdownElapsed = s.countdownStartMs
+          ? (nowMs - s.countdownStartMs) / 1000
+          : 999
+        if (countdownElapsed < 1.5) {
+          drawParticipantsIntro(ctx, s.participants, countdownElapsed)
+        } else if (s.countdown !== null) {
+          drawCountdownOverlay(ctx, s.countdown)
+        }
       } else if (s.phase === "reveal" || s.phase === "done") {
         const revealSec = s.revealStartMs !== null
           ? (nowMs - s.revealStartMs) / 1000
           : (s.phase === "done" ? 999 : 0)
-        drawReveal(ctx, s.winner ?? "", s.winnerColor, revealSec)
+        drawReveal(ctx, s.winner ?? "", s.winnerColor, revealSec, s.participants.length)
       }
 
       if (s.phase === "countdown" || s.phase === "spinning" || s.phase === "reveal") {

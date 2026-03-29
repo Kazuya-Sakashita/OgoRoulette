@@ -392,10 +392,15 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
   }, [room?.inviteCode, currentUser]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Sync roulette phase → recording phase.
-  // "preparing" maps to countdown; "spinning" starts the recorder.
+  // ISSUE-091: Start recording at "countdown" (not "spinning") so the 3-2-1
+  // anticipation is captured in the video. "spinning" only updates the phase.
   useEffect(() => {
-    if (phase === "preparing") setRecordingPhase("countdown")
-    else if (phase === "spinning") startRecording()
+    if (phase === "preparing") {
+      setRecordingPhase("countdown")
+      startRecording()
+    } else if (phase === "spinning") {
+      setRecordingPhase("spinning")
+    }
   }, [phase]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ゲストホスト専用: サーバー認可用ヘッダーを組み立てる

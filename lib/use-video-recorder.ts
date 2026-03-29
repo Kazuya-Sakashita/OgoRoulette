@@ -8,10 +8,11 @@ import type { RecordingPhase } from "@/components/recording-canvas"
  * Encapsulates the full video recording lifecycle for the roulette.
  *
  * Usage:
- *   1. Call `setRecordingPhase("countdown")` when the countdown begins.
- *   2. Call `startRecording()` when the wheel starts spinning.
+ *   1. Call `setRecordingPhase("countdown")` + `startRecording()` when countdown begins.
+ *      This captures the 3→2→1 anticipation in the video (ISSUE-091).
+ *   2. Call `setRecordingPhase("spinning")` when the wheel starts spinning.
  *   3. Call `stopRecordingAfterReveal()` when the winner is determined —
- *      this lets the reveal animation run for 2.5 s before stopping.
+ *      this lets the reveal animation run for 4.5 s before stopping (ISSUE-091).
  *   4. Call `reset()` when the WinnerCard is closed.
  *
  * The hook manages RecordingCanvas's ref and wheelRotationRef internally.
@@ -27,16 +28,19 @@ export function useVideoRecorder() {
   const recorderRef        = useRef(new VideoRecorder())
   const revealTimerRef     = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  /** Start MediaRecorder. Sets recordingPhase → "spinning". */
+  /**
+   * Start MediaRecorder. Phase must be set by the caller.
+   * Call during "countdown" phase so the 3-2-1 anticipation is captured in the video.
+   */
   const startRecording = useCallback(() => {
-    setRecordingPhase("spinning")
     if (recordingCanvasRef.current && canRecord(recordingCanvasRef.current)) {
       recorderRef.current.start(recordingCanvasRef.current)
     }
   }, [])
 
   /**
-   * Enter reveal phase, then stop the recorder 2.5 s later.
+   * Enter reveal phase, then stop the recorder 4.5 s later.
+   * 4.5 s covers the full WinnerCard Phase A animation (crown → name → reaction → amount).
    * Call this immediately when the wheel stops (handleSpinComplete).
    */
   const stopRecordingAfterReveal = useCallback(() => {
@@ -46,7 +50,7 @@ export function useVideoRecorder() {
       setRecordingPhase("done")
       const blob = await recorderRef.current.stop()
       if (blob && blob.size > 0) setRecordedBlob(blob)
-    }, 2500)
+    }, 4500)
   }, [])
 
   /** Clear all recording state. Call when WinnerCard is dismissed. */
