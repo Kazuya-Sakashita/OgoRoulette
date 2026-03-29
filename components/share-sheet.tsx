@@ -38,6 +38,10 @@ interface ShareSheetProps {
   participants?: string[]
   totalBill?: number
   treatAmount?: number
+  /** ISSUE-078: ログインユーザーのプロフィール。初回シェア前の公開名確認に使用 */
+  profile?: { id: string; displayName: string | null; displayNameConfirmedAt: string | null } | null
+  /** ISSUE-078: 確認後に displayNameConfirmedAt を親に伝えるコールバック */
+  onProfileConfirmed?: (confirmedAt: string) => void
 }
 
 type ShareStatus = "idle" | "sharing" | "shared" | "error"
@@ -51,10 +55,16 @@ export function ShareSheet({
   participants,
   totalBill,
   treatAmount,
+  profile,
+  onProfileConfirmed,
 }: ShareSheetProps) {
   const [videoUrl, setVideoUrl]         = useState<string | null>(null)
   const [shareStatus, setShareStatus]   = useState<ShareStatus>("idle")
   const [copied, setCopied]             = useState(false)
+  // ISSUE-078: 初回シェア前の公開名確認
+  const needsConfirm = profile != null && profile.displayNameConfirmedAt === null
+  const [showConfirm, setShowConfirm]   = useState(false)
+  const [pendingAction, setPendingAction] = useState<(() => void) | null>(null)
   const [selectedTemplate, setSelectedTemplate] = useState(SHARE_TEMPLATES[0].id)
   const [isEditingText, setIsEditingText] = useState(false)
   const [customText, setCustomText]     = useState<string | null>(null)
@@ -107,6 +117,33 @@ export function ShareSheet({
     }
   }, [videoUrl])
 
+  /** ISSUE-078: 確認が必要な場合はシートを挟む。不要なら直接実行 */
+  const withConfirm = (action: () => void) => {
+    if (needsConfirm) {
+      setPendingAction(() => action)
+      setShowConfirm(true)
+    } else {
+      action()
+    }
+  }
+
+  /** ISSUE-078: 「この名前でシェア」押下 — confirmed_at を記録してから pending action を実行 */
+  const handleConfirmAndShare = async () => {
+    const now = new Date().toISOString()
+    // fire-and-forget — UI は先に進む
+    fetch("/api/profile", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ displayNameConfirmedAt: now }),
+    }).catch(() => {})
+    onProfileConfirmed?.(now)
+    setShowConfirm(false)
+    pendingAction?.()
+    setPendingAction(null)
+  }
+
+  const handleShareClick = () => withConfirm(handleShare)
+
   const handleShare = async () => {
     setShareStatus("sharing")
     const result: ShareWithFileResult = await shareWithFile(payload, shareText, shareUrl)
@@ -126,8 +163,8 @@ export function ShareSheet({
     downloadVideo(blob, winner)
   }
 
-  const handleShareToX = () => shareToX(shareText, shareUrl)
-  const handleShareToLine = () => shareToLine(shareText, shareUrl)
+  const handleShareToX = () => withConfirm(() => shareToX(shareText, shareUrl))
+  const handleShareToLine = () => withConfirm(() => shareToLine(shareText, shareUrl))
 
   return (
     <AnimatePresence>
@@ -262,7 +299,7 @@ export function ShareSheet({
 
             {/* Primary CTA — SNS Share (video if supported) */}
             <Button
-              onClick={handleShare}
+              onClick={handleShareClick}
               disabled={shareStatus === "sharing"}
               className="w-full h-14 rounded-2xl font-bold text-base text-white mb-3 transition-all hover:opacity-90 active:scale-95"
               style={{
@@ -342,6 +379,51 @@ export function ShareSheet({
           </div>
         </motion.div>
       </motion.div>
+
+      {/* ISSUE-078: 初回シェア前の公開名確認ダイアログ */}
+      {showConfirm && profile && (
+        <motion.div
+          className="absolute inset-0 z-10 flex items-end justify-center"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+        >
+          <div className="absolute inset-0 bg-black/60" onClick={() => setShowConfirm(false)} />
+          <motion.div
+            className="relative w-full max-w-[390px] rounded-t-3xl p-6 border-t border-white/10"
+            style={{ background: "linear-gradient(180deg, #162A3E 0%, #0B1B2B 100%)" }}
+            initial={{ y: 80 }}
+            animate={{ y: 0 }}
+          >
+            <p className="text-xs text-white/50 uppercase tracking-widest mb-2">📢 SNSに公開される名前の確認</p>
+            <p className="text-sm text-white/70 mb-4">
+              シェア時にこの名前が表示されます。よろしいですか？
+            </p>
+            <div className="px-4 py-3 rounded-xl bg-white/8 border border-white/10 mb-5">
+              <p className="text-base font-bold text-white">
+                {profile.displayName?.trim() || ("ユーザー" + profile.id.slice(-4))}
+              </p>
+            </div>
+            <div className="flex gap-3">
+              <Button
+                onClick={() => {
+                  setShowConfirm(false)
+                  setPendingAction(null)
+                }}
+                variant="outline"
+                className="flex-1 h-11 rounded-xl border-white/15 bg-white/5 text-white text-sm"
+              >
+                キャンセル
+              </Button>
+              <Button
+                onClick={handleConfirmAndShare}
+                className="flex-1 h-11 rounded-xl bg-gradient-accent text-primary-foreground font-bold text-sm"
+              >
+                この名前でシェア
+              </Button>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
     </AnimatePresence>
   )
 }

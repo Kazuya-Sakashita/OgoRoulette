@@ -5,7 +5,7 @@ import { RouletteWheel } from "@/components/roulette-wheel"
 import { Confetti } from "@/components/confetti"
 import { WinnerCard } from "@/components/winner-card"
 import { CountdownOverlay } from "@/components/countdown-overlay"
-import { QrCode, Sparkles, Plus, X as XIcon, History, ChevronDown, ChevronUp, Calculator, LogOut, Check } from "lucide-react"
+import { QrCode, Sparkles, Plus, X as XIcon, History, ChevronDown, ChevronUp, Calculator, LogOut, Check, UserCircle } from "lucide-react"
 import { useState, useEffect, useRef } from "react"
 import Link from "next/link"
 import Image from "next/image"
@@ -26,6 +26,7 @@ import { useGroups } from "@/hooks/use-groups"
 import { GroupList } from "@/components/group-list"
 import { RecordingCanvas } from "@/components/recording-canvas"
 import { ShareSheet } from "@/components/share-sheet"
+import { ProfileSheet } from "@/components/profile-sheet"
 import { useVideoRecorder } from "@/lib/use-video-recorder"
 import { getDisplayName } from "@/lib/display-name"
 
@@ -40,7 +41,8 @@ export default function HomePage() {
   const [countdown, setCountdown] = useState<number | null>(null)
   const countdownTimersRef = useRef<ReturnType<typeof setTimeout>[]>([])
   const [user, setUser] = useState<User | null>(null)
-  const [profile, setProfile] = useState<{ id: string; displayName: string | null } | null>(null)
+  const [profile, setProfile] = useState<{ id: string; displayName: string | null; displayNameConfirmedAt: string | null } | null>(null)
+  const [showProfileSheet, setShowProfileSheet] = useState(false)
   const router = useRouter()
 
   const { groups: savedGroups, isLoaded: groupsLoaded, selectedGroupId, selectGroup, saveGroup, updateGroup, deleteGroup } = useGroups(user)
@@ -100,10 +102,10 @@ export default function HomePage() {
       if (user) {
         const { data } = await supabase
           .from("profiles")
-          .select("id, display_name")
+          .select("id, display_name, display_name_confirmed_at")
           .eq("id", user.id)
           .single()
-        if (data) setProfile({ id: data.id, displayName: data.display_name })
+        if (data) setProfile({ id: data.id, displayName: data.display_name, displayNameConfirmedAt: data.display_name_confirmed_at })
       }
     }
     getUser()
@@ -361,10 +363,25 @@ export default function HomePage() {
           blob={recordedBlob}
           winner={winner.name}
           winnerColor={SEGMENT_COLORS[winner.index % SEGMENT_COLORS.length]}
+          profile={profile}
+          onProfileConfirmed={(confirmedAt) =>
+            setProfile((p) => p ? { ...p, displayNameConfirmedAt: confirmedAt } : p)
+          }
           onClose={() => {
             setShowShareSheet(false)
           }}
           onRespin={closeWinnerCard}
+        />
+      )}
+
+      {/* ISSUE-079: プロフィール編集シート */}
+      {showProfileSheet && profile && (
+        <ProfileSheet
+          profile={profile}
+          onClose={() => setShowProfileSheet(false)}
+          onSaved={(newDisplayName) =>
+            setProfile((p) => p ? { ...p, displayName: newDisplayName } : p)
+          }
         />
       )}
 
@@ -538,6 +555,17 @@ export default function HomePage() {
                 <Link href="/history">
                   <History className="w-5 h-5" />
                 </Link>
+              </Button>
+            )}
+            {user && profile && (
+              <Button
+                onClick={() => setShowProfileSheet(true)}
+                variant="ghost"
+                size="icon"
+                className="text-muted-foreground hover:text-foreground"
+                title="プロフィール編集"
+              >
+                <UserCircle className="w-5 h-5" />
               </Button>
             )}
             {user ? (

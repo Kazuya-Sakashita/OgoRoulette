@@ -69,14 +69,20 @@ export async function PATCH(request: Request) {
     }
 
     const body = await request.json()
-    const { name, avatarUrl } = body
+    const { name, avatarUrl, displayName, displayNameConfirmedAt } = body
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const data: Record<string, any> = {}
+    if (name !== undefined) data.name = name
+    if (avatarUrl !== undefined) data.avatarUrl = avatarUrl
+    // ISSUE-079: display_name の更新。空文字は NULL として扱い fallback 名に戻す
+    if (displayName !== undefined) data.displayName = displayName?.trim() || null
+    // ISSUE-078: 初回シェア確認済みフラグ
+    if (displayNameConfirmedAt !== undefined) data.displayNameConfirmedAt = displayNameConfirmedAt
 
     const profile = await prisma.profile.update({
       where: { id: user.id },
-      data: {
-        name,
-        avatarUrl,
-      }
+      data,
     })
 
     return NextResponse.json(profile)
