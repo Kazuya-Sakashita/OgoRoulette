@@ -375,12 +375,12 @@ export default function HomePage() {
       )}
 
       {/* ISSUE-079: プロフィール編集シート */}
-      {showProfileSheet && profile && (
+      {showProfileSheet && user && (
         <ProfileSheet
-          profile={profile}
+          profile={profile ?? { id: user.id, displayName: null }}
           onClose={() => setShowProfileSheet(false)}
           onSaved={(newDisplayName) =>
-            setProfile((p) => p ? { ...p, displayName: newDisplayName } : p)
+            setProfile((p) => p ? { ...p, displayName: newDisplayName } : { id: user.id, displayName: newDisplayName, displayNameConfirmedAt: null })
           }
         />
       )}
@@ -557,7 +557,7 @@ export default function HomePage() {
                 </Link>
               </Button>
             )}
-            {user && profile && (
+            {user && (
               <Button
                 onClick={() => setShowProfileSheet(true)}
                 variant="ghost"
