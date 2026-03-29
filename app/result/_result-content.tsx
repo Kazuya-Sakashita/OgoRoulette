@@ -223,20 +223,32 @@ function ResultInner() {
           </Button>
         </div>
 
+        {/* Conversion CTA for new visitors */}
+        <div className="rounded-3xl bg-linear-to-br from-orange-500 via-pink-500 to-purple-500 p-px">
+          <div className="bg-white rounded-[23px] px-6 py-5 text-center">
+            <p className="text-base font-bold text-gray-900 mb-1">
+              あなたも試してみよう 🎰
+            </p>
+            <p className="text-sm text-gray-500 mb-4">
+              「誰が奢る？」をルーレットで即決。無料・登録30秒。
+            </p>
+            <Button
+              asChild
+              className="w-full h-12 rounded-2xl bg-linear-to-r from-orange-500 to-pink-500 hover:opacity-90 text-white font-semibold text-base shadow-md shadow-orange-500/30 transition-all active:scale-[0.98]"
+            >
+              <Link href="/home">OgoRouletteを無料で試す</Link>
+            </Button>
+          </div>
+        </div>
+
         {/* Action Buttons */}
-        <div className="space-y-3 pt-4">
-          <Button
-            asChild
-            className="w-full h-14 rounded-2xl bg-gradient-to-r from-orange-500 to-pink-500 hover:opacity-90 text-white font-semibold text-lg shadow-lg shadow-orange-500/25 transition-all active:scale-[0.98]"
-          >
-            <Link href="/">新しいルーレット</Link>
-          </Button>
+        <div className="space-y-3">
           <Button
             asChild
             variant="outline"
-            className="w-full h-14 rounded-2xl border-gray-200 bg-white hover:bg-gray-50 text-gray-700 font-semibold text-lg"
+            className="w-full h-12 rounded-2xl border-gray-200 bg-white hover:bg-gray-50 text-gray-600 font-medium"
           >
-            <Link href="/history">履歴を見る</Link>
+            <Link href="/history">過去のルーレットを見る</Link>
           </Button>
         </div>
       </div>
