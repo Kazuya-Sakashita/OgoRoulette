@@ -3,12 +3,12 @@
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import Image from "next/image"
-import { useState } from "react"
+import { useState, Suspense } from "react"
 import { ArrowLeft, QrCode } from "lucide-react"
 import { useSearchParams } from "next/navigation"
 import { startSupabaseOAuth, startLineAuth, type SupabaseOAuthProvider } from "@/lib/auth"
 
-export default function LoginPage() {
+function LoginContent() {
   const [isLoading, setIsLoading] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const searchParams = useSearchParams()
@@ -169,5 +169,17 @@ export default function LoginPage() {
         </p>
       </div>
     </main>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <main className="min-h-screen bg-background flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+      </main>
+    }>
+      <LoginContent />
+    </Suspense>
   )
 }

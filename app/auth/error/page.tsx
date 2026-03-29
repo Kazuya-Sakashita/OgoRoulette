@@ -4,8 +4,9 @@ import { Button } from "@/components/ui/button"
 import { Gift, AlertCircle, Clock } from "lucide-react"
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
+import { Suspense } from "react"
 
-export default function AuthErrorPage() {
+function AuthErrorContent() {
   const searchParams = useSearchParams()
   const reason = searchParams.get("reason")
   const retryAfterStr = searchParams.get("retry_after")
@@ -92,5 +93,17 @@ export default function AuthErrorPage() {
         </div>
       </div>
     </main>
+  )
+}
+
+export default function AuthErrorPage() {
+  return (
+    <Suspense fallback={
+      <main className="min-h-screen bg-background flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+      </main>
+    }>
+      <AuthErrorContent />
+    </Suspense>
   )
 }
