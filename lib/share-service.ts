@@ -101,8 +101,19 @@ export function trimForX(text: string): string {
   return text.slice(0, budget - 1) + "…"
 }
 
-export function shareToX(text: string, url: string): void {
+/**
+ * Share to X (Twitter).
+ *
+ * ISSUE-097: If a blob is provided, auto-download it first so the user can
+ * manually attach the video/image to the tweet. X's web intent doesn't support
+ * file uploads, so this is the best UX we can offer on desktop/Android.
+ */
+export function shareToX(text: string, url: string, blob?: Blob | null, winner?: string): void {
   const trimmed = trimForX(text)
+  // ISSUE-097: Auto-download the recording so the user can attach it to the tweet
+  if (blob && blob.size > 0) {
+    downloadVideo(blob, winner ?? "share")
+  }
   // ISSUE-083: window.open(_blank) はモバイル Chrome で about:blank タブを残す。
   // location.href で同一タブ遷移にすることでユーザーが「戻る」で元ページへ戻れる。
   window.location.href =

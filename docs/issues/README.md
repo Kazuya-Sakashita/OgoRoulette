@@ -303,7 +303,15 @@
 |----|--------|------|----------|
 | [ISSUE-079](./issue-079-profile-edit-display-name.md) | プロフィール編集導線の追加（display_name 変更） | ログインユーザーが公開名をいつでも変更できる UI を追加 | 🔴 未対応 |
 
-| **合計** | **83** |
+## 🚀 バズ特化フェーズ1（2026-03-30）
+
+| ID | タイトル | 概要 | ステータス |
+|----|--------|------|----------|
+| [ISSUE-095](./issue-095-recording-stability-fallback.md) | 録画安定化 — MediaRecorder 失敗時に静止画フォールバック | iOS Safari で録画が失敗した際、recordingCanvas から PNG を取得してシェア可能に | ✅ 完了 |
+| [ISSUE-096](./issue-096-landing-page-demo-spin.md) | ランディングページにデモルーレットを追加 | ログイン前にデモ体験 → コンバージョン向上 | ✅ 完了 |
+| [ISSUE-097](./issue-097-x-share-save-flow-ogp-enhancement.md) | X シェア「保存→貼り付け」フロー改善 + OGP 画像強化 | blob 自動ダウンロード後 X Intent 起動 + 背景グラデーション強化 | ✅ 完了 |
+
+| **合計** | **97** |
 
 ---
 

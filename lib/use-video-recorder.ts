@@ -49,7 +49,17 @@ export function useVideoRecorder() {
     revealTimerRef.current = setTimeout(async () => {
       setRecordingPhase("done")
       const blob = await recorderRef.current.stop()
-      if (blob && blob.size > 0) setRecordedBlob(blob)
+      if (blob && blob.size > 0) {
+        setRecordedBlob(blob)
+      } else {
+        // ISSUE-095: MediaRecorder returned nothing (common on iOS Safari).
+        // Fall back to a static PNG captured from the recording canvas.
+        const canvas = recordingCanvasRef.current
+        if (canvas) {
+          const png = await new Promise<Blob | null>((res) => canvas.toBlob(res, "image/png"))
+          if (png && png.size > 0) setRecordedBlob(png)
+        }
+      }
     }, 4500)
   }, [])
 

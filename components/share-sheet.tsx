@@ -163,7 +163,8 @@ export function ShareSheet({
     downloadVideo(blob, winner)
   }
 
-  const handleShareToX = () => withConfirm(() => shareToX(shareText, shareUrl))
+  // ISSUE-097: Pass blob so shareToX auto-downloads it before opening X intent
+  const handleShareToX = () => withConfirm(() => shareToX(shareText, shareUrl, blob, winner))
   const handleShareToLine = () => withConfirm(() => shareToLine(shareText, shareUrl))
 
   return (

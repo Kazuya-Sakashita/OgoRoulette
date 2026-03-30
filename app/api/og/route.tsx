@@ -70,7 +70,8 @@ export async function GET(request: NextRequest) {
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          background: "#0B1B2B",
+          // ISSUE-097: Use winner color for a more dramatic, brand-consistent gradient
+          background: `linear-gradient(150deg, ${color}33 0%, #080F1C 40%, #080F1C 60%, ${color}26 100%)`,
           position: "relative",
           overflow: "hidden",
           fontFamily,
@@ -81,7 +82,7 @@ export async function GET(request: NextRequest) {
           style={{
             position: "absolute",
             inset: 0,
-            background: `radial-gradient(ellipse at center, ${color}44 0%, ${color}18 38%, transparent 65%)`,
+            background: `radial-gradient(ellipse at 50% 55%, ${color}55 0%, ${color}28 42%, transparent 68%)`,
           }}
         />
 
