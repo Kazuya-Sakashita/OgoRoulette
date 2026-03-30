@@ -23,6 +23,8 @@ export function useVideoRecorder() {
   const [recordingPhase, setRecordingPhase] = useState<RecordingPhase>("idle")
   const [recordedBlob, setRecordedBlob]     = useState<Blob | null>(null)
   const [showShareSheet, setShowShareSheet] = useState(false)
+  // ISSUE-103: true only when MediaRecorder is actually running (false on iOS where captureStream is unsupported)
+  const [isRecording, setIsRecording]       = useState(false)
 
   const recordingCanvasRef = useRef<HTMLCanvasElement>(null)
   const wheelRotationRef   = useRef<number>(0)
@@ -35,7 +37,8 @@ export function useVideoRecorder() {
    */
   const startRecording = useCallback(() => {
     if (recordingCanvasRef.current && canRecord(recordingCanvasRef.current)) {
-      recorderRef.current.start(recordingCanvasRef.current)
+      const ok = recorderRef.current.start(recordingCanvasRef.current)
+      if (ok) setIsRecording(true)
     }
   }, [])
 
@@ -48,6 +51,7 @@ export function useVideoRecorder() {
     setRecordingPhase("reveal")
     clearTimeout(revealTimerRef.current ?? undefined)
     revealTimerRef.current = setTimeout(async () => {  // ISSUE-102: REVEAL_RECORD_DURATION_MS
+      setIsRecording(false)
       setRecordingPhase("done")
       const blob = await recorderRef.current.stop()
       if (blob && blob.size > 0) {
@@ -66,6 +70,7 @@ export function useVideoRecorder() {
 
   /** Clear all recording state. Call when WinnerCard is dismissed. */
   const reset = useCallback(() => {
+    setIsRecording(false)
     setRecordedBlob(null)
     setShowShareSheet(false)
     setRecordingPhase("idle")
@@ -87,5 +92,6 @@ export function useVideoRecorder() {
     startRecording,
     stopRecordingAfterReveal,
     reset,
+    isRecording,
   }
 }

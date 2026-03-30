@@ -61,6 +61,8 @@ export function ShareSheet({
   const [videoUrl, setVideoUrl]         = useState<string | null>(null)
   const [shareStatus, setShareStatus]   = useState<ShareStatus>("idle")
   const [copied, setCopied]             = useState(false)
+  // ISSUE-103: true if the blob is an image (iOS PNG fallback), false if video
+  const isImageBlob = blob.type.startsWith("image/")
   // ISSUE-078: 初回シェア前の公開名確認
   const needsConfirm = profile != null && profile.displayNameConfirmedAt === null
   const [showConfirm, setShowConfirm]   = useState(false)
@@ -207,13 +209,13 @@ export function ShareSheet({
           <div className="px-5 pb-8 pt-3">
             {/* Header */}
             <p className="text-xs text-muted-foreground uppercase tracking-widest mb-1">
-              動画を保存・シェア
+              {isImageBlob ? "画像を保存・シェア" : "動画を保存・シェア"}
             </p>
             <h2 className="text-xl font-black text-white mb-4">
               <span style={{ color: winnerColor }}>{winner}</span>さんが奢りに決定！
             </h2>
 
-            {/* Video preview */}
+            {/* Video / image preview */}
             {videoUrl && (
               <div
                 className="mx-auto rounded-2xl overflow-hidden mb-4"
@@ -224,15 +226,20 @@ export function ShareSheet({
                   border: `2px solid ${winnerColor}40`,
                 }}
               >
-                <video
-                  ref={videoRef}
-                  src={videoUrl}
-                  autoPlay
-                  muted
-                  loop
-                  playsInline
-                  className="w-full h-full object-cover"
-                />
+                {/* ISSUE-103: show <img> for iOS PNG fallback, <video> for recorded video */}
+                {isImageBlob ? (
+                  <img src={videoUrl} className="w-full h-full object-cover" alt="シェア画像" />
+                ) : (
+                  <video
+                    ref={videoRef}
+                    src={videoUrl}
+                    autoPlay
+                    muted
+                    loop
+                    playsInline
+                    className="w-full h-full object-cover"
+                  />
+                )}
               </div>
             )}
 
@@ -325,7 +332,7 @@ export function ShareSheet({
               ) : (
                 <span className="flex items-center gap-2">
                   <Share2 className="w-5 h-5" />
-                  動画をシェア
+                  {isImageBlob ? "画像をシェア 📸" : "動画をシェア"}
                 </span>
               )}
             </Button>

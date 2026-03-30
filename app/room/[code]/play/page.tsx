@@ -137,6 +137,7 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
     startRecording,
     stopRecordingAfterReveal,
     reset: resetRecording,
+    isRecording,
   } = useVideoRecorder()
 
   // Group save — hook 呼び出しはここで固定（Hook の呼び出し順を安定させるため）
@@ -717,8 +718,8 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
         canvasRef={recordingCanvasRef}
       />
 
-      {/* REC indicator — visible while recording is active */}
-      {(recordingPhase === "countdown" || recordingPhase === "spinning" || recordingPhase === "reveal") && (
+      {/* REC indicator — visible only when MediaRecorder is actually running (ISSUE-103: hidden on iOS) */}
+      {isRecording && (
         <div className="fixed top-4 right-4 z-30 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-red-500/90 text-white text-xs font-bold animate-pulse pointer-events-none">
           ● REC
         </div>

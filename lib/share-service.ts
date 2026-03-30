@@ -142,7 +142,11 @@ export async function shareWithFile(
   const title = `${payload.winner}さんが今日の奢り担当！`
 
   if (payload.videoBlob) {
-    const ext = payload.videoBlob.type.includes("mp4") ? "mp4" : "webm"
+    // ISSUE-103: PNG fallback on iOS has type="image/png" — handle image/* separately
+    const blobType = payload.videoBlob.type
+    const ext = blobType.startsWith("image/")
+      ? (blobType.split("/")[1] ?? "png")
+      : blobType.includes("mp4") ? "mp4" : "webm"
     const file = new File([payload.videoBlob], `ogoroulette_${payload.winner}.${ext}`, {
       type: payload.videoBlob.type,
     })
@@ -172,7 +176,10 @@ export async function shareWithFile(
 }
 
 export function downloadVideo(blob: Blob, winner: string): void {
-  const ext = blob.type.includes("mp4") ? "mp4" : "webm"
+  // ISSUE-103: PNG fallback on iOS has type="image/png"
+  const ext = blob.type.startsWith("image/")
+    ? (blob.type.split("/")[1] ?? "png")
+    : blob.type.includes("mp4") ? "mp4" : "webm"
   const url = URL.createObjectURL(blob)
   const a = document.createElement("a")
   a.href = url

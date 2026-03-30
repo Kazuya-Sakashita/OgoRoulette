@@ -78,6 +78,7 @@ export default function HomePage() {
     startRecording,
     stopRecordingAfterReveal,
     reset: resetRecording,
+    isRecording,
   } = useVideoRecorder()
   const winnerIndexForColor = winner ? winner.index : 0
 
@@ -333,8 +334,8 @@ export default function HomePage() {
         winnerColor={winner ? SEGMENT_COLORS[winner.index % SEGMENT_COLORS.length] : undefined}
       />
 
-      {/* REC indicator in main UI — visible while recording is active */}
-      {(recordingPhase === "countdown" || recordingPhase === "spinning" || recordingPhase === "reveal") && (
+      {/* REC indicator — visible only when MediaRecorder is actually running (ISSUE-103: hidden on iOS) */}
+      {isRecording && (
         <div className="fixed top-4 right-4 z-30 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-red-500/90 text-white text-xs font-bold animate-pulse pointer-events-none">
           ● REC
         </div>
