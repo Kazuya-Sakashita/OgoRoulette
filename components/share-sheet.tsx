@@ -165,8 +165,8 @@ export function ShareSheet({
     downloadVideo(blob, winner)
   }
 
-  // ISSUE-097: Pass blob so shareToX auto-downloads it before opening X intent
-  const handleShareToX = () => withConfirm(() => shareToX(shareText, shareUrl, blob, winner))
+  // X intent はテキスト+URLのみ。動画の自動ダウンロードは「保存」ボタンの責務に分離。
+  const handleShareToX = () => withConfirm(() => shareToX(shareText, shareUrl))
   const handleShareToLine = () => withConfirm(() => shareToLine(shareText, shareUrl))
 
   return (
@@ -337,7 +337,11 @@ export function ShareSheet({
               )}
             </Button>
 
-            {/* Platform-specific buttons (text + URL only) */}
+            {/* Platform-specific buttons */}
+            <p className="text-xs text-white/35 mb-2">
+              {isImageBlob ? "画像を保存してからXに手動で添付できます" : "動画を保存してからXに手動で添付できます"}
+              <span className="text-white/25"> · X・LINEはテキストのみ</span>
+            </p>
             <div className="flex gap-2 mb-4">
               {/* Download */}
               <Button
