@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { createClient } from "@/lib/supabase/server"
+import type { Prisma } from "@prisma/client"
 
 // GET /api/profile - Get current user's profile with stats
 export async function GET() {
@@ -71,22 +72,26 @@ export async function PATCH(request: Request) {
     const body = await request.json()
     const { name, avatarUrl, displayName, displayNameConfirmedAt } = body
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const data: Record<string, any> = {}
-    if (name !== undefined) data.name = name
-    if (avatarUrl !== undefined) data.avatarUrl = avatarUrl
+    // ISSUE-107: Prisma 型で update フィールドを明示し、
+    // stale クライアント時のサイレント失敗をコンパイルエラーで検知できるようにする
+    const updateData: Prisma.ProfileUpdateInput = {}
+    if (name !== undefined) updateData.name = name
+    if (avatarUrl !== undefined) updateData.avatarUrl = avatarUrl
     // ISSUE-079: display_name の更新。空文字は NULL として扱い fallback 名に戻す
-    if (displayName !== undefined) data.displayName = displayName?.trim() || null
+    if (displayName !== undefined) updateData.displayName = displayName?.trim() || null
     // ISSUE-078: 初回シェア確認済みフラグ
-    if (displayNameConfirmedAt !== undefined) data.displayNameConfirmedAt = displayNameConfirmedAt
+    if (displayNameConfirmedAt !== undefined) updateData.displayNameConfirmedAt = displayNameConfirmedAt
 
     const profile = await prisma.profile.upsert({
       where: { id: user.id },
-      update: data,
+      update: updateData,
       create: {
         id: user.id,
         email: user.email ?? null,
-        ...data,
+        name: typeof name === "string" ? name : undefined,
+        avatarUrl: typeof avatarUrl === "string" ? avatarUrl : undefined,
+        displayName: typeof displayName === "string" ? (displayName.trim() || null) : undefined,
+        displayNameConfirmedAt: displayNameConfirmedAt ?? undefined,
       },
     })
 
