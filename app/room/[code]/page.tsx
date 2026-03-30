@@ -81,7 +81,7 @@ export default function RoomPage({ params }: { params: Promise<{ code: string }>
       )
       if (newMembers.length > 0 && prevMemberIdsRef.current.size > 0) {
         const name = newMembers[0].nickname ||
-          (newMembers[0].profile ? (newMembers[0].profile.displayName || newMembers[0].profile.name || "ゲスト") : "ゲスト")
+          (newMembers[0].profile ? getDisplayName(newMembers[0].profile) : "ゲスト")
         setJoinToast(`${name}さんが参加しました 🎉`)
         setTimeout(() => setJoinToast(null), 3000)
       }
