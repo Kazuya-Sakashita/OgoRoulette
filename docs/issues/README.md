@@ -321,7 +321,15 @@
 | [ISSUE-101](./issue-101-pwa-install-prompt.md) | PWA インストールプロンプト | beforeinstallprompt キャプチャ + ホーム追加バナー | ✅ 完了 |
 | [ISSUE-102](./issue-102-video-duration-optimization.md) | 動画尺最適化 | REVEAL_RECORD_DURATION_MS 定数抽出（機能変化なし） | ✅ 完了 |
 
-| **合計** | **102** |
+## 🚨 iPhone 動画シェア問題（2026-03-30）
+
+| ID | タイトル | 概要 | ステータス |
+|----|--------|------|----------|
+| [ISSUE-103](./issue-103-fix-ios-png-fallback-mime-bug.md) | iPhone PNG fallback MIME/拡張子バグ修正 | shareWithFile/downloadVideo/ShareSheet の PNG 対応 | 🔴 未対応 |
+| [ISSUE-104](./issue-104-ios-share-ux-improvement.md) | iOS 向けシェア UX 明確化 | canRecordVideo 公開・ボタンテキスト変更・REC 非表示 | 🔴 未対応 |
+| [ISSUE-105](./issue-105-gif-video-generation-ios.md) | iOS でも動画/GIF でシェアできるようにする | GIF生成 PoC / PNG静止画強化 / サーバー生成検討 | 🔴 未対応 |
+
+| **合計** | **105** |
 
 ---
 
