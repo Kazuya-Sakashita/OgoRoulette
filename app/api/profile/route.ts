@@ -72,15 +72,26 @@ export async function PATCH(request: Request) {
     const body = await request.json()
     const { name, avatarUrl, displayName, displayNameConfirmedAt } = body
 
+    // サーバーサイドバリデーション
+    if (displayName !== undefined && displayName !== null) {
+      if (typeof displayName !== "string") {
+        return NextResponse.json({ error: "displayName must be a string" }, { status: 400 })
+      }
+      if (displayName.trim().length > 20) {
+        return NextResponse.json({ error: "displayName must be 20 characters or less" }, { status: 400 })
+      }
+    }
+
     // ISSUE-107: Prisma 型で update フィールドを明示し、
     // stale クライアント時のサイレント失敗をコンパイルエラーで検知できるようにする
+    const resolvedDisplayName = typeof displayName === "string" ? (displayName.trim() || null) : undefined
     const updateData: Prisma.ProfileUpdateInput = {}
-    if (name !== undefined) updateData.name = name
-    if (avatarUrl !== undefined) updateData.avatarUrl = avatarUrl
+    if (typeof name === "string") updateData.name = name
+    if (typeof avatarUrl === "string") updateData.avatarUrl = avatarUrl
     // ISSUE-079: display_name の更新。空文字は NULL として扱い fallback 名に戻す
-    if (displayName !== undefined) updateData.displayName = displayName?.trim() || null
+    if (resolvedDisplayName !== undefined) updateData.displayName = resolvedDisplayName
     // ISSUE-078: 初回シェア確認済みフラグ
-    if (displayNameConfirmedAt !== undefined) updateData.displayNameConfirmedAt = displayNameConfirmedAt
+    if (typeof displayNameConfirmedAt === "string") updateData.displayNameConfirmedAt = displayNameConfirmedAt
 
     const profile = await prisma.profile.upsert({
       where: { id: user.id },
@@ -90,8 +101,8 @@ export async function PATCH(request: Request) {
         email: user.email ?? null,
         name: typeof name === "string" ? name : undefined,
         avatarUrl: typeof avatarUrl === "string" ? avatarUrl : undefined,
-        displayName: typeof displayName === "string" ? (displayName.trim() || null) : undefined,
-        displayNameConfirmedAt: displayNameConfirmedAt ?? undefined,
+        displayName: resolvedDisplayName,
+        displayNameConfirmedAt: typeof displayNameConfirmedAt === "string" ? displayNameConfirmedAt : undefined,
       },
     })
 
