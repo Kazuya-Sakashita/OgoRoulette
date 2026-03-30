@@ -1,7 +1,7 @@
 # ISSUE-079: プロフィール編集導線の追加（display_name 変更）
 
 ## ステータス
-🔴 未対応
+✅ 完了（feat: ISSUE-078〜079 + fix: ISSUE-106）
 
 ## 優先度
 Medium
