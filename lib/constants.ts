@@ -1,3 +1,8 @@
+// ISSUE-102: 録画尺の定数化 — 変更時はここだけ修正する
+// reveal アニメーション（crown → name → reaction → amount）は約3秒で完了するが、
+// 4.5秒のバッファを持たせて金額テキストが画面に残る時間を確保する
+export const REVEAL_RECORD_DURATION_MS = 4500
+
 // スピン同期定数
 // SPIN_COUNTDOWN_MS: SPIN押下からアニメーション開始までの猶予時間
 // この時間でオーナーはAPIレスポンスを待ち、メンバーはポーリングで同期できる

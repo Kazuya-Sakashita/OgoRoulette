@@ -311,7 +311,17 @@
 | [ISSUE-096](./issue-096-landing-page-demo-spin.md) | ランディングページにデモルーレットを追加 | ログイン前にデモ体験 → コンバージョン向上 | ✅ 完了 |
 | [ISSUE-097](./issue-097-x-share-save-flow-ogp-enhancement.md) | X シェア「保存→貼り付け」フロー改善 + OGP 画像強化 | blob 自動ダウンロード後 X Intent 起動 + 背景グラデーション強化 | ✅ 完了 |
 
-| **合計** | **97** |
+## 🚀 バズ特化フェーズ2（2026-03-30）
+
+| ID | タイトル | 概要 | ステータス |
+|----|--------|------|----------|
+| [ISSUE-098](./issue-098-near-miss-effect.md) | ニアミス演出 | スピン停止直前に隣セグメントを280ms点灯 → 「惜しかった！」感 | ✅ 完了 |
+| ISSUE-099 | 同期バイブレーション | `vibrate(HapticPattern.result)` は play/page.tsx:614,654 で実装済み | ✅ 完了（既存） |
+| [ISSUE-100](./issue-100-live-waiting-room.md) | ライブ待機室 | Supabase Realtime でメンバー参加を即検出 + 参加トースト | ✅ 完了 |
+| [ISSUE-101](./issue-101-pwa-install-prompt.md) | PWA インストールプロンプト | beforeinstallprompt キャプチャ + ホーム追加バナー | ✅ 完了 |
+| [ISSUE-102](./issue-102-video-duration-optimization.md) | 動画尺最適化 | REVEAL_RECORD_DURATION_MS 定数抽出（機能変化なし） | ✅ 完了 |
+
+| **合計** | **102** |
 
 ---
 

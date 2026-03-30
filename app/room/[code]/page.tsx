@@ -50,6 +50,9 @@ export default function RoomPage({ params }: { params: Promise<{ code: string }>
   const [copied, setCopied] = useState(false)
   const [showQRFull, setShowQRFull] = useState(false)
   const [isOwner, setIsOwner] = useState(false)
+  // ISSUE-100: join toast
+  const [joinToast, setJoinToast] = useState<string | null>(null)
+  const prevMemberIdsRef = useRef<Set<string>>(new Set())
   // Stops polling once room is COMPLETED (ref avoids stale closure in setInterval)
   const isCompletedRef = useRef(false)
 
@@ -72,6 +75,18 @@ export default function RoomPage({ params }: { params: Promise<{ code: string }>
       }
 
       isCompletedRef.current = false
+      // ISSUE-100: Detect newly joined members and show a toast
+      const newMembers = (data.members as Member[]).filter(
+        (m) => !prevMemberIdsRef.current.has(m.id)
+      )
+      if (newMembers.length > 0 && prevMemberIdsRef.current.size > 0) {
+        const name = newMembers[0].nickname ||
+          (newMembers[0].profile ? (newMembers[0].profile.displayName || newMembers[0].profile.name || "ゲスト") : "ゲスト")
+        setJoinToast(`${name}さんが参加しました 🎉`)
+        setTimeout(() => setJoinToast(null), 3000)
+      }
+      prevMemberIdsRef.current = new Set((data.members as Member[]).map((m: Member) => m.id))
+
       // Skip re-render when key fields are unchanged (prevents QR image from re-fetching)
       setRoom(prev => {
         if (prev && prev.status === data.status && prev._count.members === data._count.members) return prev
@@ -84,22 +99,41 @@ export default function RoomPage({ params }: { params: Promise<{ code: string }>
     }
   }
 
-  // Poll for updates every 3 seconds; stops once room is COMPLETED.
-  // Uses recursive setTimeout instead of setInterval so each request waits for the previous to complete,
-  // preventing concurrent overlapping requests when the API response takes > 3 s.
+  // ISSUE-100: Supabase Realtime + polling fallback (same pattern as play/page.tsx)
+  // Realtime fires instantly when members join; polling is the safety net.
   useEffect(() => {
     let timeoutId: ReturnType<typeof setTimeout> | null = null
     let cancelled = false
 
+    fetchRoom()
+
+    // Realtime: Room テーブルの変更を購読（メンバー参加も Room._count に反映される）
+    const supabase = createClient()
+    const channel = supabase
+      .channel(`room-lobby:${code}`)
+      .on(
+        "postgres_changes" as Parameters<ReturnType<typeof supabase.channel>["on"]>[0],
+        {
+          event: "*",
+          schema: "public",
+          table: "Room",
+          filter: `invite_code=eq.${code.toUpperCase()}`,
+        },
+        () => { fetchRoom() }
+      )
+      .subscribe()
+
+    // Fallback polling: 5 秒ごと（Realtime が機能していない場合の安全網）
     const poll = async () => {
       await fetchRoom()
-      if (!cancelled && !isCompletedRef.current) timeoutId = setTimeout(poll, 3000)
+      if (!cancelled && !isCompletedRef.current) timeoutId = setTimeout(poll, 5000)
     }
+    timeoutId = setTimeout(poll, 5000)
 
-    poll()
     return () => {
       cancelled = true
       if (timeoutId !== null) clearTimeout(timeoutId)
+      supabase.removeChannel(channel)
     }
   }, [code]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -210,6 +244,13 @@ export default function RoomPage({ params }: { params: Promise<{ code: string }>
 
   return (
     <main className="min-h-screen bg-background">
+      {/* ISSUE-100: Join toast — shown when a new member arrives */}
+      {joinToast && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl bg-accent text-accent-foreground text-sm font-semibold shadow-xl animate-in fade-in slide-in-from-top-2 duration-300">
+          {joinToast}
+        </div>
+      )}
+
       {/* Full Screen QR Modal */}
       {showQRFull && (
         <div 

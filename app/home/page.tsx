@@ -29,6 +29,7 @@ import { ShareSheet } from "@/components/share-sheet"
 import { ProfileSheet } from "@/components/profile-sheet"
 import { useVideoRecorder } from "@/lib/use-video-recorder"
 import { getDisplayName } from "@/lib/display-name"
+import { usePWAInstall } from "@/lib/use-pwa-install"
 
 export default function HomePage() {
   const [isSpinning, setIsSpinning] = useState(false)
@@ -46,6 +47,8 @@ export default function HomePage() {
   const router = useRouter()
 
   const { groups: savedGroups, isLoaded: groupsLoaded, selectedGroupId, selectGroup, saveGroup, updateGroup, deleteGroup } = useGroups(user)
+  // ISSUE-101: PWA install prompt — shows "ホーム画面に追加" banner on supported browsers
+  const { canInstall, promptInstall } = usePWAInstall()
   const [createRoomLoading, setCreateRoomLoading] = useState(false)
   const [createRoomError, setCreateRoomError] = useState<string | null>(null)
   const [showSaveInput, setShowSaveInput] = useState(false)
@@ -924,6 +927,20 @@ export default function HomePage() {
           </p>
         </footer>
       </div>
+
+      {/* ISSUE-101: PWA install prompt — subtle fixed banner at the bottom */}
+      {canInstall && (
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-5 py-3 rounded-2xl bg-secondary border border-white/10 shadow-xl text-sm">
+          <span className="text-foreground font-medium">📱 ホーム画面に追加</span>
+          <button
+            onClick={promptInstall}
+            className="px-3 py-1.5 rounded-xl text-xs font-semibold text-primary-foreground"
+            style={{ background: 'linear-gradient(to right, #F97316, #EC4899)' }}
+          >
+            追加する
+          </button>
+        </div>
+      )}
     </main>
   )
 }

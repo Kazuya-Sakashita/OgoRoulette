@@ -118,9 +118,15 @@ export function RouletteWheel({
           }).then(() => {
             spinActiveRef.current = false
             setIsSlowingDown(false)
-            setWinnerIndex(resolvedIdx)
             setGlowIntensity(0.35)
-            onSpinCompleteRef.current?.(snapshotParticipants[resolvedIdx], resolvedIdx)
+            // ISSUE-098: ニアミス演出 — 本当の当選者の1つ前のセグメントを
+            // 280ms だけハイライトして「惜しかった！」感を演出する
+            const neighborIdx = (resolvedIdx - 1 + snapshotParticipants.length) % snapshotParticipants.length
+            setWinnerIndex(neighborIdx)
+            setTimeout(() => {
+              setWinnerIndex(resolvedIdx)
+              onSpinCompleteRef.current?.(snapshotParticipants[resolvedIdx], resolvedIdx)
+            }, 280)
           })
         })
       }

@@ -3,6 +3,7 @@
 import { useState, useRef, useCallback, useEffect } from "react"
 import { VideoRecorder, canRecord } from "@/lib/video-recorder"
 import type { RecordingPhase } from "@/components/recording-canvas"
+import { REVEAL_RECORD_DURATION_MS } from "@/lib/constants"
 
 /**
  * Encapsulates the full video recording lifecycle for the roulette.
@@ -46,7 +47,7 @@ export function useVideoRecorder() {
   const stopRecordingAfterReveal = useCallback(() => {
     setRecordingPhase("reveal")
     clearTimeout(revealTimerRef.current ?? undefined)
-    revealTimerRef.current = setTimeout(async () => {
+    revealTimerRef.current = setTimeout(async () => {  // ISSUE-102: REVEAL_RECORD_DURATION_MS
       setRecordingPhase("done")
       const blob = await recorderRef.current.stop()
       if (blob && blob.size > 0) {
@@ -60,7 +61,7 @@ export function useVideoRecorder() {
           if (png && png.size > 0) setRecordedBlob(png)
         }
       }
-    }, 4500)
+    }, REVEAL_RECORD_DURATION_MS)
   }, [])
 
   /** Clear all recording state. Call when WinnerCard is dismissed. */
