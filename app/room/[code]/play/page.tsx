@@ -499,9 +499,9 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
   const handleSpin = async () => {
     if (phase !== "waiting" || participants.length < 2) return
 
-    // iOS Safari: ユーザータップのタイミングで AudioContext を running にアンロック
-    // これにより以降の setTimeout / アニメーションコールバックからも音が出る
-    await unlockAudioContext()
+    // iOS Safari: ユーザータップのタイミングで AudioContext をアンロック（sync）
+    // 無音バッファ再生で確実に unlock し、以降の setTimeout 等からも音が出る
+    unlockAudioContext()
 
     // 押下フィードバック（音・振動）は即時
     playPressSound()

@@ -5,13 +5,14 @@
  * HOW:  OscillatorNode + GainNode の組み合わせで短いトーンを合成する
  *
  * iOS Safari 対応:
- *   AudioContext はシングルトンで保持し、ユーザーのタップ時に一度だけ
- *   unlockAudioContext() を呼んで "running" 状態にする。
- *   一度 running になれば setTimeout やアニメーションコールバックからも再生可能。
+ *   AudioContext はシングルトン。ユーザーのタップ時に unlockAudioContext() を呼ぶ。
+ *   unlock は「無音バッファの再生」で行う（Howler.js / Tone.js と同じ手法）。
+ *   ctx.resume() のみでは iOS で動かないケースがある。
+ *   sync 関数なので async handleSpin でも普通の onClick でも呼べる。
  */
 
-// Singleton AudioContext — iOS では毎回 new すると suspended のまま音が出ない
 let _ctx: AudioContext | null = null
+let _unlocked = false
 
 function getAudioContext(): AudioContext | null {
   if (typeof window === "undefined") return null
@@ -26,16 +27,33 @@ function getAudioContext(): AudioContext | null {
 }
 
 /**
- * iOS Safari 用: ユーザーのタップ（click/touchend）から呼ぶことで
- * AudioContext を suspended → running にアンロックする。
- * 一度 running になればその後の setTimeout 等からも音が出る。
- * handleSpin() など直接のユーザーアクションハンドラの先頭で呼ぶこと。
+ * iOS Safari 用アンロック。ユーザーのタップハンドラから呼ぶ。
+ *
+ * ctx.resume() + 無音バッファ再生の両方を実行する。
+ * 無音バッファ再生が iOS の autoplay ポリシーを確実に解除する
+ * (Howler.js と同じ手法)。
+ * 同期関数なので async/await 不要。一度 unlock されれば以後は即時 return。
  */
-export async function unlockAudioContext(): Promise<void> {
+export function unlockAudioContext(): void {
+  if (_unlocked) return
   const ctx = getAudioContext()
   if (!ctx) return
-  if (ctx.state === "suspended") {
-    await ctx.resume()
+
+  // resume() を呼ぶ（suspended → running への移行を開始）
+  ctx.resume().catch(() => {})
+
+  // iOS 用: 無音の 1 サンプルバッファを再生して autoplay lock を解除する
+  // resume() だけでは不十分なケースへの対策
+  try {
+    const buffer = ctx.createBuffer(1, 1, 22050)
+    const source = ctx.createBufferSource()
+    source.buffer = buffer
+    source.connect(ctx.destination)
+    source.start(0)
+    source.disconnect()
+    _unlocked = true
+  } catch {
+    // 非対応環境では無視
   }
 }
 
@@ -62,14 +80,14 @@ function playTone(
 /** ボタン押下: 短いクリック音 */
 export function playPressSound() {
   const ctx = getAudioContext()
-  if (!ctx || ctx.state !== "running") return
+  if (!ctx) return
   playTone(ctx, 800, ctx.currentTime, 0.03, 0.2, "square")
 }
 
 /** 回転開始: 上昇スウィープ */
 export function playSpinStartSound() {
   const ctx = getAudioContext()
-  if (!ctx || ctx.state !== "running") return
+  if (!ctx) return
   const osc = ctx.createOscillator()
   const gain = ctx.createGain()
   osc.connect(gain)
@@ -86,14 +104,14 @@ export function playSpinStartSound() {
 /** 減速 tick: 乾いたカチ音 */
 export function playTickSound() {
   const ctx = getAudioContext()
-  if (!ctx || ctx.state !== "running") return
+  if (!ctx) return
   playTone(ctx, 1100, ctx.currentTime, 0.02, 0.15, "square")
 }
 
 /** 結果確定: 3音ファンファーレ (G4 → B4 → D5) */
 export function playResultSound() {
   const ctx = getAudioContext()
-  if (!ctx || ctx.state !== "running") return
+  if (!ctx) return
   const notes = [392, 494, 587] // G4, B4, D5
   const now = ctx.currentTime
   notes.forEach((freq, i) => {

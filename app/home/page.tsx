@@ -30,6 +30,7 @@ import { ProfileSheet } from "@/components/profile-sheet"
 import { useVideoRecorder } from "@/lib/use-video-recorder"
 import { getDisplayName } from "@/lib/display-name"
 import { usePWAInstall } from "@/lib/use-pwa-install"
+import { unlockAudioContext, playPressSound, playSpinStartSound, playTickSound, playResultSound } from "@/lib/spin-sound"
 
 export default function HomePage() {
   const [isSpinning, setIsSpinning] = useState(false)
@@ -163,6 +164,19 @@ export default function HomePage() {
   }
 
   // スピン開始の共通ロジック — participantCount を受け取ることで参加者 state に依存しない
+  // 回転開始コールバック（RouletteWheel → onSpinStart）
+  const handleSpinStart = () => {
+    playSpinStartSound()
+  }
+
+  // 減速フェーズコールバック（RouletteWheel → onSlowingDown）
+  const handleSlowingDown = () => {
+    const delays = [0, 500, 950]
+    delays.forEach((d) => {
+      setTimeout(() => playTickSound(), d)
+    })
+  }
+
   const startSpin = (participantCount: number) => {
     if (isSpinning || participantCount < 2 || countdown !== null) return
     setWinner(null)
@@ -181,10 +195,16 @@ export default function HomePage() {
     ]
   }
 
-  const handleSpin = () => startSpin(participants.length)
+  const handleSpin = () => {
+    unlockAudioContext() // iOS: ユーザータップで AudioContext を unlock
+    playPressSound()
+    startSpin(participants.length)
+  }
 
   // グループカードの「▶ 回す」ボタン — 1タップでそのグループのメンバーをセットしてスピン開始
   const handleSpinWithGroup = (id: string) => {
+    unlockAudioContext()
+    playPressSound()
     const members = selectGroup(id)
     setParticipants(members)
     startSpin(members.length)
@@ -226,6 +246,7 @@ export default function HomePage() {
   }
 
   const handleSpinComplete = (winnerName: string, winnerIndex: number) => {
+    playResultSound()
     setIsSpinning(false)
     setWinner({ name: winnerName, index: winnerIndex })
     setShowConfetti(true)
@@ -798,6 +819,8 @@ export default function HomePage() {
               size={280}
               participants={participants}
               onSpinComplete={handleSpinComplete}
+              onSpinStart={handleSpinStart}
+              onSlowingDown={handleSlowingDown}
               wheelRotationRef={wheelRotationRef}
             />
           </div>
