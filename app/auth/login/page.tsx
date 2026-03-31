@@ -74,12 +74,14 @@ function LoginContent() {
           {/* Social Login Buttons */}
           <div className="flex flex-col gap-3">
 
-            {/* Google */}
-            <button
-              onClick={() => handleSocialLogin("google")}
-              disabled={isLoading !== null}
-              className="w-full h-14 flex items-center justify-center gap-3 rounded-2xl bg-white hover:bg-gray-50 active:bg-gray-100 text-gray-800 text-base font-semibold press-effect transition-all shadow-soft disabled:opacity-50"
-            >
+            {/* Google — primary */}
+            <div className="relative">
+              <span className="absolute -top-2 right-3 z-10 px-2 py-0.5 text-[10px] font-bold rounded-full bg-primary text-primary-foreground">おすすめ</span>
+              <button
+                onClick={() => handleSocialLogin("google")}
+                disabled={isLoading !== null}
+                className="w-full h-14 flex items-center justify-center gap-3 rounded-2xl bg-white hover:bg-gray-50 active:bg-gray-100 text-gray-800 text-base font-semibold press-effect transition-all shadow-soft disabled:opacity-50 ring-2 ring-primary/40"
+              >
               {isLoading === "google" ? (
                 <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
               ) : (
@@ -93,7 +95,8 @@ function LoginContent() {
                   Googleで続ける
                 </>
               )}
-            </button>
+              </button>
+            </div>
 
             {/* LINE */}
             <button
@@ -113,11 +116,11 @@ function LoginContent() {
               )}
             </button>
 
-            {/* X (Twitter) */}
+            {/* X (Twitter) — outline to reduce visual weight */}
             <button
               onClick={() => handleSocialLogin("x")}
               disabled={isLoading !== null}
-              className="w-full h-14 flex items-center justify-center gap-3 rounded-2xl bg-black hover:bg-gray-900 active:bg-gray-800 text-white text-base font-semibold press-effect transition-all shadow-soft disabled:opacity-50"
+              className="w-full h-12 flex items-center justify-center gap-3 rounded-2xl bg-transparent border border-white/20 hover:bg-white/5 active:bg-white/10 text-muted-foreground text-sm font-medium press-effect transition-all disabled:opacity-50"
             >
               {isLoading === "x" ? (
                 <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
