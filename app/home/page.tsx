@@ -30,7 +30,7 @@ import { ProfileSheet } from "@/components/profile-sheet"
 import { useVideoRecorder } from "@/lib/use-video-recorder"
 import { getDisplayName } from "@/lib/display-name"
 import { usePWAInstall } from "@/lib/use-pwa-install"
-import { unlockAudioContext, playPressSound, playSpinStartSound, playTickSound, playResultSound } from "@/lib/spin-sound"
+import { unlockAudioContext, playPressSound, playSpinStartSound, playTickSound, playResultSound, playNearMissSound } from "@/lib/spin-sound"
 
 export default function HomePage() {
   const [isSpinning, setIsSpinning] = useState(false)
@@ -175,6 +175,11 @@ export default function HomePage() {
     delays.forEach((d) => {
       setTimeout(() => playTickSound(), d)
     })
+  }
+
+  // ニアミス演出コールバック（RouletteWheel → onNearMiss）
+  const handleNearMiss = () => {
+    playNearMissSound()
   }
 
   const startSpin = (participantCount: number) => {
@@ -821,6 +826,7 @@ export default function HomePage() {
               onSpinComplete={handleSpinComplete}
               onSpinStart={handleSpinStart}
               onSlowingDown={handleSlowingDown}
+              onNearMiss={handleNearMiss}
               wheelRotationRef={wheelRotationRef}
             />
           </div>

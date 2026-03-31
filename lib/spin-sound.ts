@@ -108,13 +108,44 @@ export function playTickSound() {
   playTone(ctx, 1100, ctx.currentTime, 0.02, 0.15, "square")
 }
 
-/** 結果確定: 3音ファンファーレ (G4 → B4 → D5) */
+/**
+ * ニアミス演出用: 加速するドラムロール（8打、40→20ms間隔で詰まる）
+ * RouletteWheel の onNearMiss コールバックから呼ぶ。
+ * 280ms の near-miss ウィンドウにフィットする長さ。
+ */
+export function playNearMissSound() {
+  const ctx = getAudioContext()
+  if (!ctx) return
+  // 8打: 0, 40, 75, 105, 130, 152, 170, 185ms（徐々に詰まる）
+  const offsets = [0, 0.040, 0.075, 0.105, 0.130, 0.152, 0.170, 0.185]
+  const now = ctx.currentTime
+  offsets.forEach((t) => {
+    playTone(ctx, 280, now + t, 0.018, 0.18, "square")
+  })
+}
+
+/** 結果確定: インパクト音 + 3音ファンファーレ (G4 → B4 → D5) */
 export function playResultSound() {
   const ctx = getAudioContext()
   if (!ctx) return
-  const notes = [392, 494, 587] // G4, B4, D5
   const now = ctx.currentTime
+
+  // 低域インパクト（キック感）
+  const osc = ctx.createOscillator()
+  const gain = ctx.createGain()
+  osc.connect(gain)
+  gain.connect(ctx.destination)
+  osc.type = "sine"
+  osc.frequency.setValueAtTime(120, now)
+  osc.frequency.exponentialRampToValueAtTime(40, now + 0.25)
+  gain.gain.setValueAtTime(0.45, now)
+  gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35)
+  osc.start(now)
+  osc.stop(now + 0.35)
+
+  // ファンファーレ (G4 → B4 → D5) — 0.08s 後に開始、より大きく長く
+  const notes = [392, 494, 587] // G4, B4, D5
   notes.forEach((freq, i) => {
-    playTone(ctx, freq, now + i * 0.12, 0.18, 0.25, "sine")
+    playTone(ctx, freq, now + 0.08 + i * 0.13, 0.22, 0.32, "sine")
   })
 }

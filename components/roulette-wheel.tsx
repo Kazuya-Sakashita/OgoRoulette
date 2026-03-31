@@ -13,6 +13,7 @@ interface RouletteWheelProps {
   // 演出フック: 呼び出し元（play/page.tsx）が音・振動を担当する
   onSpinStart?: () => void
   onSlowingDown?: () => void  // 減速フェーズ開始時（結果直前）
+  onNearMiss?: () => void     // ISSUE-098: ニアミス演出直前（当選確定の280ms前）
   /** Ref written each frame with the current rotation in degrees — used by RecordingCanvas */
   wheelRotationRef?: MutableRefObject<number>
 }
@@ -25,6 +26,7 @@ export function RouletteWheel({
   onSpinComplete,
   onSpinStart,
   onSlowingDown,
+  onNearMiss,
   wheelRotationRef,
 }: RouletteWheelProps) {
   const rotation = useMotionValue(0)
@@ -46,6 +48,8 @@ export function RouletteWheel({
   useEffect(() => { onSpinStartRef.current = onSpinStart }, [onSpinStart])
   const onSlowingDownRef = useRef(onSlowingDown)
   useEffect(() => { onSlowingDownRef.current = onSlowingDown }, [onSlowingDown])
+  const onNearMissRef = useRef(onNearMiss)
+  useEffect(() => { onNearMissRef.current = onNearMiss }, [onNearMiss])
 
   // Stable participants snapshot captured at spin start — prevents mid-animation re-runs
   // スピン中は更新しない: mid-spin 参加者変化でレイアウトと角度計算がズレるのを防ぐ
@@ -123,6 +127,7 @@ export function RouletteWheel({
             // 280ms だけハイライトして「惜しかった！」感を演出する
             const neighborIdx = (resolvedIdx - 1 + snapshotParticipants.length) % snapshotParticipants.length
             setWinnerIndex(neighborIdx)
+            onNearMissRef.current?.()
             setTimeout(() => {
               setWinnerIndex(resolvedIdx)
               onSpinCompleteRef.current?.(snapshotParticipants[resolvedIdx], resolvedIdx)
