@@ -63,6 +63,10 @@ export function ShareSheet({
   const [copied, setCopied]             = useState(false)
   // ISSUE-103: true if the blob is an image (iOS PNG fallback), false if video
   const isImageBlob = blob.type.startsWith("image/")
+  // PC では navigator.canShare({files}) が false → Web Share API でファイルを渡せない
+  const canShareFile = typeof navigator !== "undefined" &&
+    typeof navigator.canShare === "function" &&
+    (() => { try { const f = new File([blob], "t", { type: blob.type }); return navigator.canShare({ files: [f] }) } catch { return false } })()
   // ISSUE-078: 初回シェア前の公開名確認
   const needsConfirm = profile != null && profile.displayNameConfirmedAt === null
   const [showConfirm, setShowConfirm]   = useState(false)
@@ -332,15 +336,15 @@ export function ShareSheet({
               ) : (
                 <span className="flex items-center gap-2">
                   <Share2 className="w-5 h-5" />
-                  {isImageBlob ? "画像をシェア 📸" : "動画をシェア"}
+                  {isImageBlob ? "画像をシェア 📸" : canShareFile ? "動画をシェア" : "URLをシェア / コピー"}
                 </span>
               )}
             </Button>
 
             {/* Platform-specific buttons */}
-            <p className="text-xs text-white/35 mb-2">
+            <p className="text-xs text-white/50 mb-2">
               {isImageBlob ? "画像を保存してからXに手動で添付できます" : "動画を保存してからXに手動で添付できます"}
-              <span className="text-white/25"> · X・LINEはテキストのみ</span>
+              <span className="text-white/40"> · X・LINEはテキストのみ</span>
             </p>
             <div className="flex gap-2 mb-4">
               {/* Download */}

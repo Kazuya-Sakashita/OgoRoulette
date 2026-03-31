@@ -5,7 +5,7 @@ import { RouletteWheel } from "@/components/roulette-wheel"
 import { Confetti } from "@/components/confetti"
 import { WinnerCard } from "@/components/winner-card"
 import { CountdownOverlay } from "@/components/countdown-overlay"
-import { QrCode, Sparkles, Plus, X as XIcon, History, ChevronDown, ChevronUp, Calculator, LogOut, Check, UserCircle } from "lucide-react"
+import { QrCode, Sparkles, Plus, X as XIcon, History, ChevronDown, ChevronUp, Calculator, LogOut, Check, UserCircle, LogIn } from "lucide-react"
 import { useState, useEffect, useRef } from "react"
 import Link from "next/link"
 import Image from "next/image"
@@ -875,7 +875,8 @@ export default function HomePage() {
                 {participants.length > 2 && (
                   <button
                     onClick={() => removeParticipant(index)}
-                    className="opacity-0 group-hover:opacity-100 w-5 h-5 rounded-full bg-destructive/20 flex items-center justify-center text-destructive hover:bg-destructive/30 transition-all"
+                    aria-label="削除"
+                    className="opacity-0 group-hover:opacity-100 [@media(hover:none)]:opacity-100 w-5 h-5 rounded-full bg-destructive/20 flex items-center justify-center text-destructive hover:bg-destructive/30 transition-all"
                   >
                     <XIcon className="w-3 h-3" />
                   </button>
@@ -948,6 +949,23 @@ export default function HomePage() {
             </Link>
           </Button>
         </section>
+
+        {/* Non-logged-in CTA */}
+        {!user && (
+          <section className="mt-4 px-4 py-3 rounded-2xl border border-white/8 bg-white/3 flex items-center gap-3">
+            <UserCircle className="w-8 h-8 text-primary/70 shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-semibold text-foreground">ログインでさらに便利に</p>
+              <p className="text-xs text-muted-foreground">メンバー保存・履歴・公開名が使えます</p>
+            </div>
+            <Button asChild size="sm" variant="outline" className="shrink-0 h-8 rounded-lg border-white/15 bg-transparent text-xs font-semibold">
+              <Link href="/auth/login">
+                <LogIn className="w-3 h-3 mr-1" />
+                ログイン
+              </Link>
+            </Button>
+          </section>
+        )}
 
         {/* Footer */}
         <footer className="mt-6 pt-4 border-t border-white/5">
