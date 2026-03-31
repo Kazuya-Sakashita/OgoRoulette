@@ -104,12 +104,12 @@ export default function HomePage() {
       const { data: { user } } = await supabase.auth.getUser()
       setUser(user)
       if (user) {
-        const { data } = await supabase
-          .from("profiles")
-          .select("id, display_name, display_name_confirmed_at")
-          .eq("id", user.id)
-          .single()
-        if (data) setProfile({ id: data.id, displayName: data.display_name, displayNameConfirmedAt: data.display_name_confirmed_at })
+        // Use server API (Prisma) instead of direct Supabase query to bypass RLS
+        const res = await fetch("/api/profile")
+        if (res.ok) {
+          const data = await res.json()
+          setProfile({ id: data.id, displayName: data.displayName ?? null, displayNameConfirmedAt: data.displayNameConfirmedAt ?? null })
+        }
       }
     }
     getUser()
