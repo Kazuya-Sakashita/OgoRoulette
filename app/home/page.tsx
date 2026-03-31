@@ -592,12 +592,12 @@ export default function HomePage() {
         </header>
 
         {/* User greeting if logged in */}
-        {/* ISSUE-088: provider由来名（full_name/email）は本名が含まれるため使用禁止。displayName のみ表示する */}
+        {/* ISSUE-088: provider由来名（full_name/email）は本名が含まれるため使用禁止。getDisplayName() のみ使う */}
         {user && (
           <div className="mb-4 px-4 py-3 rounded-2xl glass-card border border-white/10">
             <p className="text-sm text-muted-foreground">
-              {profile?.displayName
-                ? <>こんにちは、<span className="text-foreground font-medium">{profile.displayName}</span> さん 👋</>
+              {profile
+                ? <>こんにちは、<span className="text-foreground font-medium">{getDisplayName(profile)}</span> さん 👋</>
                 : "今日もルーレット回しますか？"}
             </p>
           </div>
