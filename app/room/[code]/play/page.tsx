@@ -6,7 +6,7 @@ import { calculateBillSplit } from "@/lib/bill-calculator"
 import { isRoomOwner } from "@/lib/room-owner"
 import { isSpinInProgress } from "@/lib/room-spin"
 import { vibrate, HapticPattern } from "@/lib/haptic"
-import { playPressSound, playSpinStartSound, playTickSound, playResultSound } from "@/lib/spin-sound"
+import { playPressSound, playSpinStartSound, playTickSound, playResultSound, unlockAudioContext } from "@/lib/spin-sound"
 import Link from "next/link"
 import { ArrowLeft, Calculator, ChevronDown, ChevronUp, Crown, Users } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -498,6 +498,10 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
 
   const handleSpin = async () => {
     if (phase !== "waiting" || participants.length < 2) return
+
+    // iOS Safari: ユーザータップのタイミングで AudioContext を running にアンロック
+    // これにより以降の setTimeout / アニメーションコールバックからも音が出る
+    await unlockAudioContext()
 
     // 押下フィードバック（音・振動）は即時
     playPressSound()
