@@ -14,7 +14,7 @@ export default function CreateRoomPage() {
   const [currentUser, setCurrentUser] = useState<User | null>(null)
   const [guestNickname, setGuestNickname] = useState("")
   const [roomName, setRoomName] = useState("")
-  const [maxMembers, setMaxMembers] = useState(8)
+  const [maxMembers, setMaxMembers] = useState(6)
   const [isPersistent, setIsPersistent] = useState(false)  // ISSUE-014: 常設グループ
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
