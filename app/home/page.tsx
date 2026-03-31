@@ -634,7 +634,7 @@ export default function HomePage() {
         {/* User greeting if logged in */}
         {/* ISSUE-088: provider由来名（full_name/email）は本名が含まれるため使用禁止。getDisplayName() のみ使う */}
         {user && (
-          <div className="mb-4 px-4 py-3 rounded-2xl glass-card border border-white/10">
+          <div className="mb-2 px-4 py-3 rounded-2xl glass-card border border-white/10">
             <p className="text-sm text-muted-foreground">
               {profile
                 ? <>こんにちは、<span className="text-foreground font-medium">{getDisplayName(profile)}</span> さん 👋</>
@@ -644,7 +644,7 @@ export default function HomePage() {
         )}
 
         {/* Tagline */}
-        <div className="text-center mb-4">
+        <div className="text-center mb-2">
           <h1 className="text-2xl font-bold text-foreground tracking-tight mb-1">
             今日の<span className="text-gradient">奢り</span>は誰だ？
           </h1>
@@ -654,7 +654,7 @@ export default function HomePage() {
         </div>
 
         {/* Social Proof Chips */}
-        <div className="flex flex-wrap justify-center gap-2 mb-4">
+        <div className="flex flex-wrap justify-center gap-2 mb-2">
           <span className="px-3 py-1 text-xs font-medium rounded-full bg-primary/10 text-primary border border-primary/20">
             飲み会で盛り上がる
           </span>
@@ -814,8 +814,8 @@ export default function HomePage() {
         </section>
 
         {/* Roulette Wheel - Centerpiece */}
-        <div className="flex-1 flex flex-col items-center justify-center py-4">
-          <div className="relative mb-6">
+        <div className="flex-1 flex flex-col items-center justify-center py-2">
+          <div className="relative mb-2">
             {/* Ambient background glow */}
             <div className="absolute inset-0 scale-[1.6] bg-primary/10 rounded-full blur-3xl pointer-events-none" />
 
