@@ -99,16 +99,29 @@ export default function HomePage() {
     // 閉じ込められる問題を防ぐ（WelcomePage は user || hasVisited で /home へ転送する）。
     localStorage.setItem('ogoroulette_visited', 'true')
 
+    // Optimistic: show cached profile immediately (zero lag on repeat visits)
+    const CACHE_KEY = "ogoroulette_profile_v1"
+    const cached = localStorage.getItem(CACHE_KEY)
+    if (cached) {
+      try {
+        const p = JSON.parse(cached) as { id: string; displayName: string | null; displayNameConfirmedAt: string | null }
+        setProfile({ id: p.id, displayName: p.displayName ?? null, displayNameConfirmedAt: p.displayNameConfirmedAt ?? null })
+      } catch {
+        localStorage.removeItem(CACHE_KEY)
+      }
+    }
+
     const supabase = createClient()
     const getUser = async () => {
       const { data: { user } } = await supabase.auth.getUser()
       setUser(user)
       if (user) {
-        // Use server API (Prisma) instead of direct Supabase query to bypass RLS
-        const res = await fetch("/api/profile")
+        // Lightweight endpoint: auth + single Prisma query (no stats)
+        const res = await fetch("/api/profile/name")
         if (res.ok) {
-          const data = await res.json()
+          const data = await res.json() as { id: string; displayName: string | null; displayNameConfirmedAt: string | null }
           setProfile({ id: data.id, displayName: data.displayName ?? null, displayNameConfirmedAt: data.displayNameConfirmedAt ?? null })
+          localStorage.setItem(CACHE_KEY, JSON.stringify({ id: data.id, displayName: data.displayName ?? null, displayNameConfirmedAt: data.displayNameConfirmedAt ?? null }))
         }
       }
     }
@@ -144,6 +157,7 @@ export default function HomePage() {
     const supabase = createClient()
     // ユーザー依存の localStorage データをクリアしてから signOut
     clearUserGroupData()
+    localStorage.removeItem("ogoroulette_profile_v1")
     await supabase.auth.signOut()
     router.push('/')
   }
