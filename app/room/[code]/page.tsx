@@ -346,14 +346,22 @@ export default function RoomPage({ params }: { params: Promise<{ code: string }>
               メンバーを招待
             </h2>
             
-            {/* QR Code */}
+            {/* QR Code with logo overlay */}
             <button
               onClick={() => setShowQRFull(true)}
               className="mx-auto block bg-white rounded-2xl p-3 shadow-lg hover:shadow-xl transition-shadow mb-4"
             >
-              {shareUrl && (
-                <QRCode value={shareUrl} size={176} bgColor="#FFFFFF" fgColor="#0B1B2B" />
-              )}
+              <div className="relative inline-block">
+                {shareUrl && (
+                  <QRCode value={shareUrl} size={176} bgColor="#FFFFFF" fgColor="#0B1B2B" />
+                )}
+                {/* Logo overlay — white bg circle keeps QR decodable */}
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow">
+                    <Image src="/images/logo-icon.png" alt="OgoRoulette" width={28} height={28} className="w-7 h-7" />
+                  </div>
+                </div>
+              </div>
             </button>
             
             <p className="text-xs text-muted-foreground mb-4">
@@ -394,6 +402,12 @@ export default function RoomPage({ params }: { params: Promise<{ code: string }>
 
         {/* Members Section */}
         <section className="flex-1">
+          {room._count.members >= room.maxMembers && (
+            <div className="mb-4 px-4 py-3 rounded-2xl bg-primary/10 border border-primary/30 text-center">
+              <p className="text-sm font-bold text-primary">✨ 全員揃いました！</p>
+              <p className="text-xs text-muted-foreground mt-0.5">ゲームを開始できます</p>
+            </div>
+          )}
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <Users className="w-4 h-4 text-muted-foreground" />
