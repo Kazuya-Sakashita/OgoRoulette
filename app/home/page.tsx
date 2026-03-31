@@ -831,6 +831,12 @@ export default function HomePage() {
             />
           </div>
 
+          {/* Visual connector: wheel → button */}
+          <div className="flex flex-col items-center gap-1 mb-1">
+            <div className="w-px h-3 bg-white/20 rounded-full" />
+            <div className="w-1.5 h-1.5 rounded-full bg-primary/40" />
+          </div>
+
           {/* SPIN Button */}
           <Button
             onClick={handleSpin}
