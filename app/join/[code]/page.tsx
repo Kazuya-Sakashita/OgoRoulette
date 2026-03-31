@@ -181,13 +181,17 @@ export default function JoinRoomPage({ params }: { params: Promise<{ code: strin
           <div className="w-full glass-card rounded-3xl p-6 border border-white/10 mb-6">
             <div className="text-center mb-6">
               <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-accent flex items-center justify-center mb-4">
-                <Users className="w-8 h-8 text-primary-foreground" />
+                <span className="text-3xl">🎰</span>
               </div>
+              <p className="text-xs font-semibold text-primary uppercase tracking-widest mb-1">奢り争奪戦</p>
               <h1 className="text-xl font-bold text-foreground mb-1">
                 {room?.name || "ルーレットルーム"}
               </h1>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-muted-foreground mb-2">
                 {room?.owner ? getDisplayName(room.owner) : (room?.members.find(m => m.isHost)?.nickname ?? "ゲスト")}さんがあなたを招待しています
+              </p>
+              <p className="text-xs text-muted-foreground/70">
+                ルーレットを回して今日の奢り担当を決めます
               </p>
             </div>
 
