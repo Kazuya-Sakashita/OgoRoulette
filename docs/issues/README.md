@@ -9,11 +9,11 @@
 
 | ID | タイトル | 概要 | ステータス |
 |----|--------|------|----------|
-| [ISSUE-074](./issue-074-safe-display-name-spec.md) | SNS共有時の表示名安全仕様（設計・親Issue） | Google/LINEログイン由来のフルネームがそのままSNS共有される。display_name を分離し安全名のみ公開する | 🔴 未対応 |
-| [ISSUE-075](./issue-075-display-name-db-migration.md) | Profile に display_name フィールド追加（DB migration） | `profiles` テーブルに `display_name` / `display_name_confirmed_at` を追加 | 🔴 未対応 |
-| [ISSUE-076](./issue-076-get-display-name-util.md) | getDisplayName() ユーティリティ実装 | `lib/display-name.ts` に表示名ロジックを集約。fallback は `"ユーザー" + id末尾4文字` | 🔴 未対応 |
-| [ISSUE-077](./issue-077-replace-share-name-with-display-name.md) | シェア・公開箇所の表示名を display_name に切り替え | result / history / share-service / 招待ページのオーナー名を display_name に変更 | 🔴 未対応 |
-| [ISSUE-078](./issue-078-display-name-confirmation-sheet.md) | 初回シェア前の「公開名確認」ボトムシート実装 | 初回シェアアクション時に1回だけ公開名を確認するUIを追加 | 🔴 未対応 |
+| [ISSUE-074](./issue-074-safe-display-name-spec.md) | SNS共有時の表示名安全仕様（設計・親Issue） | Google/LINEログイン由来のフルネームがそのままSNS共有される。display_name を分離し安全名のみ公開する | ✅ 完了（commit: d1fb32c） |
+| [ISSUE-075](./issue-075-display-name-db-migration.md) | Profile に display_name フィールド追加（DB migration） | `profiles` テーブルに `display_name` / `display_name_confirmed_at` を追加 | ✅ 完了（commit: 1b3579a） |
+| [ISSUE-076](./issue-076-get-display-name-util.md) | getDisplayName() ユーティリティ実装 | `lib/display-name.ts` に表示名ロジックを集約。fallback は `"ユーザー" + id末尾4文字` | ✅ 完了（commit: 1b3579a） |
+| [ISSUE-077](./issue-077-replace-share-name-with-display-name.md) | シェア・公開箇所の表示名を display_name に切り替え | result / history / share-service / 招待ページのオーナー名を display_name に変更 | ✅ 完了（commit: 1b3579a） |
+| [ISSUE-078](./issue-078-display-name-confirmation-sheet.md) | 初回シェア前の「公開名確認」ボトムシート実装 | 初回シェアアクション時に1回だけ公開名を確認するUIを追加 | ✅ 完了（commit: 4b88980） |
 | [ISSUE-073](./issue-073-spin-button-initially-disabled.md) | home 画面 SPIN ボタンが初回押せない（overlay CSS バグ） | `roulette-wheel.tsx` の ambient glow `motion.div` に `pointer-events: none` がなく、ボタン上部 72% へのクリックを奪っていた | ✅ 完了 |
 | [ISSUE-001](./issue-001-spin-button-isowner-flicker.md) | ゲストホスト `isOwner` フリッカーによる SPIN ボタン永続無効化 | `isGuestHost` が非同期ロードされる間に `isOwner=false` でメンバーエフェクトが誤発火。`phase` が "preparing" に固まり SPIN が押せなくなる | ✅ 完了 |
 | [ISSUE-002](./issue-002-spin-scheduled-ref-race.md) | `spinScheduledRef` 競合による `setPhase("spinning")` ブロック | ISSUE-001 の副作用として `spinScheduledRef.current=true` が残り、`setPhase("spinning")` が永続ブロックされる | ✅ 完了（ISSUE-001 修正により解消） |
@@ -301,7 +301,7 @@
 
 | ID | タイトル | 概要 | ステータス |
 |----|--------|------|----------|
-| [ISSUE-079](./issue-079-profile-edit-display-name.md) | プロフィール編集導線の追加（display_name 変更） | ログインユーザーが公開名をいつでも変更できる UI を追加 | 🔴 未対応 |
+| [ISSUE-079](./issue-079-profile-edit-display-name.md) | プロフィール編集導線の追加（display_name 変更） | ログインユーザーが公開名をいつでも変更できる UI を追加 | ✅ 完了（commit: 4b88980, 3eb6a75） |
 
 ## 🚀 バズ特化フェーズ1（2026-03-30）
 
@@ -325,11 +325,50 @@
 
 | ID | タイトル | 概要 | ステータス |
 |----|--------|------|----------|
-| [ISSUE-103](./issue-103-fix-ios-png-fallback-mime-bug.md) | iPhone PNG fallback MIME/拡張子バグ修正 | shareWithFile/downloadVideo/ShareSheet の PNG 対応 | 🔴 未対応 |
-| [ISSUE-104](./issue-104-ios-share-ux-improvement.md) | iOS 向けシェア UX 明確化 | canRecordVideo 公開・ボタンテキスト変更・REC 非表示 | 🔴 未対応 |
+| [ISSUE-103](./issue-103-fix-ios-png-fallback-mime-bug.md) | iPhone PNG fallback MIME/拡張子バグ修正 | shareWithFile/downloadVideo/ShareSheet の PNG 対応 | ✅ 完了（commit: e470755） |
+| [ISSUE-104](./issue-104-ios-share-ux-improvement.md) | iOS 向けシェア UX 明確化 | canRecordVideo 公開・ボタンテキスト変更・REC 非表示 | ✅ 完了（commit: e470755 で REC 非表示・ShareSheet 対応） |
 | [ISSUE-105](./issue-105-gif-video-generation-ios.md) | iOS でも動画/GIF でシェアできるようにする | GIF生成 PoC / PNG静止画強化 / サーバー生成検討 | 🔴 未対応 |
 
 | **合計** | **105** |
+
+---
+
+## 📱 モバイル入力・QR スキャン改善（2026-03-30）
+
+| ID | タイトル | 概要 | ステータス |
+|----|--------|------|----------|
+| [ISSUE-080](./issue-080-improve-mobile-room-id-input-performance.md) | スマホでルームID入力時の反応が鈍い問題を改善 | input の onChange をデバウンス + キーボード上昇時の scroll 最適化 | ✅ 完了（commit: ae02520） |
+| [ISSUE-081](./issue-081-fix-mobile-flick-input-instability.md) | スマホのフリック入力でルームID入力が不安定な問題を修正 | IME compositionend イベントで確定前文字入力を制御 | ✅ 完了（commit: 8dfa688） |
+| [ISSUE-082](./issue-082-fix-iphone-room-id-input-regression.md) | iPhoneでルームID入力ができなくなった問題を修正（ISSUE-081リグレッション） | ISSUE-081 の compositionend 対応が Safari で逆効果になるリグレッション修正 | ✅ 完了（commit: 383d7d9） |
+| [ISSUE-083](./issue-083-fix-share-return-about-blank.md) | シェア後にChromeへ戻るとabout:blankになる問題を修正 | Web Share API 完了後に window.history.back() → about:blank になる問題を修正 | ✅ 完了（commit: 1731992） |
+| [ISSUE-084](./issue-084-improve-qr-scan-mobile-strategy.md) | QRコード読み取り機能のモバイル実装戦略 | jsQR + getUserMedia の全端末対応設計方針 | ✅ 完了（commit: bc1febb → 129bdd8 → bd4742c） |
+| [ISSUE-085](./issue-085-qr-scanner-component.md) | jsQR 導入と QrScanner コンポーネント実装 | `components/qr-scanner.tsx` 実装（getUserMedia + Canvas ループ） | ✅ 完了（commit: 129bdd8） |
+| [ISSUE-086](./issue-086-scan-page-qr-integration.md) | /scan ページへの QrScanner 統合 | プレースホルダー削除・QrScanner コンポーネント組み込み | ✅ 完了（commit: bd4742c） |
+| [ISSUE-087](./issue-087-camera-permission-denied-ui.md) | カメラ権限拒否・未対応 UI | NotAllowedError / NotFoundError を捕捉しエラー UI 表示 | ✅ 完了（commit: bd4742c） |
+| [ISSUE-088](./issue-088-review-home-greeting-display-name.md) | home画面の挨拶表示を公開名ベースへ修正 | `user.user_metadata.full_name` → `profile.displayName` に変更 | ✅ 完了（commit: c20cfac） |
+| [ISSUE-089](./issue-089-fix-iphone-qr-camera-startup.md) | iPhoneでQRスキャン時にカメラが起動しない問題を修正 | `<video>` 常時マウント + 表示切り替えで iPhone Safari の getUserMedia 問題を解消 | ✅ 完了（commit: 5b5c81d） |
+| [ISSUE-090](./issue-090-fix-room-join-member-display-name.md) | ルーム参加時のメンバー表示を公開名に統一 | join API の `nickname` を `getDisplayName()` に変更 | ✅ 完了（commit: 55bb60e） |
+
+---
+
+## 🎬 動画演出・エンゲージメント強化（2026-03-30）
+
+| ID | タイトル | 概要 | ステータス |
+|----|--------|------|----------|
+| [ISSUE-091](./issue-091-improve-roulette-video-recording-timing.md) | ルーレット動画の録画タイミング修正・感情アーク演出 | スピン開始〜当選発表の録画タイミングを調整し、参加者イントロを追加 | ✅ 完了（commit: b681e6d） |
+| [ISSUE-092](./issue-092-improve-roulette-video-visual-effects.md) | ルーレット動画の視覚演出を強化 | 当選者名76pxフォント・ダブルグロウ・パーティクル演出追加 | ✅ 完了（commit: b681e6d） |
+| [ISSUE-093](./issue-093-instant-share-at-peak-moment.md) | 当選確定の瞬間に「今すぐシェア」ボタンを追加 | WinnerCard に 1.5s 後に出現するインスタントシェアボタン実装 | ✅ 完了（commit: f3dfd44） |
+| [ISSUE-094](./issue-094-result-page-conversion-cta.md) | /result ページに新規ユーザー向け CTA を追加 | シェア流入ユーザーへの「あなたもやる？」コンバージョン CTA 追加 | ✅ 完了（commit: f3dfd44） |
+
+---
+
+## 🔐 公開名保存バグ修正（2026-03-31）
+
+| ID | タイトル | 概要 | ステータス |
+|----|--------|------|----------|
+| [ISSUE-106](./issue-106-fix-display-name-not-saved-to-db.md) | 公開名を編集してもDBに保存されない問題を修正 | 旧 Prisma クライアントキャッシュによる保存失敗を調査・文書化 | ✅ 完了（commit: 1384b3b, 1c3833c） |
+| [ISSUE-107](./issue-107-fix-display-name-persistence-stale-prisma-client.md) | 公開名がDBに保存されず再ログインで消える問題の根本原因修正 | stale Prisma クライアント問題 + /api/profile バリデーション強化 | ✅ 完了（commit: 547ded3, 22064ec） |
+| [ISSUE-108](./issue-108-x-video-share-honest-ux.md) | Xへの動画シェア仕様を実態に合う形へ修正 | 動画ダウンロード分離・「テキストのみ」注記追加・Xシェア誤認UX改善 | ✅ 完了（commit: bb29b14, 49e6916） |
 
 ---
 

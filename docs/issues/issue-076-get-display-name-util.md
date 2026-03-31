@@ -1,7 +1,7 @@
 # ISSUE-076: getDisplayName() ユーティリティ関数の実装
 
 ## ステータス
-🔴 未対応
+✅ 完了（commit: 1b3579a）
 
 ## 優先度
 Critical

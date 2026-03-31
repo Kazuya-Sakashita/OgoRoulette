@@ -1,7 +1,7 @@
 # ISSUE-075: Profile テーブルに display_name フィールドを追加
 
 ## ステータス
-🔴 未対応
+✅ 完了（commit: 1b3579a）
 
 ## 優先度
 Critical

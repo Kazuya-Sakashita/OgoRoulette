@@ -1,7 +1,7 @@
 # ISSUE-083: シェア後にChromeへ戻ると about:blank になる問題を修正する
 
 ## ステータス
-🔴 未対応
+✅ 実装済み（commit: 1731992）
 
 ## 優先度
 High
