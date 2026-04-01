@@ -93,12 +93,26 @@ export function buildShareText(template: ShareTemplate, payload: SharePayload): 
   return template.build(payload)
 }
 
+/** X は CJK・絵文字を 2 weight としてカウントする（Unicode拡張ブロック以上を2とする） */
+function xCharWeight(char: string): number {
+  const cp = char.codePointAt(0) ?? 0
+  // Basic Latin + Latin supplement は 1、それ以外（CJK・絵文字等）は 2
+  return cp > 0x007E ? 2 : 1
+}
+
 /** Trim text so text + URL fits within X's 280-char limit */
 export function trimForX(text: string): string {
   // +1 for the space between text and URL
   const budget = X_CHAR_LIMIT - X_URL_COST - 1
-  if (text.length <= budget) return text
-  return text.slice(0, budget - 1) + "…"
+  let weight = 0
+  let result = ""
+  for (const char of [...text]) {
+    const w = xCharWeight(char)
+    if (weight + w > budget) return result + "…"
+    weight += w
+    result += char
+  }
+  return result
 }
 
 /**
