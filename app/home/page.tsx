@@ -1,9 +1,12 @@
 "use client"
 
+import dynamic from "next/dynamic"
 import { Button } from "@/components/ui/button"
 import { RouletteWheel } from "@/components/roulette-wheel"
-import { Confetti } from "@/components/confetti"
-import { WinnerCard } from "@/components/winner-card"
+const Confetti = dynamic(() => import("@/components/confetti").then(m => ({ default: m.Confetti })), { ssr: false })
+const WinnerCard = dynamic(() => import("@/components/winner-card").then(m => ({ default: m.WinnerCard })), { ssr: false })
+const RecordingCanvas = dynamic(() => import("@/components/recording-canvas").then(m => ({ default: m.RecordingCanvas })), { ssr: false })
+const ShareSheet = dynamic(() => import("@/components/share-sheet").then(m => ({ default: m.ShareSheet })), { ssr: false })
 import { CountdownOverlay } from "@/components/countdown-overlay"
 import { QrCode, Sparkles, Plus, X as XIcon, History, ChevronDown, ChevronUp, Calculator, LogOut, Check, UserCircle, LogIn } from "lucide-react"
 import { useState, useEffect, useRef } from "react"
@@ -24,8 +27,6 @@ import {
 } from "@/lib/group-storage"
 import { useGroups } from "@/hooks/use-groups"
 import { GroupList } from "@/components/group-list"
-import { RecordingCanvas } from "@/components/recording-canvas"
-import { ShareSheet } from "@/components/share-sheet"
 import { ProfileSheet } from "@/components/profile-sheet"
 import { useVideoRecorder } from "@/lib/use-video-recorder"
 import { getDisplayName } from "@/lib/display-name"
@@ -596,7 +597,7 @@ export default function HomePage() {
       )}
 
       {/* Container: mobile 390px / desktop max-w-4xl with 2-column layout */}
-      <div className="mx-auto max-w-[390px] md:max-w-4xl min-h-screen flex flex-col px-5 py-6">
+      <div className="mx-auto max-w-[390px] lg:max-w-4xl min-h-screen flex flex-col px-5 py-6">
 
         {/* Header */}
         <header className="flex items-center justify-between mb-6">
@@ -713,10 +714,10 @@ export default function HomePage() {
         )}
 
         {/* Desktop 2-column grid: GroupA(右上) / GroupB(左ルーレット) / GroupC(右下) */}
-        <div className="flex-1 flex flex-col md:grid md:grid-cols-2 md:gap-8 md:items-start">
+        <div className="flex-1 flex flex-col lg:grid lg:grid-cols-2 lg:gap-8 lg:items-start">
 
         {/* Group A: グループ選択・金額設定 — desktop: right column top */}
-        <div className="md:col-start-2 md:row-start-1">
+        <div className="lg:col-start-2 lg:row-start-1">
 
         {/* いつものメンバー — shown above roulette for 1-tap access */}
         <GroupList
@@ -806,7 +807,11 @@ export default function HomePage() {
                   {quickAmounts.map((amount) => (
                     <button
                       key={amount}
-                      onClick={() => setTreatAmount(Math.min(amount, totalBill || amount))}
+                      onClick={() => {
+                        const newTreat = Math.min(amount, totalBill || amount)
+                        setTreatAmount(newTreat)
+                        if (!totalBill) setTotalBill(amount)
+                      }}
                       className={`flex-1 py-2 rounded-xl text-xs font-medium transition-all ${
                         treatAmount === amount
                           ? 'bg-gradient-accent text-primary-foreground'
@@ -850,7 +855,7 @@ export default function HomePage() {
         </div>{/* /Group A */}
 
         {/* Group B: ルーレット — desktop: left column, sticky */}
-        <div className="flex-1 flex flex-col items-center justify-center py-2 md:col-start-1 md:row-start-1 md:row-span-2 md:sticky md:top-6 md:py-8">
+        <div className="flex-1 flex flex-col items-center justify-center py-2 lg:col-start-1 lg:row-start-1 lg:row-span-2 lg:sticky lg:top-6 lg:py-8">
 
         {/* Roulette Wheel - Centerpiece */}
           <div className="relative mb-2">
@@ -879,6 +884,8 @@ export default function HomePage() {
           <Button
             onClick={handleSpin}
             disabled={isSpinning || participants.length < 2 || countdown !== null}
+            aria-busy={isSpinning}
+            aria-label={isSpinning ? 'ルーレット回転中' : participants.length < 2 ? '参加者を2人以上追加してください' : 'ルーレットを回す'}
             className="w-full max-w-[280px] h-16 text-xl font-bold rounded-2xl bg-gradient-accent hover:opacity-90 text-white shadow-lg glow-primary press-effect disabled:opacity-50 disabled:cursor-not-allowed transition-all uppercase tracking-wider animate-pulse-glow"
           >
             {isSpinning ? (
@@ -896,7 +903,7 @@ export default function HomePage() {
         </div>
 
         {/* Group C: 参加者・アクション — desktop: right column bottom */}
-        <div className="md:col-start-2 md:row-start-2">
+        <div className="lg:col-start-2 lg:row-start-2">
 
         {/* Participants Section */}
         <section className="mt-4">

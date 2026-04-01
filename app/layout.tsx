@@ -3,8 +3,32 @@ import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'OgoRoulette - 誰が奢る？ルーレットで決めよう',
-  description: '楽しく割り勘！QRコードで参加して、ルーレットで奢る人を決めよう。',
+  metadataBase: new URL('https://ogo-roulette.vercel.app'),
+  title: 'OgoRoulette — おごりをルーレットで決めよう',
+  description: '飲み会・合コン・社内ランチ。おごりを公平にルーレットで決める無料アプリ。QRコードでみんなで参加してワイワイ楽しもう。',
+  keywords: ['おごり', 'ルーレット', '割り勘', '飲み会', '合コン', 'QRコード'],
+  openGraph: {
+    title: 'OgoRoulette — おごりをルーレットで決めよう',
+    description: '飲み会・合コン・社内ランチ。おごりを公平にルーレットで決める無料アプリ。',
+    url: 'https://ogo-roulette.vercel.app',
+    siteName: 'OgoRoulette',
+    images: [
+      {
+        url: '/images/og-image.png',
+        width: 1200,
+        height: 630,
+        alt: 'OgoRoulette — おごりをルーレットで決めよう',
+      },
+    ],
+    locale: 'ja_JP',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'OgoRoulette — おごりをルーレットで決めよう',
+    description: '飲み会・合コン・社内ランチ。おごりを公平にルーレットで決める無料アプリ。',
+    images: ['/images/og-image.png'],
+  },
   icons: {
     icon: [
       {

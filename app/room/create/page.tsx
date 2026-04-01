@@ -78,7 +78,7 @@ export default function CreateRoomPage() {
 
   return (
     <main className="min-h-screen bg-background">
-      <div className="mx-auto max-w-[390px] md:max-w-lg min-h-screen flex flex-col px-5 py-6">
+      <div className="mx-auto max-w-[390px] md:max-w-lg min-h-screen flex flex-col px-5 py-6 md:justify-center">
         {/* Header */}
         <header className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-3">
@@ -101,7 +101,7 @@ export default function CreateRoomPage() {
         </header>
 
         {/* Main Content */}
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col md:justify-center">
           <div className="glass-card rounded-3xl p-6 border border-white/10">
             <div className="text-center mb-6">
               <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-accent flex items-center justify-center mb-4">

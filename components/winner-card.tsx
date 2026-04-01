@@ -430,7 +430,7 @@ export function WinnerCard({
               transition={{ type: "spring", stiffness: 290, damping: 32 }}
             >
               <div
-                className="relative rounded-t-3xl overflow-hidden"
+                className="relative rounded-t-3xl overflow-hidden md:rounded-3xl md:mx-auto md:max-w-lg md:mb-8"
                 style={{
                   background: "linear-gradient(180deg, #0F2236 0%, #0B1B2B 100%)",
                   boxShadow: `0 -8px 60px ${color}30, 0 -2px 20px rgba(0,0,0,0.5)`,

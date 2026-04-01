@@ -65,7 +65,7 @@ export default function ScanPage() {
 
   return (
     <main className="min-h-screen bg-background">
-      <div className="mx-auto max-w-[390px] md:max-w-lg min-h-screen flex flex-col px-5 py-6">
+      <div className="mx-auto max-w-[390px] md:max-w-lg min-h-screen flex flex-col px-5 py-6 md:justify-center">
         {/* Header */}
         <header className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-3">
@@ -114,7 +114,7 @@ export default function ScanPage() {
         </div>
 
         {/* Content based on mode */}
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col md:justify-center">
           {mode === "scan" ? (
             <div className="flex-1 flex flex-col">
               {/* QR Scanner */}
@@ -145,7 +145,7 @@ export default function ScanPage() {
           ) : (
             <>
               {/* Manual Code Entry */}
-              <div className="flex-1 flex flex-col">
+              <div className="flex-1 flex flex-col md:justify-center">
                 <div className="glass-card rounded-3xl p-6 border border-white/10">
                   <div className="text-center mb-6">
                     <div className="w-14 h-14 mx-auto rounded-xl bg-gradient-accent flex items-center justify-center mb-4">

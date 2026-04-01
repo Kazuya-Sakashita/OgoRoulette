@@ -14,7 +14,6 @@ const DEMO_NAMES = ["さくら", "たろう", "はな"]
 export default function WelcomePage() {
   const [isLoading, setIsLoading] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [mounted, setMounted] = useState(false)
   // ISSUE-096: Demo roulette state
   const [demoSpinning, setDemoSpinning] = useState(false)
   const [demoWinner, setDemoWinner] = useState<string | null>(null)
@@ -22,8 +21,6 @@ export default function WelcomePage() {
   const router = useRouter()
 
   useEffect(() => {
-    setMounted(true)
-    
     // Check if user is already logged in or has visited before
     const checkUserOrVisited = async () => {
       // Check localStorage for returning guest
@@ -120,17 +117,9 @@ export default function WelcomePage() {
       </div>
 
       {/* Content Container */}
-      <div 
-        className={`relative z-10 w-full max-w-[360px] md:max-w-md flex flex-col items-center text-center transition-all duration-700 ${
-          mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
-        }`}
-      >
+      <div className="relative z-10 w-full max-w-[360px] md:max-w-md flex flex-col items-center text-center animate-fade-in-up">
         {/* Logo with animation */}
-        <div 
-          className={`mb-6 transition-all duration-700 delay-100 ${
-            mounted ? 'opacity-100 scale-100' : 'opacity-0 scale-90'
-          }`}
-        >
+        <div className="mb-6 animate-fade-in-up-delay-1">
           <div className="relative">
             {/* Glow behind logo */}
             <div className="absolute inset-0 scale-150 bg-primary/20 rounded-full blur-3xl" />
@@ -146,30 +135,18 @@ export default function WelcomePage() {
         </div>
 
         {/* App Name */}
-        <h1 
-          className={`text-4xl font-bold tracking-tight mb-3 transition-all duration-700 delay-200 ${
-            mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-          }`}
-        >
+        <h1 className="text-4xl font-bold tracking-tight mb-3 animate-fade-in-up-delay-2">
           <span className="text-foreground">Ogo</span>
           <span className="text-gradient">Roulette</span>
         </h1>
 
         {/* Tagline */}
-        <p 
-          className={`text-lg text-muted-foreground mb-10 transition-all duration-700 delay-300 ${
-            mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-          }`}
-        >
+        <p className="text-lg text-muted-foreground mb-10 animate-fade-in-up-delay-3">
           おごりをルーレットで決めよう
         </p>
 
         {/* ISSUE-096: Demo Roulette — instant try-before-signup */}
-        <div
-          className={`w-full mb-8 transition-all duration-700 delay-350 ${
-            mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-          }`}
-        >
+        <div className="w-full mb-8 animate-fade-in-up-delay-3">
           {demoWinner ? (
             <div className="text-center p-5 rounded-2xl bg-primary/10 border border-primary/20">
               <div className="text-2xl font-black text-foreground mb-1">
@@ -238,11 +215,7 @@ export default function WelcomePage() {
         </div>
 
         {/* Buttons Container */}
-        <div
-          className={`w-full space-y-4 transition-all duration-700 delay-400 ${
-            mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-          }`}
-        >
+        <div className="w-full space-y-4 animate-fade-in-up-delay-4">
           {/* Google Login Button */}
           <button
             onClick={handleGoogleLogin}
@@ -339,11 +312,7 @@ export default function WelcomePage() {
         )}
 
         {/* ISSUE-137: ソーシャルプルーフ — 利用者の安心感と信頼を高める */}
-        <div
-          className={`mt-6 flex items-center justify-center gap-4 transition-all duration-700 delay-500 ${
-            mounted ? 'opacity-100' : 'opacity-0'
-          }`}
-        >
+        <div className="mt-6 flex items-center justify-center gap-4 animate-fade-in-up-delay-5">
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground/70">
             <span>🎰</span>
             <span>飲み会・合コン・社内で人気</span>
@@ -356,22 +325,14 @@ export default function WelcomePage() {
         </div>
 
         {/* How to use link */}
-        <p
-          className={`mt-4 transition-all duration-700 delay-500 ${
-            mounted ? 'opacity-100' : 'opacity-0'
-          }`}
-        >
+        <p className="mt-4 animate-fade-in-up-delay-5">
           <Link href="/how-to-use" className="text-xs text-muted-foreground hover:text-foreground transition-colors underline underline-offset-4">
             使い方を見る →
           </Link>
         </p>
 
         {/* Terms */}
-        <p
-          className={`mt-5 text-xs text-muted-foreground leading-relaxed transition-all duration-700 delay-500 ${
-            mounted ? 'opacity-100' : 'opacity-0'
-          }`}
-        >
+        <p className="mt-5 text-xs text-muted-foreground leading-relaxed animate-fade-in-up-delay-5">
           続行することで、
           <Link href="/terms" className="text-primary hover:underline">利用規約</Link>
           と
@@ -381,11 +342,7 @@ export default function WelcomePage() {
       </div>
 
       {/* Footer */}
-      <footer 
-        className={`absolute bottom-6 text-xs text-muted-foreground/60 transition-all duration-700 delay-600 ${
-          mounted ? 'opacity-100' : 'opacity-0'
-        }`}
-      >
+      <footer className="absolute bottom-6 text-xs text-muted-foreground/60 animate-fade-in-up-delay-5">
         © 2026 OgoRoulette
       </footer>
     </main>

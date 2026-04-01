@@ -76,10 +76,18 @@ export function GroupList({
     }
   }, [openMenuId])
 
-  // Render nothing while hydrating — SSR produces [] and CSR initial render must match.
-  // Without this guard, the empty-state DOM rendered by the server would conflict with
-  // the group-list DOM the client wants to render, causing a Hydration error.
-  if (loading) return null
+  // Show skeleton while loading — prevents layout shift and hydration errors
+  if (loading) {
+    return (
+      <section className="mb-5">
+        <div className="h-3 w-24 bg-white/10 rounded animate-pulse mb-3" />
+        {[1, 2].map((i) => (
+          <div key={i} className="h-14 rounded-2xl bg-white/5 animate-pulse mb-2" />
+        ))}
+        <div className="h-4 w-32 bg-white/5 rounded animate-pulse mt-2" />
+      </section>
+    )
+  }
 
   if (groups.length === 0) {
     return (
@@ -160,6 +168,8 @@ export function GroupList({
                   <button
                     onClick={() => onSelect(group.id)}
                     onContextMenu={(e) => e.preventDefault()}
+                    aria-label={`${group.name}を選択${isSelected ? '（選択中）' : ''}`}
+                    aria-pressed={isSelected}
                     className="flex items-center gap-2 flex-1 min-w-0 text-left select-none"
                   >
                     {/* Selection indicator */}
@@ -194,8 +204,9 @@ export function GroupList({
                       e.stopPropagation()
                       setOpenMenuId(menuOpen ? null : group.id)
                     }}
+                    aria-label={`${group.name}のメニューを${menuOpen ? '閉じる' : '開く'}`}
+                    aria-expanded={menuOpen}
                     className="shrink-0 w-8 h-8 rounded-xl flex items-center justify-center transition-all active:scale-95 text-muted-foreground hover:bg-white/10 hover:text-foreground"
-                    title="メニュー"
                   >
                     <MoreHorizontal className="w-4 h-4" />
                   </button>
@@ -207,12 +218,12 @@ export function GroupList({
                         e.stopPropagation()
                         onSpin(group.id)
                       }}
+                      aria-label={`${group.name}ですぐ回す`}
                       className={`shrink-0 w-8 h-8 rounded-xl flex items-center justify-center transition-all active:scale-95 ${
                         isSelected
                           ? "bg-gradient-accent text-white font-bold shadow-md"
                           : "bg-primary/20 hover:bg-primary/40 text-primary"
                       }`}
-                      title={`${group.name}ですぐ回す`}
                     >
                       <Play className={`w-3.5 h-3.5 ${isSelected ? "fill-white" : "fill-primary"}`} />
                     </button>
@@ -241,6 +252,7 @@ export function GroupList({
                   </button>
                   <button
                     onClick={() => { setOpenMenuId(null); onDelete(group.id) }}
+                    aria-label={`${group.name}を削除`}
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-destructive hover:bg-destructive/15 transition-colors"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
