@@ -127,6 +127,22 @@ export default function HomePage() {
       }
     }
     getUser()
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === "SIGNED_IN" && session?.user) {
+        setUser(session.user)
+        const res = await fetch("/api/profile/name")
+        if (res.ok) {
+          const data = await res.json() as { id: string; displayName: string | null; displayNameConfirmedAt: string | null }
+          setProfile({ id: data.id, displayName: data.displayName ?? null, displayNameConfirmedAt: data.displayNameConfirmedAt ?? null })
+          localStorage.setItem(CACHE_KEY, JSON.stringify({ id: data.id, displayName: data.displayName ?? null, displayNameConfirmedAt: data.displayNameConfirmedAt ?? null }))
+        }
+      } else if (event === "SIGNED_OUT") {
+        setUser(null)
+        setProfile(null)
+      }
+    })
+    return () => subscription.unsubscribe()
   }, [])
 
   // Sessions sync — seed treat stats in LocalStorage from cloud history
