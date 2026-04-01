@@ -54,7 +54,12 @@ function ResultInner() {
     const text = `OgoRouletteで${treaterName}さんが${formatCurrency(treatAmount)}奢り!\n残り${formatCurrency(remainingAmount)}は${nonTreaters.length}人で割り勘 → 1人${formatCurrency(splitAmount)}`
 
     if (navigator.share) {
-      navigator.share({ text, url: window.location.href })
+      navigator.share({ text, url: window.location.href }).catch((e: unknown) => {
+        // AbortError = ユーザーがキャンセル → 無音でOK
+        if (e instanceof Error && e.name !== "AbortError") {
+          console.warn("[OgoRoulette] navigator.share failed:", e)
+        }
+      })
     } else {
       navigator.clipboard.writeText(text)
       setCopied(true)
