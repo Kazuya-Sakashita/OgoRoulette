@@ -473,6 +473,16 @@ export default function RoomPage({ params }: { params: Promise<{ code: string }>
               ))}
             </div>
           )}
+
+          {/* 参加者向け：ホストがゲームを開始するのを待っている旨を表示 */}
+          {!isOwner && room.status === "WAITING" && (
+            <div className="mt-4 px-4 py-3 rounded-2xl glass-card border border-white/10 text-center">
+              <div className="flex items-center justify-center gap-2 text-muted-foreground">
+                <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                <p className="text-sm">ホストがゲームを開始するのを待っています</p>
+              </div>
+            </div>
+          )}
         </section>
 
         {/* Start Roulette Button — オーナーのみ操作可、メンバーは待機メッセージ */}
