@@ -410,7 +410,7 @@ export function ShareSheet({
       {/* ISSUE-078: 初回シェア前の公開名確認ダイアログ */}
       {showConfirm && profile && (
         <motion.div
-          className="absolute inset-0 z-10 flex items-end justify-center"
+          className="fixed inset-0 z-[90] flex items-end justify-center"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
         >
