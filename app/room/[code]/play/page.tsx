@@ -827,6 +827,13 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
           </Link>
         </header>
 
+        {/* ISSUE-127: ゲスト参加者向けログイン誘導 */}
+        {!currentUser && !isOwner && (
+          <p className="text-xs text-muted-foreground/60 text-center mb-2">
+            ゲスト参加中 · <Link href="/auth/login" className="text-primary hover:underline">ログインして公開名を設定</Link>
+          </p>
+        )}
+
         {/* ISSUE-010: 有効期限バナー */}
         {isExpired && (
           <div className="mb-3 px-3 py-2 rounded-xl bg-red-500/15 border border-red-500/30 flex items-center justify-between gap-2">
