@@ -283,11 +283,19 @@ function drawParticipantsIntro(
   const colors   = ["#F97316", "#EC4899", "#8B5CF6", "#3B82F6", "#22C55E", "#FBBF24", "#EF4444", "#06B6D4"]
 
   for (let i = 0; i < shown.length; i++) {
+    // 各名前にstaggeredフェードイン
+    const startDelay = 0.08 + i * 0.10  // 80ms起点、100msずつずらす
+    const nameElapsed = Math.max(0, elapsed - startDelay)
+    const nameAlpha = Math.min(nameElapsed / 0.12, 1)  // 120msでフェードイン
+    if (nameAlpha <= 0) continue  // まだ表示しない
+
     const y = listTopY + i * lineH
+    ctx.globalAlpha = alpha * nameAlpha
     ctx.font      = `bold ${shown.length > 5 ? 30 : 34}px sans-serif`
     ctx.fillStyle = colors[i % colors.length]
     ctx.textAlign = "center"
     ctx.fillText(shown[i], cx, y)
+    ctx.globalAlpha = alpha
   }
 
   // Bottom tagline
