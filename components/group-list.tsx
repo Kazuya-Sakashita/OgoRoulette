@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useRef } from "react"
-import { Plus, Check, Pencil, Trash2, X as XIcon, Play, Users } from "lucide-react"
+import { useState, useRef, useEffect } from "react"
+import { Plus, Check, Pencil, Trash2, X as XIcon, Play, Users, MoreHorizontal } from "lucide-react"
 import type { SavedGroup } from "@/lib/group-storage"
 
 interface GroupListProps {
@@ -46,7 +46,7 @@ export function GroupList({
 }: GroupListProps) {
   const [editState, setEditState] = useState<EditState | null>(null)
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
-  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const menuRef = useRef<HTMLDivElement | null>(null)
 
   const startEdit = (group: SavedGroup) => {
     setOpenMenuId(null)
@@ -61,13 +61,20 @@ export function GroupList({
     setEditState(null)
   }
 
-  const handleLongPressStart = (id: string) => {
-    longPressTimer.current = setTimeout(() => setOpenMenuId(id), 500)
-  }
-
-  const handleLongPressEnd = () => {
-    if (longPressTimer.current) clearTimeout(longPressTimer.current)
-  }
+  useEffect(() => {
+    if (!openMenuId) return
+    const handleOutsideClick = (e: MouseEvent | TouchEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setOpenMenuId(null)
+      }
+    }
+    document.addEventListener("mousedown", handleOutsideClick)
+    document.addEventListener("touchstart", handleOutsideClick)
+    return () => {
+      document.removeEventListener("mousedown", handleOutsideClick)
+      document.removeEventListener("touchstart", handleOutsideClick)
+    }
+  }, [openMenuId])
 
   // Render nothing while hydrating — SSR produces [] and CSR initial render must match.
   // Without this guard, the empty-state DOM rendered by the server would conflict with
@@ -151,16 +158,9 @@ export function GroupList({
                 >
                   {/* Left: tap to select */}
                   <button
-                    onClick={() => {
-                      if (menuOpen) { setOpenMenuId(null); return }
-                      onSelect(group.id)
-                    }}
-                    onMouseDown={() => handleLongPressStart(group.id)}
-                    onMouseUp={handleLongPressEnd}
-                    onMouseLeave={handleLongPressEnd}
-                    onTouchStart={() => handleLongPressStart(group.id)}
-                    onTouchEnd={handleLongPressEnd}
-                    className="flex items-center gap-2 flex-1 min-w-0 text-left"
+                    onClick={() => onSelect(group.id)}
+                    onContextMenu={(e) => e.preventDefault()}
+                    className="flex items-center gap-2 flex-1 min-w-0 text-left select-none"
                   >
                     {/* Selection indicator */}
                     <div
@@ -188,6 +188,18 @@ export function GroupList({
                     </div>
                   </button>
 
+                  {/* Actions menu trigger */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setOpenMenuId(menuOpen ? null : group.id)
+                    }}
+                    className="shrink-0 w-8 h-8 rounded-xl flex items-center justify-center transition-all active:scale-95 text-muted-foreground hover:bg-white/10 hover:text-foreground"
+                    title="メニュー"
+                  >
+                    <MoreHorizontal className="w-4 h-4" />
+                  </button>
+
                   {/* Right: spin immediately with this group */}
                   {onSpin && (
                     <button
@@ -208,9 +220,9 @@ export function GroupList({
                 </div>
               )}
 
-              {/* Long-press action menu */}
+              {/* Action menu */}
               {menuOpen && !isEditing && (
-                <div className="absolute right-0 top-full mt-1 z-20 flex gap-1 p-1 rounded-xl glass-card border border-white/15 shadow-lg">
+                <div ref={menuRef} className="absolute right-0 top-full mt-1 z-20 flex gap-1 p-1 rounded-xl glass-card border border-white/15 shadow-lg">
                   {onCreateRoom && (
                     <button
                       onClick={() => { setOpenMenuId(null); onCreateRoom(group.id) }}
