@@ -13,6 +13,13 @@ export const SPIN_DURATION_MS = 5500
 // Canonical roulette segment colors — shared across RouletteWheel and WinnerCard
 // Order matters: index 0 = first segment color shown on wheel
 // 10 colors to cover the default maxMembers of 10 without repeating
+// 演出タイムアウト定数 — この1ファイルで全フェーズ尺を管理する
+export const INTRO_DURATION_S      = 1.5   // イントロ参加者表示（秒）
+export const COUNTDOWN_DURATION_S  = 3.0   // カウントダウン 3→2→1（秒）
+export const BOUNCE_DURATION_MS    = 500   // バウンスアニメーション（ms）
+export const SILENCE_BEFORE_REVEAL_MS = 500 // ホイール停止〜reveal開始までの溜め（ms）
+export const CONFETTI_DURATION_MS  = 4000  // confetti表示時間（ms）
+
 export const SEGMENT_COLORS = [
   "#F97316", // Orange
   "#EC4899", // Pink
