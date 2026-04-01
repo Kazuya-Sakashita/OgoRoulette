@@ -118,12 +118,12 @@ export function WinnerCard({
     const t3 = setTimeout(() => setShowReaction(true), 1150)
     // ISSUE-093: instant share button appears 1.5 s after reveal
     const t4 = setTimeout(() => setShowInstantShare(true), 1500)
-    const t5 = setTimeout(() => setShowHint(true), 2300)
-    // Auto-advance to Phase B after 4 seconds
+    const t5 = setTimeout(() => setShowHint(true), 1800)
+    // ISSUE-155: Auto-advance to Phase B after 3.2s (was 4s) — tighter pacing
     const t6 = setTimeout(() => {
       setPhase("details")
       onAdvanceToDetails?.()
-    }, 4000)
+    }, 3200)
 
     return () => {
       clearTimeout(t1)
@@ -227,7 +227,7 @@ export function WinnerCard({
             onClick={advanceToDetails}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            exit={{ opacity: 0, scale: 0.96, filter: "blur(4px)" }}
             transition={{ duration: 0.25 }}
           >
             {/* Full-screen winner color flood */}
@@ -421,13 +421,13 @@ export function WinnerCard({
               />
             </div>
 
-            {/* Bottom sheet slides up */}
+            {/* Bottom sheet slides up — ISSUE-155: tighter spring for snappier feel */}
             <motion.div
               key="sheet"
               className="fixed inset-x-0 bottom-0 z-50 max-h-[92vh] overflow-y-auto"
-              initial={{ y: "100%" }}
-              animate={{ y: 0 }}
-              transition={{ type: "spring", stiffness: 290, damping: 32 }}
+              initial={{ y: "100%", opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ type: "spring", stiffness: 340, damping: 30, mass: 0.8 }}
             >
               <div
                 className="relative rounded-t-3xl overflow-hidden md:rounded-3xl md:mx-auto md:max-w-lg md:mb-8"

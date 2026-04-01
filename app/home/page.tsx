@@ -272,45 +272,48 @@ export default function HomePage() {
   }
 
   const handleSpinComplete = (winnerName: string, winnerIndex: number) => {
-    playResultSound()
-    vibrate(HapticPattern.result)
     setIsSpinning(false)
-    setWinner({ name: winnerName, index: winnerIndex })
-    setShowConfetti(true)
-    clearTimeout(confettiTimerRef.current ?? undefined)
-    confettiTimerRef.current = setTimeout(() => setShowConfetti(false), 4000)
+    // ISSUE-155: 300ms silence after wheel stops — creates anticipation before reveal
+    setTimeout(() => {
+      playResultSound()
+      vibrate(HapticPattern.result)
+      setWinner({ name: winnerName, index: winnerIndex })
+      setShowConfetti(true)
+      clearTimeout(confettiTimerRef.current ?? undefined)
+      confettiTimerRef.current = setTimeout(() => setShowConfetti(false), 4000)
 
-    // Record treat in LocalStorage and compute gamification data
-    const amount = hasBillInput ? treatAmount : 0
-    const newCount = recordTreat(winnerName, amount)
-    setLastTreatCount(newCount)
-    setLastTreatTitle(getTreatTitle(newCount))
-    setLastRanking(getGroupRanking(participants).map(r => ({ name: r.name, count: r.count })))
+      // Record treat in LocalStorage and compute gamification data
+      const amount = hasBillInput ? treatAmount : 0
+      const newCount = recordTreat(winnerName, amount)
+      setLastTreatCount(newCount)
+      setLastTreatTitle(getTreatTitle(newCount))
+      setLastRanking(getGroupRanking(participants).map(r => ({ name: r.name, count: r.count })))
 
-    // Trigger reveal phase in recording canvas, then stop recording 2.5s later
-    stopRecordingAfterReveal()
+      // Trigger reveal phase in recording canvas, then stop recording 2.5s later
+      stopRecordingAfterReveal()
 
-    // Save session to DB (fire-and-forget — don't block the UX)
-    if (user) {
-      fetch("/api/sessions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          totalAmount: hasBillInput ? totalBill : null,
-          treatAmount: hasBillInput ? treatAmount : null,
-          perPersonAmount: hasBillInput ? splitAmount : null,
-          winnerName,
-          winnerIndex,
-          participants: participants.map((name, index) => ({
-            name,
-            color: SEGMENT_COLORS[index % SEGMENT_COLORS.length],
-            index,
-          })),
-        }),
-      }).catch(() => {
-        // Silently ignore — session save failure must not interrupt the spin experience
-      })
-    }
+      // Save session to DB (fire-and-forget — don't block the UX)
+      if (user) {
+        fetch("/api/sessions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            totalAmount: hasBillInput ? totalBill : null,
+            treatAmount: hasBillInput ? treatAmount : null,
+            perPersonAmount: hasBillInput ? splitAmount : null,
+            winnerName,
+            winnerIndex,
+            participants: participants.map((name, index) => ({
+              name,
+              color: SEGMENT_COLORS[index % SEGMENT_COLORS.length],
+              index,
+            })),
+          }),
+        }).catch(() => {
+          // Silently ignore — session save failure must not interrupt the spin experience
+        })
+      }
+    }, 300)
   }
 
   const closeWinnerCard = () => {
@@ -361,6 +364,13 @@ export default function HomePage() {
     await saveGroup(name, members)
     setSaveGroupSuccess(true)
     setTimeout(closeSaveInput, 1500)
+  }
+
+  // ISSUE-151: WinnerCard inline save — uses current participants (not modal state)
+  const handleSaveGroupFromWinner = async (name: string) => {
+    const members = participants.filter((p) => p.trim())
+    if (members.length < 2) return
+    await saveGroup(name, members)
   }
 
   const removeParticipant = (index: number) => {
@@ -418,7 +428,7 @@ export default function HomePage() {
           ranking={lastRanking}
           videoBlob={recordedBlob}
           onShareVideo={() => setShowShareSheet(true)}
-          onSaveGroup={isCurrentGroupSaved ? undefined : handleSaveGroup}
+          onSaveGroup={isCurrentGroupSaved ? undefined : handleSaveGroupFromWinner}
           isGuest={!user}
         />
       )}
