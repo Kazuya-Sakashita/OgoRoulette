@@ -129,6 +129,11 @@ function ResultInner() {
           </div>
         </div>
 
+        {/* ソーシャルプルーフ */}
+        <p className="text-center text-xs text-muted-foreground px-2">
+          OgoRouletteで「誰が奢る？」をルーレットで楽しく決めよう 🎰
+        </p>
+
         {/* ISSUE-094: Conversion CTA — join active room or discover the app */}
         {/* ISSUE-116: 楽観表示 — loading中もroomCodeがあれば "参加する" CTAを出す */}
         {roomActive !== "inactive" && roomCode ? (
