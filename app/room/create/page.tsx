@@ -78,7 +78,7 @@ export default function CreateRoomPage() {
 
   return (
     <main className="min-h-screen bg-background">
-      <div className="mx-auto max-w-[390px] min-h-screen flex flex-col px-5 py-6">
+      <div className="mx-auto max-w-[390px] md:max-w-lg min-h-screen flex flex-col px-5 py-6">
         {/* Header */}
         <header className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-3">

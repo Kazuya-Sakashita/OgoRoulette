@@ -595,8 +595,8 @@ export default function HomePage() {
         </>
       )}
 
-      {/* Mobile-first container - max 390px as per spec */}
-      <div className="mx-auto max-w-[390px] min-h-screen flex flex-col px-5 py-6">
+      {/* Container: mobile 390px / desktop max-w-4xl with 2-column layout */}
+      <div className="mx-auto max-w-[390px] md:max-w-4xl min-h-screen flex flex-col px-5 py-6">
 
         {/* Header */}
         <header className="flex items-center justify-between mb-6">
@@ -711,6 +711,12 @@ export default function HomePage() {
             </button>
           </div>
         )}
+
+        {/* Desktop 2-column grid: GroupA(右上) / GroupB(左ルーレット) / GroupC(右下) */}
+        <div className="flex-1 flex flex-col md:grid md:grid-cols-2 md:gap-8 md:items-start">
+
+        {/* Group A: グループ選択・金額設定 — desktop: right column top */}
+        <div className="md:col-start-2 md:row-start-1">
 
         {/* いつものメンバー — shown above roulette for 1-tap access */}
         <GroupList
@@ -841,8 +847,12 @@ export default function HomePage() {
           )}
         </section>
 
+        </div>{/* /Group A */}
+
+        {/* Group B: ルーレット — desktop: left column, sticky */}
+        <div className="flex-1 flex flex-col items-center justify-center py-2 md:col-start-1 md:row-start-1 md:row-span-2 md:sticky md:top-6 md:py-8">
+
         {/* Roulette Wheel - Centerpiece */}
-        <div className="flex-1 flex flex-col items-center justify-center py-2">
           <div className="relative mb-2">
             {/* Ambient background glow */}
             <div className="absolute inset-0 scale-[1.6] bg-primary/10 rounded-full blur-3xl pointer-events-none" />
@@ -884,6 +894,9 @@ export default function HomePage() {
             )}
           </Button>
         </div>
+
+        {/* Group C: 参加者・アクション — desktop: right column bottom */}
+        <div className="md:col-start-2 md:row-start-2">
 
         {/* Participants Section */}
         <section className="mt-4">
@@ -1022,6 +1035,8 @@ export default function HomePage() {
             © 2026 OgoRoulette
           </p>
         </footer>
+        </div>{/* /Group C */}
+        </div>{/* /layout grid */}
       </div>
 
       {/* ISSUE-101: PWA install prompt — subtle fixed banner at the bottom */}

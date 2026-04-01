@@ -700,7 +700,7 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
   if (loading || !authLoaded || !isGuestHostResolved) {
     return (
       <main className="min-h-screen bg-background">
-        <div className="mx-auto max-w-[390px] min-h-dvh flex flex-col px-5 py-6">
+        <div className="mx-auto max-w-[390px] md:max-w-lg min-h-dvh flex flex-col px-5 py-6">
           {/* Header skeleton */}
           <div className="flex items-center gap-4 mb-8">
             <div className="w-9 h-9 rounded-xl bg-white/10 animate-pulse" />
@@ -721,7 +721,7 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
     const isExpiredError = error === "expired"
     return (
       <main className="min-h-screen bg-background">
-        <div className="mx-auto max-w-[390px] min-h-dvh flex flex-col px-5 py-6">
+        <div className="mx-auto max-w-[390px] md:max-w-lg min-h-dvh flex flex-col px-5 py-6">
           <header className="flex items-center gap-4 mb-8">
             <Button asChild variant="ghost" size="icon" className="text-muted-foreground">
               <Link href="/home">
@@ -828,7 +828,7 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
         />
       )}
 
-      <div className="mx-auto max-w-[390px] min-h-dvh flex flex-col px-5 py-6">
+      <div className="mx-auto max-w-[390px] md:max-w-lg min-h-dvh flex flex-col px-5 py-6">
 
         {/* Header */}
         <header className="flex items-center gap-3 mb-4">

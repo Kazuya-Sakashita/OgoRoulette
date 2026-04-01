@@ -212,7 +212,7 @@ export default function RoomPage({ params }: { params: Promise<{ code: string }>
     const isExpiredError = error === "expired"
     return (
       <main className="min-h-screen bg-background">
-        <div className="mx-auto max-w-[390px] min-h-screen flex flex-col px-5 py-6">
+        <div className="mx-auto max-w-[390px] md:max-w-lg min-h-screen flex flex-col px-5 py-6">
           <header className="flex items-center gap-4 mb-8">
             <Button asChild variant="ghost" size="icon" className="text-muted-foreground">
               <Link href="/">
@@ -299,7 +299,7 @@ export default function RoomPage({ params }: { params: Promise<{ code: string }>
         </div>
       )}
 
-      <div className="mx-auto max-w-[390px] min-h-screen flex flex-col px-5 py-6">
+      <div className="mx-auto max-w-[390px] md:max-w-lg min-h-screen flex flex-col px-5 py-6">
         {/* Header */}
         <header className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">

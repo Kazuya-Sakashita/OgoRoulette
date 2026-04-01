@@ -121,7 +121,7 @@ export default function WelcomePage() {
 
       {/* Content Container */}
       <div 
-        className={`relative z-10 w-full max-w-[360px] flex flex-col items-center text-center transition-all duration-700 ${
+        className={`relative z-10 w-full max-w-[360px] md:max-w-md flex flex-col items-center text-center transition-all duration-700 ${
           mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
         }`}
       >

@@ -127,7 +127,7 @@ export default function JoinRoomPage({ params }: { params: Promise<{ code: strin
   if (error && !room) {
     return (
       <main className="min-h-screen bg-background">
-        <div className="mx-auto max-w-[390px] min-h-screen flex flex-col px-5 py-6">
+        <div className="mx-auto max-w-[390px] md:max-w-lg min-h-screen flex flex-col px-5 py-6">
           <header className="flex items-center gap-4 mb-8">
             <Button asChild variant="ghost" size="icon" className="text-muted-foreground">
               <Link href="/">
@@ -153,7 +153,7 @@ export default function JoinRoomPage({ params }: { params: Promise<{ code: strin
 
   return (
     <main className="min-h-screen bg-background">
-      <div className="mx-auto max-w-[390px] min-h-screen flex flex-col px-5 py-6">
+      <div className="mx-auto max-w-[390px] md:max-w-lg min-h-screen flex flex-col px-5 py-6">
         {/* Header */}
         <header className="flex items-center gap-4 mb-8">
           <Button asChild variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
