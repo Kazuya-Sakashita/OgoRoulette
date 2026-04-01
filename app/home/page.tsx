@@ -36,6 +36,15 @@ import { vibrate, HapticPattern } from "@/lib/haptic"
 
 export default function HomePage() {
   const [isSpinning, setIsSpinning] = useState(false)
+  // ISSUE-157: Responsive roulette size — larger at desktop (lg: 1024px+)
+  const [wheelSize, setWheelSize] = useState(280)
+  useEffect(() => {
+    const mql = window.matchMedia('(min-width: 1024px)')
+    const update = (e: MediaQueryList | MediaQueryListEvent) => setWheelSize(e.matches ? 360 : 280)
+    update(mql)
+    mql.addEventListener('change', update)
+    return () => mql.removeEventListener('change', update)
+  }, [])
   const [participants, setParticipants] = useState(["さくら", "たろう", "はな", "けんた"])
   const [showAddInput, setShowAddInput] = useState(false)
   const [newName, setNewName] = useState("")
@@ -874,7 +883,7 @@ export default function HomePage() {
 
             <RouletteWheel
               isSpinning={isSpinning}
-              size={280}
+              size={wheelSize}
               participants={participants}
               onSpinComplete={handleSpinComplete}
               onSpinStart={handleSpinStart}
@@ -945,7 +954,7 @@ export default function HomePage() {
                 {participants.length > 2 && (
                   <button
                     onClick={() => removeParticipant(index)}
-                    aria-label="削除"
+                    aria-label={`${name}を削除`}
                     className="opacity-0 group-hover:opacity-100 [@media(hover:none)]:opacity-100 w-5 h-5 rounded-full bg-destructive/20 flex items-center justify-center text-destructive hover:bg-destructive/30 transition-all"
                   >
                     <XIcon className="w-3 h-3" />

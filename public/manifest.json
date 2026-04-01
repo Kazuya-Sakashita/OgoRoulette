@@ -1,12 +1,17 @@
 {
-  "name": "OgoRoulette",
+  "id": "/",
+  "name": "OgoRoulette — おごりをルーレットで決めよう",
   "short_name": "OgoRoulette",
-  "description": "おごりをルーレットで決めよう",
+  "description": "飲み会・合コン・社内ランチ。おごりを公平にルーレットで決める無料アプリ。",
+  "lang": "ja",
+  "dir": "ltr",
   "start_url": "/home",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#0B1B2B",
   "theme_color": "#F97316",
-  "orientation": "portrait",
+  "orientation": "portrait-primary",
+  "categories": ["games", "utilities", "entertainment"],
   "icons": [
     {
       "src": "/images/icon-192.png",
@@ -32,5 +37,15 @@
       "type": "image/png",
       "purpose": "maskable"
     }
-  ]
+  ],
+  "screenshots": [
+    {
+      "src": "/images/og-image.png",
+      "sizes": "1200x630",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "OgoRoulette — おごりをルーレットで決めよう"
+    }
+  ],
+  "prefer_related_applications": false
 }
