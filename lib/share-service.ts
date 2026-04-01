@@ -145,7 +145,7 @@ export async function shareWithFile(
     // ISSUE-103: PNG fallback on iOS has type="image/png" — handle image/* separately
     const blobType = payload.videoBlob.type
     const ext = blobType.startsWith("image/")
-      ? (blobType.split("/")[1] ?? "png")
+      ? (blobType.split("/")[1]?.split(";")[0] ?? "png")
       : blobType.includes("mp4") ? "mp4" : "webm"
     const file = new File([payload.videoBlob], `ogoroulette_${payload.winner}.${ext}`, {
       type: payload.videoBlob.type,
@@ -178,7 +178,7 @@ export async function shareWithFile(
 export function downloadVideo(blob: Blob, winner: string): void {
   // ISSUE-103: PNG fallback on iOS has type="image/png"
   const ext = blob.type.startsWith("image/")
-    ? (blob.type.split("/")[1] ?? "png")
+    ? (blob.type.split("/")[1]?.split(";")[0] ?? "png")
     : blob.type.includes("mp4") ? "mp4" : "webm"
   const url = URL.createObjectURL(blob)
   const a = document.createElement("a")
