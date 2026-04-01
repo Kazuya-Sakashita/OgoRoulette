@@ -393,7 +393,7 @@
 
 | ID | タイトル | 概要 | ステータス |
 |----|--------|------|----------|
-| [ISSUE-141](./issue-141-fix-mobile-roulette-overflow.md) | iPhone 17 Proでルーレットが画面外にはみ出す問題を修正する | overflow-x-clip・min-h-dvh・window.innerHeight ベースのレスポンシブサイズで解決 | ✅ 完了 |
+| [ISSUE-141](./issue-141-fix-mobile-roulette-overflow.md) | iPhone 17 Proでルーレットが画面外にはみ出す問題を修正する | overflow-x-clip・min-h-dvh・window.innerHeight ベースのレスポンシブサイズで解決 | ✅ 完了（commit: b303893） |
 
 ---
 
