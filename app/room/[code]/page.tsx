@@ -53,6 +53,8 @@ export default function RoomPage({ params }: { params: Promise<{ code: string }>
   // ISSUE-100: join toast
   const [joinToast, setJoinToast] = useState<string | null>(null)
   const prevMemberIdsRef = useRef<Set<string>>(new Set())
+  // ISSUE-124: 新規参加メンバーの行ハイライト用
+  const [newMemberIds, setNewMemberIds] = useState<Set<string>>(new Set())
   // Stops polling once room is COMPLETED (ref avoids stale closure in setInterval)
   const isCompletedRef = useRef(false)
 
@@ -84,6 +86,9 @@ export default function RoomPage({ params }: { params: Promise<{ code: string }>
           (newMembers[0].profile ? getDisplayName(newMembers[0].profile) : "ゲスト")
         setJoinToast(`${name}さんが参加しました 🎉`)
         setTimeout(() => setJoinToast(null), 3000)
+        // ISSUE-124: 新規参加メンバーの行をハイライト
+        setNewMemberIds(new Set(newMembers.map(m => m.id)))
+        setTimeout(() => setNewMemberIds(new Set()), 3000)
       }
       prevMemberIdsRef.current = new Set((data.members as Member[]).map((m: Member) => m.id))
 
@@ -431,9 +436,13 @@ export default function RoomPage({ params }: { params: Promise<{ code: string }>
           ) : (
             <div className="space-y-2">
               {room.members.map((member) => (
-                <div 
+                <div
                   key={member.id}
-                  className="flex items-center gap-3 p-3 rounded-xl glass-card border border-white/10"
+                  className={`flex items-center gap-3 p-3 rounded-xl glass-card border transition-all ${
+                    newMemberIds.has(member.id)
+                      ? "border-primary/60 ring-2 ring-primary/60"
+                      : "border-white/10"
+                  }`}
                 >
                   <div 
                     className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-white"
