@@ -127,6 +127,8 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
 
   // Countdown display — driven by spinStartedAtMs vs Date.now()
   const [spinStartedAtMs, setSpinStartedAtMs] = useState<number | null>(null)
+  // ルーム同期: メンバーがアニメーション開始時点で spinStartedAt から何 ms 経過しているか
+  const [spinElapsedMs, setSpinElapsedMs] = useState<number>(0)
   const [countdownValue, setCountdownValue] = useState<number | null>(null)
 
   // Video recording
@@ -464,7 +466,23 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
       setSpinStartedAtMs(startMs)
       spinScheduledRef.current = true
       setPhase("preparing")
-      setTimeout(() => setPhase("spinning"), delay)
+      // アニメーション全体の所要時間 (spin 4500ms + bounce buffer 500ms)
+      const TOTAL_ANIM_MS = 5000
+      setTimeout(() => {
+        const elapsed = Math.max(0, Date.now() - startMs)
+        // 受信が遅すぎてアニメーション終了済みの場合 → アニメーションをスキップして直接 result 表示
+        if (elapsed >= TOTAL_ANIM_MS) {
+          const winnerData = pendingMemberWinnerRef.current
+          if (winnerData) {
+            setWinner(winnerData)
+            setPhase("result")
+            spinScheduledRef.current = false
+          }
+          return
+        }
+        setSpinElapsedMs(elapsed)
+        setPhase("spinning")
+      }, delay)
     }
 
     // First load
@@ -570,6 +588,7 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
       const delay = Math.max(0, Math.min(data.spinStartedAt - Date.now(), MAX_SPIN_DELAY_MS))
       setSpinStartedAtMs(data.spinStartedAt)
       setPendingWinnerIndex(data.winnerIndex)
+      setSpinElapsedMs(0) // オーナーは常にフル duration で開始
       setTimeout(() => {
         if (!spinScheduledRef.current) {
           spinScheduledRef.current = true
@@ -588,6 +607,7 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
     setPendingWinnerIndex(undefined)
     setSpinError(null)
     setSpinStartedAtMs(null)
+    setSpinElapsedMs(0)
     spinScheduledRef.current = false
     prevSessionIdRef.current = null
     pendingMemberWinnerRef.current = null
@@ -1045,6 +1065,8 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
               onSlowingDown={handleSlowingDown}
               onNearMiss={handleNearMiss}
               wheelRotationRef={wheelRotationRef}
+              spinElapsedMs={spinElapsedMs}
+              spinSeed={spinStartedAtMs ?? undefined}
             />
           </div>
 

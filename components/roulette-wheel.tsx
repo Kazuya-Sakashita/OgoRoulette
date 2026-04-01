@@ -16,6 +16,10 @@ interface RouletteWheelProps {
   onNearMiss?: () => void     // ISSUE-098: ニアミス演出直前（当選確定の280ms前）
   /** Ref written each frame with the current rotation in degrees — used by RecordingCanvas */
   wheelRotationRef?: MutableRefObject<number>
+  /** ルーム同期: spinStartedAt から遅れてアニメーション開始した場合の経過 ms。duration を短縮する */
+  spinElapsedMs?: number
+  /** ルーム同期: minSpins 決定論化のための seed（spinStartedAt ms）。全クライアントで同値 */
+  spinSeed?: number
 }
 
 export function RouletteWheel({
@@ -28,6 +32,8 @@ export function RouletteWheel({
   onSlowingDown,
   onNearMiss,
   wheelRotationRef,
+  spinElapsedMs,
+  spinSeed,
 }: RouletteWheelProps) {
   const rotation = useMotionValue(0)
   const [glowIntensity, setGlowIntensity] = useState(0.2)
@@ -50,6 +56,11 @@ export function RouletteWheel({
   useEffect(() => { onSlowingDownRef.current = onSlowingDown }, [onSlowingDown])
   const onNearMissRef = useRef(onNearMiss)
   useEffect(() => { onNearMissRef.current = onNearMiss }, [onNearMiss])
+
+  const spinElapsedMsRef = useRef(spinElapsedMs)
+  useEffect(() => { spinElapsedMsRef.current = spinElapsedMs }, [spinElapsedMs])
+  const spinSeedRef = useRef(spinSeed)
+  useEffect(() => { spinSeedRef.current = spinSeed }, [spinSeed])
 
   // Stable participants snapshot captured at spin start — prevents mid-animation re-runs
   // スピン中は更新しない: mid-spin 参加者変化でレイアウトと角度計算がズレるのを防ぐ
@@ -95,18 +106,28 @@ export function RouletteWheel({
 
     // 整数スピン数: 360 * integer は必ず 360 の倍数 → targetRotation % 360 === targetNormalized を保証
     // 非整数にすると各クライアントで停止角度がズレ、ポインターが異なる人を指す
-    const minSpins = 5 + Math.floor(Math.random() * 3) // 5 | 6 | 7
+    // ルーム同期: spinSeed が渡された場合は決定論的な値を使い全クライアントで一致させる
+    const minSpins = spinSeedRef.current !== undefined
+      ? 5 + (Math.floor(spinSeedRef.current / 1000) % 3)
+      : 5 + Math.floor(Math.random() * 3)
     const targetRotation = currentRotation + (360 * minSpins) + angleDiff
 
+    // ルーム同期: メンバーが spinStartedAt より遅れてアニメーション開始した場合 duration を短縮する
+    // これによりオーナーとほぼ同時に停止する
+    const FULL_DURATION = 4.5
+    const elapsedSec = Math.max(0, (spinElapsedMsRef.current ?? 0) / 1000)
+    const duration = Math.max(0.5, FULL_DURATION - elapsedSec)
+
     // 減速フェーズ開始を 1.2秒前にコールバックで通知（カチカチ演出・振動のタイミング）
+    // duration に合わせてタイミングを調整する
     const slowDownTimer = setTimeout(() => {
       setIsSlowingDown(true)
       setGlowIntensity(0.4)
       onSlowingDownRef.current?.()
-    }, (4.5 - 1.2) * 1000)
+    }, Math.max(0, (duration - 1.2) * 1000))
 
     const anim = animate(rotation, targetRotation, {
-      duration: 4.5, // 固定: ランダムにすると owner / member で終了タイミングがズレる
+      duration, // ルーム同期: 遅延受信メンバーは短縮 duration で終了タイミングを合わせる
       ease: [0.15, 0.85, 0.2, 1], // 最初ゆっくり → 急加速 → 緩やかに減速
       onUpdate: (latest) => { lastRotation.current = latest },
       onComplete: () => {
