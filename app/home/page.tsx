@@ -38,6 +38,10 @@ export default function HomePage() {
   const [isSpinning, setIsSpinning] = useState(false)
   // ISSUE-157: Responsive roulette size — larger at desktop (lg: 1024px+)
   const [wheelSize, setWheelSize] = useState(280)
+  // ISSUE-161: session spin counter for desktop stats bar
+  const [sessionSpinCount, setSessionSpinCount] = useState(0)
+  // ISSUE-162: first-visit hint — pulse on SPIN button until first spin
+  const [showSpinHint, setShowSpinHint] = useState(false)
   useEffect(() => {
     const mql = window.matchMedia('(min-width: 1024px)')
     const update = (e: MediaQueryList | MediaQueryListEvent) => setWheelSize(e.matches ? 360 : 280)
@@ -110,6 +114,10 @@ export default function HomePage() {
     // Google/LINE のみで使ってきたユーザーはログアウト後 WelcomePage に
     // 閉じ込められる問題を防ぐ（WelcomePage は user || hasVisited で /home へ転送する）。
     localStorage.setItem('ogoroulette_visited', 'true')
+    // ISSUE-162: show spin hint to first-time visitors until they spin once
+    if (!localStorage.getItem('ogoroulette_spun_once')) {
+      setShowSpinHint(true)
+    }
 
     // Optimistic: show cached profile immediately (zero lag on repeat visits)
     const CACHE_KEY = "ogoroulette_profile_v1"
@@ -282,6 +290,13 @@ export default function HomePage() {
 
   const handleSpinComplete = (winnerName: string, winnerIndex: number) => {
     setIsSpinning(false)
+    // ISSUE-161: increment session spin counter
+    setSessionSpinCount((c) => c + 1)
+    // ISSUE-162: dismiss hint after first spin
+    if (showSpinHint) {
+      setShowSpinHint(false)
+      localStorage.setItem('ogoroulette_spun_once', 'true')
+    }
     // ISSUE-155: 300ms silence after wheel stops — creates anticipation before reveal
     setTimeout(() => {
       playResultSound()
@@ -300,6 +315,24 @@ export default function HomePage() {
 
       // Trigger reveal phase in recording canvas, then stop recording 2.5s later
       stopRecordingAfterReveal()
+
+      // ISSUE-163: save to localStorage for guest local history
+      try {
+        const LOCAL_HISTORY_KEY = 'ogoroulette_local_history'
+        const prev = JSON.parse(localStorage.getItem(LOCAL_HISTORY_KEY) || '[]') as Array<{
+          winner: string; participants: string[]; totalBill: number | null; treatAmount: number | null; createdAt: string
+        }>
+        prev.unshift({
+          winner: winnerName,
+          participants: [...participants],
+          totalBill: hasBillInput ? totalBill : null,
+          treatAmount: hasBillInput ? treatAmount : null,
+          createdAt: new Date().toISOString(),
+        })
+        localStorage.setItem(LOCAL_HISTORY_KEY, JSON.stringify(prev.slice(0, 20)))
+      } catch {
+        // localStorage unavailable — silently skip
+      }
 
       // Save session to DB (fire-and-forget — don't block the UX)
       if (user) {
@@ -393,6 +426,11 @@ export default function HomePage() {
 
   return (
     <main className="min-h-screen bg-background overflow-x-hidden">
+      {/* ISSUE-164: aria-live region — announces winner to screen readers */}
+      <div aria-live="polite" aria-atomic="true" className="sr-only">
+        {winner ? `${winner.name}さんが奢りに決定しました` : ''}
+      </div>
+
       {/* Hidden recording canvas — off-screen, captured by MediaRecorder */}
       <RecordingCanvas
         phase={recordingPhase}
@@ -899,13 +937,20 @@ export default function HomePage() {
             <div className="w-1.5 h-1.5 rounded-full bg-primary/40" />
           </div>
 
+          {/* ISSUE-162: first-visit hint tooltip */}
+          {showSpinHint && !isSpinning && (
+            <div className="mb-2 px-3 py-1.5 rounded-xl bg-primary/20 border border-primary/40 text-xs text-primary font-medium animate-bounce pointer-events-none">
+              ↓ タップして回してみよう！
+            </div>
+          )}
+
           {/* SPIN Button */}
           <Button
             onClick={handleSpin}
             disabled={isSpinning || participants.length < 2 || countdown !== null}
             aria-busy={isSpinning}
             aria-label={isSpinning ? 'ルーレット回転中' : participants.length < 2 ? '参加者を2人以上追加してください' : 'ルーレットを回す'}
-            className="w-full max-w-[280px] h-16 text-xl font-bold rounded-2xl bg-gradient-accent hover:opacity-90 text-white shadow-lg glow-primary press-effect disabled:opacity-50 disabled:cursor-not-allowed transition-all uppercase tracking-wider animate-pulse-glow"
+            className={`w-full max-w-[280px] h-16 text-xl font-bold rounded-2xl bg-gradient-accent hover:opacity-90 text-white shadow-lg glow-primary press-effect disabled:opacity-50 disabled:cursor-not-allowed transition-all uppercase tracking-wider animate-pulse-glow ${showSpinHint ? 'ring-4 ring-primary/50 ring-offset-2 ring-offset-background' : ''}`}
           >
             {isSpinning ? (
               <span className="flex items-center gap-2">
@@ -919,6 +964,20 @@ export default function HomePage() {
               "SPIN"
             )}
           </Button>
+          {/* ISSUE-161: Desktop stats bar — visible only at lg+ */}
+          {sessionSpinCount > 0 && (
+            <div className="hidden lg:flex items-center gap-4 mt-4 px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-xs text-muted-foreground">
+              <span>👥 {participants.length}人</span>
+              <div className="w-px h-3 bg-white/20" />
+              <span>🎰 このセッション {sessionSpinCount}回</span>
+              {hasBillInput && (
+                <>
+                  <div className="w-px h-3 bg-white/20" />
+                  <span>💴 {formatCurrency(totalBill)}</span>
+                </>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Group C: 参加者・アクション — desktop: right column bottom */}

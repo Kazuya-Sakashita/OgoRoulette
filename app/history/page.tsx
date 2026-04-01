@@ -68,12 +68,28 @@ const TREAT_TYPE_STYLE: Record<string, string> = {
 
 // --- Component ---
 
+interface LocalEntry {
+  winner: string
+  participants: string[]
+  totalBill: number | null
+  treatAmount: number | null
+  createdAt: string
+}
+
 export default function HistoryPage() {
   const [sessions, setSessions] = useState<Session[]>([])
   const [loading, setLoading] = useState(true)
   const [isLoggedIn, setIsLoggedIn] = useState(true)
+  // ISSUE-163: local history for guests
+  const [localHistory, setLocalHistory] = useState<LocalEntry[]>([])
 
   useEffect(() => {
+    // Load local history from localStorage (available to all users)
+    try {
+      const raw = localStorage.getItem('ogoroulette_local_history')
+      if (raw) setLocalHistory(JSON.parse(raw) as LocalEntry[])
+    } catch { /* ignore */ }
+
     const fetchSessions = async () => {
       try {
         const res = await fetch("/api/sessions")
@@ -123,20 +139,79 @@ export default function HistoryPage() {
 
       <div className="max-w-[420px] mx-auto px-4 py-6">
 
-        {/* Not logged in */}
+        {/* ISSUE-163: Not logged in — show local history + login CTA */}
         {!isLoggedIn && (
-          <div className="text-center py-16">
-            <div className="w-20 h-20 rounded-full bg-secondary flex items-center justify-center mx-auto mb-4">
-              <Crown className="w-10 h-10 text-muted-foreground" />
+          <>
+            {/* Login CTA banner */}
+            <div className="mb-6 p-4 rounded-2xl glass-card border border-primary/30 bg-primary/5">
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center shrink-0 mt-0.5">
+                  <Crown className="w-4 h-4 text-primary" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-foreground mb-0.5">
+                    ログインで履歴をクラウド保存
+                  </p>
+                  <p className="text-xs text-muted-foreground mb-3">
+                    端末をまたいでいつでも確認できます
+                  </p>
+                  <Button asChild size="sm" className="h-8 px-4 rounded-xl bg-gradient-accent text-white text-xs font-semibold">
+                    <Link href="/">ログインする</Link>
+                  </Button>
+                </div>
+              </div>
             </div>
-            <p className="text-foreground font-semibold mb-1">ログインが必要です</p>
-            <p className="text-sm text-muted-foreground mb-6">
-              履歴を保存するにはGoogleアカウントでログインしてください
-            </p>
-            <Button asChild className="h-12 px-6 rounded-2xl bg-gradient-accent text-white font-semibold">
-              <Link href="/">ログインする</Link>
-            </Button>
-          </div>
+
+            {/* Local history */}
+            {localHistory.length > 0 ? (
+              <section>
+                <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+                  このデバイスの履歴
+                </h2>
+                <div className="space-y-3">
+                  {localHistory.map((entry, i) => {
+                    const d = new Date(entry.createdAt)
+                    const label = `${d.getMonth() + 1}/${d.getDate()} ${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}`
+                    return (
+                      <div key={i} className="glass-card rounded-2xl p-4 border border-white/10">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <div
+                              className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold"
+                              style={{ background: SEGMENT_COLORS[i % SEGMENT_COLORS.length], color: '#0B1B2B' }}
+                            >
+                              {entry.winner.charAt(0)}
+                            </div>
+                            <div>
+                              <p className="text-sm font-semibold text-foreground">{entry.winner}さん</p>
+                              <p className="text-xs text-muted-foreground">{label}</p>
+                            </div>
+                          </div>
+                          {entry.treatAmount != null && entry.treatAmount > 0 && (
+                            <span className="text-sm font-bold text-primary">
+                              {formatCurrency(entry.treatAmount)}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          {entry.participants.join(' · ')}
+                        </p>
+                      </div>
+                    )
+                  })}
+                </div>
+              </section>
+            ) : (
+              <div className="text-center py-12">
+                <div className="w-16 h-16 rounded-full bg-secondary flex items-center justify-center mx-auto mb-3">
+                  <Sparkles className="w-8 h-8 text-muted-foreground" />
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  ルーレットを回すとここに履歴が表示されます
+                </p>
+              </div>
+            )}
+          </>
         )}
 
         {/* Loading */}

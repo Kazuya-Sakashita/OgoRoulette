@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next'
 import { Analytics } from '@vercel/analytics/next'
+import { SwRegister } from '@/components/sw-register'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -72,6 +73,7 @@ export default function RootLayout({
       <body className="font-sans antialiased">
         {children}
         <Analytics />
+        <SwRegister />
       </body>
     </html>
   )
