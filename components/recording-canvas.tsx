@@ -19,7 +19,7 @@
  */
 
 import { useEffect, useRef, MutableRefObject, RefObject } from "react"
-import { SEGMENT_COLORS } from "@/lib/constants"
+import { SEGMENT_COLORS, SILENCE_BEFORE_REVEAL_MS } from "@/lib/constants"
 
 // ─── Canvas dimensions (9:16 portrait) ───────────────────────────────────────
 const W = 540
@@ -340,13 +340,15 @@ function drawReveal(
   revealSec: number,
   participantCount: number,
 ) {
-  const p = Math.min(revealSec / 0.65, 1)
+  // ISSUE-122: 0.5秒の沈黙後にrevealアニメーション開始（ホイール停止の「溜め」）
+  const SILENCE_S = SILENCE_BEFORE_REVEAL_MS / 1000
+  const adjustedSec = Math.max(0, revealSec - SILENCE_S)
+  const p = Math.min(adjustedSec / 0.65, 1)
   if (p <= 0) return
 
-  // ISSUE-091: White flash at the instant of reveal (t=0 → t=0.2s)
-  // Gives a "決定！" moment before the name appears.
-  if (revealSec < 0.2) {
-    const flashAlpha = 0.7 * (1 - revealSec / 0.2)
+  // ISSUE-091: White flash at the instant of reveal (0.5s経過後の最初の0.2s)
+  if (adjustedSec < 0.2) {
+    const flashAlpha = 0.7 * (1 - adjustedSec / 0.2)
     ctx.fillStyle = `rgba(255,255,255,${flashAlpha.toFixed(3)})`
     ctx.fillRect(0, 0, W, H)
   }
@@ -395,8 +397,8 @@ function drawReveal(
   ctx.restore()
 
   // Subtitle: "本日の奢り担当！"
-  if (revealSec > 0.75) {
-    const subP = Math.min((revealSec - 0.75) / 0.35, 1)
+  if (adjustedSec > 0.75) {
+    const subP = Math.min((adjustedSec - 0.75) / 0.35, 1)
     ctx.save()
     ctx.globalAlpha  = subP
     ctx.font         = "bold 28px sans-serif"
@@ -408,8 +410,8 @@ function drawReveal(
   }
 
   // ISSUE-092: Reaction text — varied by participant count
-  if (revealSec > 1.4) {
-    const reactP = Math.min((revealSec - 1.4) / 0.3, 1)
+  if (adjustedSec > 1.4) {
+    const reactP = Math.min((adjustedSec - 1.4) / 0.3, 1)
     const reactions =
       participantCount >= 6
         ? ["みんなありがとう...🙏", "大人数の中から選ばれし者！", `${participantCount}人中1人の悲劇...`]
