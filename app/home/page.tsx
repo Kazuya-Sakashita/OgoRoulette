@@ -148,7 +148,10 @@ export default function HomePage() {
         }
         seedTreatStats(cloudStats)
       })
-      .catch(() => {})
+      .catch((e: unknown) => {
+        // セッション同期失敗はUXをブロックしない（ローカル統計で動作継続）
+        console.warn("[OgoRoulette] sessions sync failed:", e)
+      })
   }, [user])
 
   useEffect(() => () => clearTimeout(confettiTimerRef.current ?? undefined), [])
