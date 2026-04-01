@@ -372,6 +372,31 @@
 
 ---
 
+## 🏆 100点仕上げ — 信頼性・UX・感情・成長施策（2026-04-01）
+
+| ID | タイトル | 概要 | ステータス |
+|----|--------|------|----------|
+| [ISSUE-131](./issue-131-spin-complete-failure-recovery-cta.md) | spin-complete全失敗後のユーザー向けエラー通知とリカバリCTA | retry全滅時のエラーメッセージに「ページを再読み込みする」ボタンを追加 | ✅ 完了（commit: 0830173） |
+| [ISSUE-132](./issue-132-near-miss-random-offset.md) | near-missセグメントのオフセットをランダム化する | 毎回固定1つ前だったnear-missを1〜3のランダムオフセットに変更 | ✅ 完了（commit: 0830173） |
+| [ISSUE-133](./issue-133-spin-button-disabled-tooltip.md) | SPINボタン無効時に理由をツールチップで表示する | ISSUE-011で実装済みと確認 — 追加対応不要 | ✅ ISSUE-011で実装済み |
+| [ISSUE-134](./issue-134-preparing-member-loading-state.md) | preparingフェーズでspinStartedAt待ち中の表示を改善する | countdownValue===null のとき「スピン中！」→「ホストが準備中...」に変更 | ✅ 完了（commit: 0830173） |
+| [ISSUE-135](./issue-135-recording-canvas-retina-hidpi.md) | 録画キャンバスをRetinaディスプレイ対応にする | devicePixelRatio を考慮した Canvas scaling（最大2x）を追加 | ✅ 完了（commit: 0830173） |
+| [ISSUE-136](./issue-136-demo-roulette-payment-cta.md) | デモルーレットに割り勘金額とCTAを追加する | 当選者カードに合計/割り勘内訳ブロックを表示、CTAテキスト改善 | ✅ 完了（commit: 0830173） |
+| [ISSUE-137](./issue-137-landing-social-proof.md) | ランディングページにソーシャルプルーフバッジを追加する | 「飲み会・合コン・社内で人気」バッジを「使い方を見る」上部に追加 | ✅ 完了（commit: 0830173） |
+| [ISSUE-138](./issue-138-home-profile-skeleton.md) | ホーム画面のプロフィール取得中にスケルトンを表示する | user&&!profile 状態でアニメーションスケルトンを表示 | ✅ 完了（commit: 0830173） |
+| [ISSUE-139](./issue-139-recording-canvas-animation-constants.md) | 録画キャンバスのアニメーション定数をlib/constantsに移動する | マジックナンバー4件を定数化してライブ/録画の数値を一元管理 | ✅ 完了（commit: 0830173） |
+| [ISSUE-140](./issue-140-landing-privacy-reassurance.md) | ランディングページにプライバシー安心感テキストを追加する | 「🔒 本名は公開されません」バッジをソーシャルプルーフと並列表示 | ✅ 完了（commit: 0830173） |
+
+---
+
+## 🔴 Critical — モバイル表示崩れ修正（2026-04-01）
+
+| ID | タイトル | 概要 | ステータス |
+|----|--------|------|----------|
+| [ISSUE-141](./issue-141-fix-mobile-roulette-overflow.md) | iPhone 17 Proでルーレットが画面外にはみ出す問題を修正する | overflow-x-clip・min-h-dvh・window.innerHeight ベースのレスポンシブサイズで解決 | ✅ 完了 |
+
+---
+
 ## 🗓 推奨実装順序
 
 ### フェーズ1: リリースブロッカー対応（〜1週間）
