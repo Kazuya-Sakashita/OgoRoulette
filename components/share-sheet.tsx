@@ -341,6 +341,13 @@ export function ShareSheet({
               )}
             </Button>
 
+            {/* iOS PNG fallback の補足説明 */}
+            {isImageBlob && (
+              <p className="text-xs text-muted-foreground text-center mb-2">
+                iPhoneでは静止画で保存されます
+              </p>
+            )}
+
             {/* Platform-specific buttons */}
             <p className="text-xs text-white/50 mb-2">
               {isImageBlob ? "画像を保存してからXに手動で添付できます" : "動画を保存してからXに手動で添付できます"}
