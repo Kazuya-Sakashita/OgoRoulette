@@ -195,10 +195,14 @@ export function GroupList({
                         e.stopPropagation()
                         onSpin(group.id)
                       }}
-                      className="shrink-0 w-8 h-8 rounded-xl bg-primary/20 hover:bg-primary/40 flex items-center justify-center text-primary transition-all active:scale-95"
+                      className={`shrink-0 w-8 h-8 rounded-xl flex items-center justify-center transition-all active:scale-95 ${
+                        isSelected
+                          ? "bg-gradient-accent text-white font-bold shadow-md"
+                          : "bg-primary/20 hover:bg-primary/40 text-primary"
+                      }`}
                       title={`${group.name}ですぐ回す`}
                     >
-                      <Play className="w-3.5 h-3.5 fill-primary" />
+                      <Play className={`w-3.5 h-3.5 ${isSelected ? "fill-white" : "fill-primary"}`} />
                     </button>
                   )}
                 </div>
