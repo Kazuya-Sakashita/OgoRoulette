@@ -109,6 +109,10 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
   // ISSUE-047: ranking は全スピン履歴から集計した専用 API で取得
   const [roomRanking, setRoomRanking] = useState<{ name: string; count: number }[] | undefined>(undefined)
 
+  // ISSUE-141: モバイル端末の実表示域に合わせてルーレットサイズを動的に調整する
+  // window.innerHeight = iOS Safariの実際の表示域（100vhとは異なり、ブラウザChromeを除いた値）
+  const [wheelSize, setWheelSize] = useState(280)
+
   // Bill input
   const [showBillInput, setShowBillInput] = useState(false)
   const [totalBill, setTotalBill] = useState(0)
@@ -195,6 +199,27 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
   // ISSUE-047: roomRanking は API から取得 (state 宣言は上部)
 
   // --- Effects ---
+
+  // ISSUE-141: ビューポートサイズに合わせてルーレットホイールのサイズを動的に計算する
+  // window.innerHeight を使うことで iOS Safari のブラウザChromeを除いた実表示域を取得できる
+  // （100vh は chrome 非表示時の大きい値を返すため、iPhoneで見切れる原因になる）
+  useEffect(() => {
+    // ヘッダー・参加者リスト・SPIN ボタン等の固定 UI の概算合計（px）
+    // ルーレット以外の縦方向占有量: コンテナpaddingx2(48) + ヘッダー(56) + 参加者(70) +
+    //   金額入力（68）+ ルーレット内py+mb+ボタン等(190) = 432px
+    const RESERVED_HEIGHT = 440
+    const update = () => {
+      const vw = window.innerWidth
+      const vh = window.innerHeight
+      // max-w-[390px] + px-5 (10px × 2) → コンテンツ幅から余白を引いた値
+      const byWidth = Math.min(280, vw - 40)
+      const byHeight = Math.min(280, vh - RESERVED_HEIGHT)
+      setWheelSize(Math.max(200, Math.min(byWidth, byHeight)))
+    }
+    update()
+    window.addEventListener("resize", update)
+    return () => window.removeEventListener("resize", update)
+  }, [])
 
   useEffect(() => {
     const supabase = createClient()
@@ -675,7 +700,7 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
   if (loading || !authLoaded || !isGuestHostResolved) {
     return (
       <main className="min-h-screen bg-background">
-        <div className="mx-auto max-w-[390px] min-h-screen flex flex-col px-5 py-6">
+        <div className="mx-auto max-w-[390px] min-h-dvh flex flex-col px-5 py-6">
           {/* Header skeleton */}
           <div className="flex items-center gap-4 mb-8">
             <div className="w-9 h-9 rounded-xl bg-white/10 animate-pulse" />
@@ -683,8 +708,8 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
             <div className="ml-auto h-5 w-16 rounded-full bg-white/10 animate-pulse" />
           </div>
           {/* Wheel skeleton */}
-          <div className="flex-1 flex flex-col items-center justify-center gap-6">
-            <div className="w-72 h-72 rounded-full bg-white/10 animate-pulse" />
+          <div className="flex-1 flex flex-col items-center justify-center gap-6 min-h-0">
+            <div className="rounded-full bg-white/10 animate-pulse" style={{ width: wheelSize, height: wheelSize }} />
             <div className="w-64 h-16 rounded-2xl bg-white/10 animate-pulse" />
           </div>
         </div>
@@ -696,7 +721,7 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
     const isExpiredError = error === "expired"
     return (
       <main className="min-h-screen bg-background">
-        <div className="mx-auto max-w-[390px] min-h-screen flex flex-col px-5 py-6">
+        <div className="mx-auto max-w-[390px] min-h-dvh flex flex-col px-5 py-6">
           <header className="flex items-center gap-4 mb-8">
             <Button asChild variant="ghost" size="icon" className="text-muted-foreground">
               <Link href="/home">
@@ -727,7 +752,7 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
   // --- Render: main ---
 
   return (
-    <main className="min-h-screen bg-background overflow-x-hidden">
+    <main className="min-h-screen bg-background overflow-x-clip">
       {/* Hidden recording canvas — off-screen, captured by MediaRecorder */}
       <RecordingCanvas
         phase={recordingPhase}
@@ -803,7 +828,7 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
         />
       )}
 
-      <div className="mx-auto max-w-[390px] min-h-screen flex flex-col px-5 py-6">
+      <div className="mx-auto max-w-[390px] min-h-dvh flex flex-col px-5 py-6">
 
         {/* Header */}
         <header className="flex items-center gap-3 mb-4">
@@ -994,7 +1019,8 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
         </section>
 
         {/* Roulette wheel */}
-        <div className="flex-1 flex flex-col items-center justify-center py-4">
+        {/* ISSUE-141: min-h-0 で flex アイテムが正しく縮小できるようにする */}
+        <div className="flex-1 flex flex-col items-center justify-center py-4 min-h-0">
           {/* ホイール周囲のグロー: spinning 中に拡大 */}
           <div className="relative mb-6">
             <motion.div
@@ -1011,7 +1037,7 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
             />
             <RouletteWheel
               isSpinning={phase === "spinning"}
-              size={280}
+              size={wheelSize}
               participants={participants}
               targetWinnerIndex={pendingWinnerIndex}
               onSpinComplete={handleSpinComplete}
