@@ -123,9 +123,11 @@ export function RouletteWheel({
             spinActiveRef.current = false
             setIsSlowingDown(false)
             setGlowIntensity(0.35)
-            // ISSUE-098: ニアミス演出 — 本当の当選者の1つ前のセグメントを
+            // ISSUE-098: ニアミス演出 — 本当の当選者の1〜3つ前のセグメントを
             // 280ms だけハイライトして「惜しかった！」感を演出する
-            const neighborIdx = (resolvedIdx - 1 + snapshotParticipants.length) % snapshotParticipants.length
+            // ISSUE-132: オフセットをランダム化し、毎回パターンが読めないようにする
+            const nearMissOffset = 1 + Math.floor(Math.random() * 3)
+            const neighborIdx = (resolvedIdx - nearMissOffset + snapshotParticipants.length) % snapshotParticipants.length
             setWinnerIndex(neighborIdx)
             onNearMissRef.current?.()
             setTimeout(() => {

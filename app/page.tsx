@@ -175,8 +175,20 @@ export default function WelcomePage() {
               <div className="text-2xl font-black text-foreground mb-1">
                 🎉 {demoWinner}さん が奢り！
               </div>
-              <p className="text-sm text-muted-foreground mb-4">
-                あなたの飲み会でも試してみませんか？
+              {/* ISSUE-136: デモ当選後に「支払い額」を表示してアプリの価値を即座に伝える */}
+              <div className="flex items-center justify-center gap-3 my-3 py-2 rounded-xl bg-white/5">
+                <div className="text-center">
+                  <p className="text-xs text-muted-foreground">合計</p>
+                  <p className="text-lg font-bold text-foreground">¥4,500</p>
+                </div>
+                <div className="w-px h-8 bg-white/10" />
+                <div className="text-center">
+                  <p className="text-xs text-muted-foreground">割り勘（3人）</p>
+                  <p className="text-lg font-bold text-primary">¥1,500</p>
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground mb-4">
+                あなたのグループで本当に決めてみませんか？
               </p>
               <button
                 onClick={() => {
@@ -186,7 +198,7 @@ export default function WelcomePage() {
                 className="w-full h-12 rounded-xl text-white font-semibold text-sm"
                 style={{ background: 'linear-gradient(to right, #F97316, #EC4899)' }}
               >
-                無料で使ってみる →
+                グループを作って試す →
               </button>
               <button
                 onClick={() => { setDemoWinner(null); setDemoHighlight(-1) }}
@@ -326,9 +338,26 @@ export default function WelcomePage() {
           </div>
         )}
 
+        {/* ISSUE-137: ソーシャルプルーフ — 利用者の安心感と信頼を高める */}
+        <div
+          className={`mt-6 flex items-center justify-center gap-4 transition-all duration-700 delay-500 ${
+            mounted ? 'opacity-100' : 'opacity-0'
+          }`}
+        >
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground/70">
+            <span>🎰</span>
+            <span>飲み会・合コン・社内で人気</span>
+          </div>
+          <div className="w-px h-3 bg-white/10" />
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground/70">
+            <span>🔒</span>
+            <span>本名は公開されません</span>
+          </div>
+        </div>
+
         {/* How to use link */}
         <p
-          className={`mt-6 transition-all duration-700 delay-500 ${
+          className={`mt-4 transition-all duration-700 delay-500 ${
             mounted ? 'opacity-100' : 'opacity-0'
           }`}
         >

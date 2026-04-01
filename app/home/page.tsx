@@ -656,11 +656,18 @@ export default function HomePage() {
         {/* ISSUE-088: provider由来名（full_name/email）は本名が含まれるため使用禁止。getDisplayName() のみ使う */}
         {user && (
           <div className="mb-2 px-4 py-3 rounded-2xl glass-card border border-white/10">
-            <p className="text-sm text-muted-foreground">
-              {profile
-                ? <>こんにちは、<span className="text-foreground font-medium">{getDisplayName(profile)}</span> さん 👋</>
-                : "今日もルーレット回しますか？"}
-            </p>
+            {/* ISSUE-138: プロフィール取得中はskeletonを表示してフリッカーを防ぐ */}
+            {user && !profile ? (
+              <div className="animate-pulse flex items-center gap-2">
+                <div className="w-28 h-4 rounded bg-white/10" />
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                {profile
+                  ? <>こんにちは、<span className="text-foreground font-medium">{getDisplayName(profile)}</span> さん 👋</>
+                  : "今日もルーレット回しますか？"}
+              </p>
+            )}
           </div>
         )}
 

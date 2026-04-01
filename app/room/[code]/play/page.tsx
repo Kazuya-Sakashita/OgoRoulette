@@ -1023,7 +1023,18 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
           </div>
 
           {spinError && (
-            <p className="text-sm text-red-400 text-center mb-3 px-4">{spinError}</p>
+            <div className="flex flex-col items-center gap-2 mb-3 px-4">
+              <p className="text-sm text-red-400 text-center">{spinError}</p>
+              {/* ISSUE-131: spin-complete全失敗時にリロードで復旧できることを伝える */}
+              {spinError.includes("再読み込み") && (
+                <button
+                  onClick={() => window.location.reload()}
+                  className="text-xs text-primary hover:underline"
+                >
+                  ページを再読み込みする →
+                </button>
+              )}
+            </div>
           )}
 
           <AnimatePresence mode="wait">
@@ -1135,7 +1146,12 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
                       animate={{ scale: [1, 1.5, 1], opacity: [1, 0.5, 1] }}
                       transition={{ duration: 0.8, repeat: Infinity }}
                     />
-                    <p className="text-sm font-semibold text-primary">スピン中！</p>
+                    {/* ISSUE-134: preparingフェーズではスピン開始前の「準備中」を伝える */}
+                    <p className="text-sm font-semibold text-primary">
+                      {phase === "preparing" && countdownValue === null
+                        ? "ホストが準備中..."
+                        : "スピン中！"}
+                    </p>
                   </>
                 ) : (
                   <>

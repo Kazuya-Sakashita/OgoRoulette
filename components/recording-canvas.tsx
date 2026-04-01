@@ -19,7 +19,14 @@
  */
 
 import { useEffect, useRef, MutableRefObject, RefObject } from "react"
-import { SEGMENT_COLORS, SILENCE_BEFORE_REVEAL_MS } from "@/lib/constants"
+import {
+  SEGMENT_COLORS,
+  SILENCE_BEFORE_REVEAL_MS,
+  INTRO_STAGGER_START_S,
+  INTRO_STAGGER_STEP_S,
+  INTRO_FADE_DURATION_S,
+  REVEAL_EXPAND_DURATION_S,
+} from "@/lib/constants"
 
 // ─── Canvas dimensions (9:16 portrait) ───────────────────────────────────────
 const W = 540
@@ -283,10 +290,10 @@ function drawParticipantsIntro(
   const colors   = ["#F97316", "#EC4899", "#8B5CF6", "#3B82F6", "#22C55E", "#FBBF24", "#EF4444", "#06B6D4"]
 
   for (let i = 0; i < shown.length; i++) {
-    // 各名前にstaggeredフェードイン
-    const startDelay = 0.08 + i * 0.10  // 80ms起点、100msずつずらす
+    // ISSUE-139: 各名前にstaggeredフェードイン — 定数は lib/constants.ts で管理
+    const startDelay = INTRO_STAGGER_START_S + i * INTRO_STAGGER_STEP_S
     const nameElapsed = Math.max(0, elapsed - startDelay)
-    const nameAlpha = Math.min(nameElapsed / 0.12, 1)  // 120msでフェードイン
+    const nameAlpha = Math.min(nameElapsed / INTRO_FADE_DURATION_S, 1)
     if (nameAlpha <= 0) continue  // まだ表示しない
 
     const y = listTopY + i * lineH
@@ -351,7 +358,8 @@ function drawReveal(
   // ISSUE-122: 0.5秒の沈黙後にrevealアニメーション開始（ホイール停止の「溜め」）
   const SILENCE_S = SILENCE_BEFORE_REVEAL_MS / 1000
   const adjustedSec = Math.max(0, revealSec - SILENCE_S)
-  const p = Math.min(adjustedSec / 0.65, 1)
+  // ISSUE-139: 定数は lib/constants.ts の REVEAL_EXPAND_DURATION_S で管理
+  const p = Math.min(adjustedSec / REVEAL_EXPAND_DURATION_S, 1)
   if (p <= 0) return
 
   // ISSUE-091: White flash at the instant of reveal (0.5s経過後の最初の0.2s)
@@ -546,6 +554,13 @@ export function RecordingCanvas({
     if (!canvas) return
     const ctx = canvas.getContext("2d")
     if (!ctx) return
+
+    // ISSUE-135: Retina/HiDPI対応 — devicePixelRatioに合わせてcanvasバッファを拡大し
+    // 高解像度端末でのシェア動画・静止画の画質を向上させる（最大2x）
+    const dpr = Math.min(window.devicePixelRatio || 1, 2)
+    canvas.width  = W * dpr
+    canvas.height = H * dpr
+    ctx.scale(dpr, dpr)
 
     const startMs = Date.now()
     let rafId: number
