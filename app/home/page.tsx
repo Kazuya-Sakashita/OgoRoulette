@@ -31,6 +31,7 @@ import { useVideoRecorder } from "@/lib/use-video-recorder"
 import { getDisplayName } from "@/lib/display-name"
 import { usePWAInstall } from "@/lib/use-pwa-install"
 import { unlockAudioContext, playPressSound, playSpinStartSound, playTickSound, playResultSound, playNearMissSound } from "@/lib/spin-sound"
+import { vibrate, HapticPattern } from "@/lib/haptic"
 
 export default function HomePage() {
   const [isSpinning, setIsSpinning] = useState(false)
@@ -271,6 +272,7 @@ export default function HomePage() {
 
   const handleSpinComplete = (winnerName: string, winnerIndex: number) => {
     playResultSound()
+    vibrate(HapticPattern.result)
     setIsSpinning(false)
     setWinner({ name: winnerName, index: winnerIndex })
     setShowConfetti(true)
