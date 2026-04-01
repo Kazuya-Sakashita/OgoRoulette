@@ -125,7 +125,8 @@ function ResultInner() {
         </div>
 
         {/* ISSUE-094: Conversion CTA — join active room or discover the app */}
-        {roomActive === "active" ? (
+        {/* ISSUE-116: 楽観表示 — loading中もroomCodeがあれば "参加する" CTAを出す */}
+        {roomActive !== "inactive" && roomCode ? (
           <div className="rounded-3xl overflow-hidden border border-white/10 bg-white/5">
             <div className="px-5 py-4">
               <p className="text-sm text-muted-foreground mb-3">
@@ -149,7 +150,7 @@ function ResultInner() {
               </Button>
             </div>
           </div>
-        ) : roomActive === "inactive" ? (
+        ) : (
           <div className="rounded-3xl bg-linear-to-br from-orange-500 via-pink-500 to-purple-500 p-px">
             <div className="bg-background rounded-[23px] px-6 py-5 text-center">
               <p className="text-base font-bold text-foreground mb-1">
@@ -166,7 +167,7 @@ function ResultInner() {
               </Button>
             </div>
           </div>
-        ) : null}
+        )}
 
         {/* Bill Split Summary Card */}
         <div className="glass-card rounded-3xl overflow-hidden border border-white/10">
