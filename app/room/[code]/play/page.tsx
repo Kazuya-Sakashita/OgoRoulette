@@ -674,8 +674,20 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
 
   if (loading || !authLoaded || !isGuestHostResolved) {
     return (
-      <main className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full" />
+      <main className="min-h-screen bg-background">
+        <div className="mx-auto max-w-[390px] min-h-screen flex flex-col px-5 py-6">
+          {/* Header skeleton */}
+          <div className="flex items-center gap-4 mb-8">
+            <div className="w-9 h-9 rounded-xl bg-white/10 animate-pulse" />
+            <div className="h-5 w-32 rounded-full bg-white/10 animate-pulse" />
+            <div className="ml-auto h-5 w-16 rounded-full bg-white/10 animate-pulse" />
+          </div>
+          {/* Wheel skeleton */}
+          <div className="flex-1 flex flex-col items-center justify-center gap-6">
+            <div className="w-72 h-72 rounded-full bg-white/10 animate-pulse" />
+            <div className="w-64 h-16 rounded-2xl bg-white/10 animate-pulse" />
+          </div>
+        </div>
       </main>
     )
   }
