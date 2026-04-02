@@ -5,6 +5,15 @@ import { AlertCircle } from "lucide-react"
 import Link from "next/link"
 import { useEffect } from "react"
 
+function isChunkLoadError(error: Error): boolean {
+  return (
+    error.name === "ChunkLoadError" ||
+    error.message?.includes("Failed to load chunk") ||
+    error.message?.includes("Loading chunk") ||
+    error.message?.includes("dynamically imported module")
+  )
+}
+
 export default function GlobalError({
   error,
   reset,
@@ -15,6 +24,18 @@ export default function GlobalError({
   useEffect(() => {
     console.error("[GlobalError] digest:", error.digest, "\n", error)
   }, [error])
+
+  // ChunkLoadError: 新デプロイで古いchunkが消えた場合はページをリロードして自動回復
+  useEffect(() => {
+    if (isChunkLoadError(error)) {
+      window.location.reload()
+    }
+  }, [error])
+
+  // ChunkLoadError 中はブランク表示（リロード中のため）
+  if (isChunkLoadError(error)) {
+    return <main className="min-h-screen bg-background" />
+  }
 
   return (
     <main className="min-h-screen bg-background flex flex-col items-center justify-center px-4">

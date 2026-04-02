@@ -5,6 +5,15 @@ import { AlertCircle } from "lucide-react"
 import Link from "next/link"
 import { useEffect } from "react"
 
+function isChunkLoadError(error: Error): boolean {
+  return (
+    error.name === "ChunkLoadError" ||
+    error.message?.includes("Failed to load chunk") ||
+    error.message?.includes("Loading chunk") ||
+    error.message?.includes("dynamically imported module")
+  )
+}
+
 export default function RoomError({
   error,
   reset,
@@ -15,6 +24,17 @@ export default function RoomError({
   useEffect(() => {
     console.error("[RoomError] digest:", error.digest, "\n", error)
   }, [error])
+
+  // ChunkLoadError は新デプロイによる stale chunk — リロードで自動回復
+  useEffect(() => {
+    if (isChunkLoadError(error)) {
+      window.location.reload()
+    }
+  }, [error])
+
+  if (isChunkLoadError(error)) {
+    return <main className="min-h-screen bg-background" />
+  }
 
   return (
     <main className="min-h-screen bg-background flex flex-col items-center justify-center px-4">
