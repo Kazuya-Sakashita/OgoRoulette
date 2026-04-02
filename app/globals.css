@@ -33,7 +33,7 @@
   
   /* Muted */
   --muted: rgba(255, 255, 255, 0.04);
-  --muted-foreground: rgba(249, 250, 251, 0.5);
+  --muted-foreground: rgba(249, 250, 251, 0.65);
   
   /* Accent - Orange (matching app theme) */
   --accent: #F97316;

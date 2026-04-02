@@ -7,7 +7,11 @@ import Image from "next/image"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
 import { startSupabaseOAuth, startLineAuth } from "@/lib/auth"
-import { RouletteWheel } from "@/components/roulette-wheel"
+import dynamic from "next/dynamic"
+const RouletteWheel = dynamic(
+  () => import("@/components/roulette-wheel").then((m) => ({ default: m.RouletteWheel })),
+  { ssr: false, loading: () => <div style={{ width: 220, height: 220 }} /> }
+)
 import { QrCode, Users } from "lucide-react"
 
 // ISSUE-096: Demo spin names shown on the welcome page
