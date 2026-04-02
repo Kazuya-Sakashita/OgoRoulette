@@ -719,7 +719,10 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
             setSpinError("結果の保存に失敗しました。ページを再読み込みしてください")
           }
         }
-      })()
+      })().catch((err) => {
+        console.error("[OgoRoulette] spin-complete unexpected error:", err)
+        setSpinError("結果の保存に失敗しました。ページを再読み込みしてください")
+      })
     } else {
       // Member: サーバー確定の当選者を使う
       const serverWinner = pendingMemberWinnerRef.current
@@ -731,6 +734,10 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
         setShowConfetti(true)
         clearTimeout(confettiTimerRef.current ?? undefined)
         confettiTimerRef.current = setTimeout(() => setShowConfetti(false), 6000)
+      } else {
+        // フォールバック: pendingMemberWinnerRef が race condition で null の場合、
+        // room state に既にある当選者情報を使う（低速回線・ポーリング遅延時に発生）
+        showResult()
       }
     }
   }

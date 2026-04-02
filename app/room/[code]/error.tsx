@@ -5,7 +5,7 @@ import { AlertCircle } from "lucide-react"
 import Link from "next/link"
 import { useEffect } from "react"
 
-export default function GlobalError({
+export default function RoomError({
   error,
   reset,
 }: {
@@ -13,7 +13,7 @@ export default function GlobalError({
   reset: () => void
 }) {
   useEffect(() => {
-    console.error("[GlobalError] digest:", error.digest, "\n", error)
+    console.error("[RoomError] digest:", error.digest, "\n", error)
   }, [error])
 
   return (
@@ -28,9 +28,11 @@ export default function GlobalError({
           <AlertCircle className="w-8 h-8 text-destructive" />
         </div>
 
-        <h1 className="text-xl font-bold text-foreground mb-3">予期しないエラーが発生しました</h1>
+        <h1 className="text-xl font-bold text-foreground mb-3">
+          ルームの読み込みに失敗しました
+        </h1>
         <p className="text-sm text-muted-foreground mb-8">
-          しばらく時間をおいて、もう一度お試しください。
+          ルーレットの結果は保存されています。再試行してください。
         </p>
 
         <div className="flex flex-col gap-3">
@@ -45,7 +47,7 @@ export default function GlobalError({
             variant="outline"
             className="w-full h-14 text-base font-bold rounded-2xl border-white/10 bg-secondary text-foreground"
           >
-            <Link href="/">ホームに戻る</Link>
+            <Link href="/home">ホームに戻る</Link>
           </Button>
         </div>
       </div>
