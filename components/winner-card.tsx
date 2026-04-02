@@ -750,6 +750,36 @@ export function WinnerCard({
                     </div>
                   )}
 
+                  {/* Viral CTA — invite friends to use the app */}
+                  <div className="mb-5 p-4 rounded-2xl bg-white/5 border border-white/10 text-center">
+                    <p className="text-xs text-muted-foreground mb-2">
+                      🎰 このアプリ、盛り上がりますよ
+                    </p>
+                    <p className="text-sm font-semibold text-foreground mb-3">
+                      友達にも教えてあげよう
+                    </p>
+                    <button
+                      onClick={() => {
+                        const url = "https://ogo-roulette.vercel.app/"
+                        const text = "飲み会の奢りをルーレットで決めるアプリ見つけた！盛り上がるよ → "
+                        if (navigator.share) {
+                          navigator.share({ title: "OgoRoulette", text, url }).catch(() => {})
+                        } else {
+                          window.open(
+                            `https://x.com/intent/tweet?text=${encodeURIComponent(text + url)}`,
+                            "_blank",
+                            "noopener"
+                          )
+                        }
+                      }}
+                      className="w-full h-10 flex items-center justify-center gap-2 rounded-xl text-white text-sm font-semibold"
+                      style={{ background: "linear-gradient(to right, #F97316, #EC4899)" }}
+                    >
+                      <Share2 className="w-4 h-4" />
+                      友達に教える
+                    </button>
+                  </div>
+
                   {/* Guest→Login conversion CTA */}
                   {isGuest && (
                     <div
@@ -765,10 +795,10 @@ export function WinnerCard({
                         </div>
                         <div>
                           <p className="text-sm font-semibold text-white leading-snug">
-                            次回もすぐに使える
+                            この履歴、端末が変わると消えます
                           </p>
                           <p className="text-xs text-white/55 mt-0.5 leading-relaxed">
-                            ログインするとメンバー保存・履歴閲覧ができます
+                            ログインしてクラウドに保存しておこう
                           </p>
                         </div>
                       </div>
@@ -816,36 +846,6 @@ export function WinnerCard({
                       </div>
                     </div>
                   )}
-
-                  {/* Viral CTA — invite friends to use the app */}
-                  <div className="mb-5 p-4 rounded-2xl bg-white/5 border border-white/10 text-center">
-                    <p className="text-xs text-muted-foreground mb-2">
-                      🎰 このアプリ、盛り上がりますよ
-                    </p>
-                    <p className="text-sm font-semibold text-foreground mb-3">
-                      友達にも教えてあげよう
-                    </p>
-                    <button
-                      onClick={() => {
-                        const url = "https://ogo-roulette.vercel.app/"
-                        const text = "飲み会の奢りをルーレットで決めるアプリ見つけた！盛り上がるよ → "
-                        if (navigator.share) {
-                          navigator.share({ title: "OgoRoulette", text, url }).catch(() => {})
-                        } else {
-                          window.open(
-                            `https://x.com/intent/tweet?text=${encodeURIComponent(text + url)}`,
-                            "_blank",
-                            "noopener"
-                          )
-                        }
-                      }}
-                      className="w-full h-10 flex items-center justify-center gap-2 rounded-xl text-white text-sm font-semibold"
-                      style={{ background: "linear-gradient(to right, #F97316, #EC4899)" }}
-                    >
-                      <Share2 className="w-4 h-4" />
-                      友達に教える
-                    </button>
-                  </div>
 
                   {/* Next actions */}
                   <div className="space-y-2">
