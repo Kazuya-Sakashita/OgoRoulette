@@ -466,7 +466,11 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
 
       // Align to server spinStartedAt — if in the past, starts immediately
       const startMs = session.startedAt ? new Date(session.startedAt).getTime() : Date.now()
-      const delay = Math.max(0, startMs - Date.now())
+      // ISSUE-146: clock skew 上限をオーナー側 handleSpin と同じキャップ（SPIN_COUNTDOWN_MS + 2秒）で統一
+      // PC のシステム時計がサーバーより数秒遅れていると delay が大きくなり、
+      // 他のクライアントが停止した後にアニメーションが開始するズレが発生する
+      const MAX_SPIN_DELAY_MS = SPIN_COUNTDOWN_MS + 2000
+      const delay = Math.max(0, Math.min(startMs - Date.now(), MAX_SPIN_DELAY_MS))
       setSpinStartedAtMs(startMs)
       spinScheduledRef.current = true
       setPhase("preparing")
