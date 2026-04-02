@@ -25,14 +25,34 @@ export default function GlobalError({
     console.error("[GlobalError] digest:", error.digest, "\n", error)
   }, [error])
 
-  // ChunkLoadError: 新デプロイで古いchunkが消えた場合はページをリロードして自動回復
+  // ChunkLoadError: キャッシュバイパスリロードで自動回復。無限ループは sessionStorage でガード
   useEffect(() => {
-    if (isChunkLoadError(error)) {
-      window.location.reload()
+    if (!isChunkLoadError(error)) return
+    const RELOAD_KEY = "chunk-error-reload-count"
+    const RELOAD_WINDOW_MS = 30_000
+    const MAX_RELOADS = 3
+    try {
+      const raw = sessionStorage.getItem(RELOAD_KEY)
+      const data: { count: number; since: number } = raw
+        ? JSON.parse(raw)
+        : { count: 0, since: Date.now() }
+      const isExpired = Date.now() - data.since > RELOAD_WINDOW_MS
+      const nextCount = isExpired ? 1 : data.count + 1
+      if (isExpired || data.count < MAX_RELOADS) {
+        sessionStorage.setItem(RELOAD_KEY, JSON.stringify({ count: nextCount, since: isExpired ? Date.now() : data.since }))
+        // クエリパラメータでブラウザ/CDN キャッシュをバイパスして最新 HTML を取得
+        window.location.href =
+          window.location.pathname +
+          (window.location.search ? window.location.search + "&" : "?") +
+          "_r=" + Date.now()
+      }
+      // MAX_RELOADS 超過 → 通常エラー画面を表示して無限ループを防止
+    } catch {
+      // sessionStorage 使用不可の場合は何もしない
     }
   }, [error])
 
-  // ChunkLoadError 中はブランク表示（リロード中のため）
+  // リロード実行中はブランク表示
   if (isChunkLoadError(error)) {
     return <main className="min-h-screen bg-background" />
   }
