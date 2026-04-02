@@ -124,6 +124,9 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
   const spinScheduledRef = useRef(false)
   // Member: stores server-confirmed winner while local wheel animation runs
   const pendingMemberWinnerRef = useRef<WinnerData | null>(null)
+  // ISSUE-146: ポーリング closure 内で最新の room status を参照するための ref
+  // useState の room は closure でキャプチャすると stale になるため ref で管理する
+  const roomStatusRef = useRef<string | undefined>(undefined)
 
   // Countdown display — driven by spinStartedAtMs vs Date.now()
   const [spinStartedAtMs, setSpinStartedAtMs] = useState<number | null>(null)
@@ -241,6 +244,8 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
         return
       }
 
+      // ISSUE-146: ポーリング interval を adaptive にするため常に最新 status を ref へ記録
+      roomStatusRef.current = data.status
       // Skip re-render when key fields are unchanged (avoids unnecessary effects)
       setRoom(prev => {
         if (
@@ -303,12 +308,19 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
         if (status === "SUBSCRIBED") fetchRoom()
       })
 
-    // フォールバックポーリング: 10 秒ごと（Realtime が機能していない場合の安全網）
+    // ISSUE-146: フォールバックポーリング — Realtime が機能しない場合の安全網
+    // IN_SESSION 中は 2 秒間隔に短縮してスピン通知をアニメーション窓内に届ける
+    // （10 秒間隔では elapsed が animation 終了後になりアニメーションが見えなくなる）
+    // roomStatusRef を参照することで stale closure を回避する
     const poll = async () => {
       await fetchRoom()
-      if (!cancelled) timeoutId = setTimeout(poll, 10000)
+      if (!cancelled) {
+        const interval = roomStatusRef.current === "IN_SESSION" ? 2000 : 10000
+        timeoutId = setTimeout(poll, interval)
+      }
     }
-    timeoutId = setTimeout(poll, 10000)
+    // ISSUE-146: 初回も 2s で発火。10s では spinStartedAt(+3s)〜アニメーション終了(+8s)の窓を外れる
+    timeoutId = setTimeout(poll, 2000)
 
     return () => {
       cancelled = true
@@ -499,26 +511,17 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
 
       if (latestSession) {
         if (room.status === "COMPLETED") {
+          // Reload of finished room → show without animation
           const wp = latestSession.participants?.find((p) => p.isWinner)
           if (wp) {
-            // ISSUE-146: スピンが 30 秒以内に完了していれば First load でもアニメーションを再生する
-            // モバイルで Realtime が遅延し、IN_SESSION を見逃して COMPLETED を初めて受信した場合のリカバリー
-            // 30秒以上前のスピン（ページリロード等）は従来通り直接 result を表示する
-            const spinAge = latestSession.startedAt
-              ? Date.now() - new Date(latestSession.startedAt).getTime()
-              : Infinity
-            if (spinAge < 30_000) {
-              scheduleSpin(latestSession)
-            } else {
-              setWinner({
-                name: wp.name,
-                index: wp.orderIndex,
-                totalAmount: latestSession.totalAmount ?? undefined,
-                treatAmount: latestSession.treatAmount ?? undefined,
-                perPersonAmount: latestSession.perPersonAmount ?? undefined,
-              })
-              setPhase("result")
-            }
+            setWinner({
+              name: wp.name,
+              index: wp.orderIndex,
+              totalAmount: latestSession.totalAmount ?? undefined,
+              treatAmount: latestSession.treatAmount ?? undefined,
+              perPersonAmount: latestSession.perPersonAmount ?? undefined,
+            })
+            setPhase("result")
           }
         } else if (room.status === "IN_SESSION") {
           // Mid-spin join → schedule using startedAt
