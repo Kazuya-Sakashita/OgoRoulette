@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { ChevronLeft, ChevronRight, Calendar, Users, Crown, Sparkles } from "lucide-react"
+import { createClient } from "@/lib/supabase/client"
 import { SEGMENT_COLORS } from "@/lib/constants"
 import { formatCurrency } from "@/lib/format"
 
@@ -91,6 +92,16 @@ export default function HistoryPage() {
     } catch { /* ignore */ }
 
     const fetchSessions = async () => {
+      // Check Supabase session first — reads from localStorage, resolves near-instantly.
+      // This avoids a full API round-trip before we know if the user is a guest.
+      const supabase = createClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) {
+        setIsLoggedIn(false)
+        setLoading(false)
+        return
+      }
+
       try {
         const res = await fetch("/api/sessions")
         if (res.status === 401) {

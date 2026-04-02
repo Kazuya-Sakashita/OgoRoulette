@@ -7,6 +7,8 @@ import Image from "next/image"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
 import { startSupabaseOAuth, startLineAuth } from "@/lib/auth"
+import { RouletteWheel } from "@/components/roulette-wheel"
+import { QrCode, Users } from "lucide-react"
 
 // ISSUE-096: Demo spin names shown on the welcome page
 const DEMO_NAMES = ["さくら", "たろう", "はな"]
@@ -14,10 +16,10 @@ const DEMO_NAMES = ["さくら", "たろう", "はな"]
 export default function WelcomePage() {
   const [isLoading, setIsLoading] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
-  // ISSUE-096: Demo roulette state
+  // Demo roulette state — uses real RouletteWheel component
   const [demoSpinning, setDemoSpinning] = useState(false)
   const [demoWinner, setDemoWinner] = useState<string | null>(null)
-  const [demoHighlight, setDemoHighlight] = useState(-1)
+  const [demoWinnerIdx, setDemoWinnerIdx] = useState<number>(0)
   const router = useRouter()
 
   useEffect(() => {
@@ -63,31 +65,18 @@ export default function WelcomePage() {
     }
   }
 
-  // ISSUE-096: Demo roulette — pick a winner with a slowing animation
+  // Demo roulette — uses real RouletteWheel component
   const handleDemoSpin = () => {
     if (demoSpinning) return
-    setDemoSpinning(true)
     setDemoWinner(null)
-    const winnerIdx = Math.floor(Math.random() * DEMO_NAMES.length)
-    let step = 0
-    const totalSteps = 18
-    const tick = () => {
-      if (step < totalSteps) {
-        setDemoHighlight(step % DEMO_NAMES.length)
-        step++
-        // Slow down as we approach the end
-        const delay = step < 12 ? 80 : step < 16 ? 160 : 300
-        setTimeout(tick, delay)
-      } else {
-        setDemoHighlight(winnerIdx)
-        setTimeout(() => {
-          setDemoWinner(DEMO_NAMES[winnerIdx])
-          setDemoHighlight(-1)
-          setDemoSpinning(false)
-        }, 300)
-      }
-    }
-    tick()
+    const idx = Math.floor(Math.random() * DEMO_NAMES.length)
+    setDemoWinnerIdx(idx)
+    setDemoSpinning(true)
+  }
+
+  const handleDemoComplete = (name: string) => {
+    setDemoSpinning(false)
+    setDemoWinner(name)
   }
 
   const handleXLogin = async () => {
@@ -145,8 +134,8 @@ export default function WelcomePage() {
           おごりをルーレットで決めよう
         </p>
 
-        {/* ISSUE-096: Demo Roulette — instant try-before-signup */}
-        <div className="w-full mb-8 animate-fade-in-up-delay-3">
+        {/* Demo Roulette — real RouletteWheel component */}
+        <div className="w-full mb-6 animate-fade-in-up-delay-3">
           {demoWinner ? (
             <div className="text-center p-5 rounded-2xl bg-primary/10 border border-primary/20">
               <div className="text-2xl font-black text-foreground mb-1">
@@ -178,29 +167,27 @@ export default function WelcomePage() {
                 グループを作って試す →
               </button>
               <button
-                onClick={() => { setDemoWinner(null); setDemoHighlight(-1) }}
+                onClick={() => setDemoWinner(null)}
                 className="mt-3 text-xs text-muted-foreground hover:text-foreground transition-colors"
               >
                 もう一度回す
               </button>
             </div>
           ) : (
-            <div className="p-5 rounded-2xl bg-white/5 border border-white/10 text-center">
-              <p className="text-xs text-muted-foreground mb-3">⬇ 試しに回してみる</p>
-              <div className="flex justify-center gap-2 mb-4">
-                {DEMO_NAMES.map((name, i) => (
-                  <div
-                    key={i}
-                    className="px-4 py-2 rounded-full text-sm font-semibold transition-all duration-100"
-                    style={{
-                      background: demoHighlight === i ? '#F97316' : 'rgba(255,255,255,0.1)',
-                      color: demoHighlight === i ? '#fff' : undefined,
-                      transform: demoHighlight === i ? 'scale(1.12)' : 'scale(1)',
-                    }}
-                  >
-                    {name}
-                  </div>
-                ))}
+            <div className="flex flex-col items-center gap-4">
+              <p className="text-xs text-muted-foreground">⬇ 試しに回してみる</p>
+              <div className="relative">
+                <div
+                  className="absolute inset-0 scale-[1.35] rounded-full blur-2xl pointer-events-none"
+                  style={{ background: "radial-gradient(circle, rgba(249,115,22,0.2) 0%, transparent 70%)" }}
+                />
+                <RouletteWheel
+                  size={220}
+                  participants={DEMO_NAMES}
+                  isSpinning={demoSpinning}
+                  targetWinnerIndex={demoWinnerIdx}
+                  onSpinComplete={handleDemoComplete}
+                />
               </div>
               <button
                 onClick={handleDemoSpin}
@@ -212,6 +199,34 @@ export default function WelcomePage() {
               </button>
             </div>
           )}
+        </div>
+
+        {/* Room feature section — みんなで参加 */}
+        <div className="w-full mb-6 animate-fade-in-up-delay-3">
+          <div className="p-4 rounded-2xl bg-white/5 border border-white/10">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+                style={{ background: "linear-gradient(135deg, #F97316, #EC4899)" }}>
+                <Users className="w-4 h-4 text-white" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-foreground">友達みんなで参加できる</p>
+                <p className="text-xs text-muted-foreground">QRコードを見せるだけ — 全員の画面が同時に動く</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="flex-1 flex items-center gap-2 px-3 py-2 rounded-xl bg-white/5 border border-white/10">
+                <QrCode className="w-3.5 h-3.5 text-primary shrink-0" />
+                <span className="text-xs text-muted-foreground">QRコードでワンタップ参加</span>
+              </div>
+              <Link
+                href="/how-to-use"
+                className="text-xs text-primary font-medium hover:underline whitespace-nowrap"
+              >
+                詳しく →
+              </Link>
+            </div>
+          </div>
         </div>
 
         {/* Buttons Container */}
