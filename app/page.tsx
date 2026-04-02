@@ -1,7 +1,7 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { createClient } from "@/lib/supabase/client"
@@ -20,6 +20,9 @@ export default function WelcomePage() {
   const [demoSpinning, setDemoSpinning] = useState(false)
   const [demoWinner, setDemoWinner] = useState<string | null>(null)
   const [demoWinnerIdx, setDemoWinnerIdx] = useState<number>(0)
+  // Desktop layout: roulette size scales up at lg breakpoint
+  const [isDesktop, setIsDesktop] = useState(false)
+  const desktopQuery = useRef<MediaQueryList | null>(null)
   const router = useRouter()
 
   useEffect(() => {
@@ -42,6 +45,15 @@ export default function WelcomePage() {
     }
     checkUserOrVisited()
   }, [router])
+
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 1024px)')
+    desktopQuery.current = mq
+    setIsDesktop(mq.matches)
+    const handler = (e: MediaQueryListEvent) => setIsDesktop(e.matches)
+    mq.addEventListener('change', handler)
+    return () => mq.removeEventListener('change', handler)
+  }, [])
 
   const getReturnTo = () => {
     const params = new URLSearchParams(window.location.search)
@@ -92,7 +104,7 @@ export default function WelcomePage() {
   }
 
   return (
-    <main className="min-h-screen bg-background flex flex-col items-center justify-center px-6 py-12 overflow-hidden">
+    <main className="min-h-screen bg-background flex flex-col items-center justify-center px-6 py-12 lg:px-16 lg:py-20 overflow-hidden">
       {/* Background orbs for visual appeal */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
         <div 
@@ -106,7 +118,10 @@ export default function WelcomePage() {
       </div>
 
       {/* Content Container */}
-      <div className="relative z-10 w-full max-w-[360px] md:max-w-md flex flex-col items-center text-center animate-fade-in-up">
+      <div className="relative z-10 w-full max-w-md lg:max-w-5xl flex flex-col lg:flex-row lg:items-start lg:gap-16 text-center animate-fade-in-up">
+        {/* ===== 左カラム: ロゴ + デモルーレット + ソーシャルプルーフ ===== */}
+        <div className="flex flex-col items-center lg:items-start lg:text-left lg:w-[480px] lg:sticky lg:top-24 lg:self-start">
+
         {/* Logo with animation */}
         <div className="mb-6 animate-fade-in-up-delay-1">
           <div className="relative">
@@ -182,7 +197,7 @@ export default function WelcomePage() {
                   style={{ background: "radial-gradient(circle, rgba(249,115,22,0.2) 0%, transparent 70%)" }}
                 />
                 <RouletteWheel
-                  size={220}
+                  size={isDesktop ? 280 : 220}
                   participants={DEMO_NAMES}
                   isSpinning={demoSpinning}
                   targetWinnerIndex={demoWinnerIdx}
@@ -200,6 +215,34 @@ export default function WelcomePage() {
             </div>
           )}
         </div>
+
+        {/* ソーシャルプルーフ — 左カラム末尾 */}
+        <div className="mt-6 flex items-center justify-center lg:justify-start gap-4 animate-fade-in-up-delay-5">
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground/70">
+            <span>🎰</span>
+            <span>飲み会・合コン・社内で人気</span>
+          </div>
+          <div className="w-px h-3 bg-white/10" />
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground/70">
+            <span>🔒</span>
+            <span>本名は公開されません</span>
+          </div>
+        </div>
+
+        {/* How to use link */}
+        <p className="mt-4 animate-fade-in-up-delay-5">
+          <Link href="/how-to-use" className="text-xs text-muted-foreground hover:text-foreground transition-colors underline underline-offset-4">
+            使い方を見る →
+          </Link>
+        </p>
+
+        </div>{/* /左カラム */}
+
+        {/* 仕切り線 (デスクトップのみ) */}
+        <div className="hidden lg:block w-px bg-white/10 self-stretch" />
+
+        {/* ===== 右カラム: ルーム機能 + ログインボタン群 ===== */}
+        <div className="flex flex-col items-center lg:items-stretch lg:flex-1 w-full lg:pt-4">
 
         {/* Room feature section — みんなで参加 */}
         <div className="w-full mb-6 animate-fade-in-up-delay-3">
@@ -326,26 +369,6 @@ export default function WelcomePage() {
           </div>
         )}
 
-        {/* ISSUE-137: ソーシャルプルーフ — 利用者の安心感と信頼を高める */}
-        <div className="mt-6 flex items-center justify-center gap-4 animate-fade-in-up-delay-5">
-          <div className="flex items-center gap-1.5 text-xs text-muted-foreground/70">
-            <span>🎰</span>
-            <span>飲み会・合コン・社内で人気</span>
-          </div>
-          <div className="w-px h-3 bg-white/10" />
-          <div className="flex items-center gap-1.5 text-xs text-muted-foreground/70">
-            <span>🔒</span>
-            <span>本名は公開されません</span>
-          </div>
-        </div>
-
-        {/* How to use link */}
-        <p className="mt-4 animate-fade-in-up-delay-5">
-          <Link href="/how-to-use" className="text-xs text-muted-foreground hover:text-foreground transition-colors underline underline-offset-4">
-            使い方を見る →
-          </Link>
-        </p>
-
         {/* Terms */}
         <p className="mt-5 text-xs text-muted-foreground leading-relaxed animate-fade-in-up-delay-5">
           続行することで、
@@ -354,7 +377,9 @@ export default function WelcomePage() {
           <Link href="/privacy" className="text-primary hover:underline">プライバシーポリシー</Link>
           に同意したことになります
         </p>
-      </div>
+
+        </div>{/* /右カラム */}
+      </div>{/* /コンテナ */}
 
       {/* Footer */}
       <footer className="absolute bottom-6 text-xs text-muted-foreground/60 animate-fade-in-up-delay-5">
