@@ -484,7 +484,11 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
       // IN_SESSION 中はスキップなしで常にアニメーションを再生する。
       setTimeout(() => {
         const elapsed = Math.max(0, Date.now() - startMs)
-        setSpinElapsedMs(elapsed)
+        // ISSUE-146: elapsed が大きいと duration = max(0.5s, ...) が 0.5s になり
+        // 「回っていない」と感じる短さになる。3000ms にキャップして最低 1.5s を保証する
+        // （4.5s - 3.0s = 1.5s）。どれだけ遅延していても視認できる回転を表示する。
+        const ELAPSED_CAP_MS = 3000
+        setSpinElapsedMs(Math.min(elapsed, ELAPSED_CAP_MS))
         setPhase("spinning")
       }, delay)
     }
@@ -495,17 +499,26 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
 
       if (latestSession) {
         if (room.status === "COMPLETED") {
-          // Reload of finished room → show without animation
           const wp = latestSession.participants?.find((p) => p.isWinner)
           if (wp) {
-            setWinner({
-              name: wp.name,
-              index: wp.orderIndex,
-              totalAmount: latestSession.totalAmount ?? undefined,
-              treatAmount: latestSession.treatAmount ?? undefined,
-              perPersonAmount: latestSession.perPersonAmount ?? undefined,
-            })
-            setPhase("result")
+            // ISSUE-146: スピンが 30 秒以内に完了していれば First load でもアニメーションを再生する
+            // モバイルで Realtime が遅延し、IN_SESSION を見逃して COMPLETED を初めて受信した場合のリカバリー
+            // 30秒以上前のスピン（ページリロード等）は従来通り直接 result を表示する
+            const spinAge = latestSession.startedAt
+              ? Date.now() - new Date(latestSession.startedAt).getTime()
+              : Infinity
+            if (spinAge < 30_000) {
+              scheduleSpin(latestSession)
+            } else {
+              setWinner({
+                name: wp.name,
+                index: wp.orderIndex,
+                totalAmount: latestSession.totalAmount ?? undefined,
+                treatAmount: latestSession.treatAmount ?? undefined,
+                perPersonAmount: latestSession.perPersonAmount ?? undefined,
+              })
+              setPhase("result")
+            }
           }
         } else if (room.status === "IN_SESSION") {
           // Mid-spin join → schedule using startedAt
