@@ -470,22 +470,16 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
       setSpinStartedAtMs(startMs)
       spinScheduledRef.current = true
       setPhase("preparing")
-      // ISSUE-146: アニメーション終了後もポーリング fallback (10秒) が間に合うよう余裕を持たせる
-      // spin 4500ms + bounce 500ms = 5000ms に 3000ms バッファを加算
-      // elapsed = 7000ms (10秒ポーリング - 3秒カウントダウン) < 8000ms → スキップしない
-      const TOTAL_ANIM_MS = 8000
+      // ISSUE-146: スキップ判定を削除
+      // 旧実装は elapsed >= TOTAL_ANIM_MS でアニメーションをスキップしていたが、
+      // モバイルはバックグラウンド復帰時に elapsed が 10〜30 秒以上になるため、
+      // 固定閾値での判定はモバイルを確実にスキップさせてしまう。
+      // RouletteWheel は duration = max(0.5s, 4.5s - elapsedSec) で遅延到着を吸収するため、
+      // どれだけ遅れて受信しても最低 0.5s のアニメーションを表示できる。
+      // room.status === "COMPLETED" 後の再表示は別パス（line ~493）で処理されるため、
+      // IN_SESSION 中はスキップなしで常にアニメーションを再生する。
       setTimeout(() => {
         const elapsed = Math.max(0, Date.now() - startMs)
-        // 受信が遅すぎてアニメーション終了済みの場合 → アニメーションをスキップして直接 result 表示
-        if (elapsed >= TOTAL_ANIM_MS) {
-          const winnerData = pendingMemberWinnerRef.current
-          if (winnerData) {
-            setWinner(winnerData)
-            setPhase("result")
-            spinScheduledRef.current = false
-          }
-          return
-        }
         setSpinElapsedMs(elapsed)
         setPhase("spinning")
       }, delay)
