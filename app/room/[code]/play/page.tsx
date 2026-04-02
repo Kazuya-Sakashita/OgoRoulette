@@ -297,7 +297,11 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
         },
         () => { fetchRoom() }
       )
-      .subscribe()
+      .subscribe((status) => {
+        // ISSUE-146: Realtime 再接続時に即座に fetchRoom() してミスしたイベントをリカバリー
+        // 初回 SUBSCRIBED でも fetchRoom() を呼ぶが、line 284 の初回取得と競合しても idempotent
+        if (status === "SUBSCRIBED") fetchRoom()
+      })
 
     // フォールバックポーリング: 10 秒ごと（Realtime が機能していない場合の安全網）
     const poll = async () => {
@@ -466,8 +470,10 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
       setSpinStartedAtMs(startMs)
       spinScheduledRef.current = true
       setPhase("preparing")
-      // アニメーション全体の所要時間 (spin 4500ms + bounce buffer 500ms)
-      const TOTAL_ANIM_MS = 5000
+      // ISSUE-146: アニメーション終了後もポーリング fallback (10秒) が間に合うよう余裕を持たせる
+      // spin 4500ms + bounce 500ms = 5000ms に 3000ms バッファを加算
+      // elapsed = 7000ms (10秒ポーリング - 3秒カウントダウン) < 8000ms → スキップしない
+      const TOTAL_ANIM_MS = 8000
       setTimeout(() => {
         const elapsed = Math.max(0, Date.now() - startMs)
         // 受信が遅すぎてアニメーション終了済みの場合 → アニメーションをスキップして直接 result 表示
