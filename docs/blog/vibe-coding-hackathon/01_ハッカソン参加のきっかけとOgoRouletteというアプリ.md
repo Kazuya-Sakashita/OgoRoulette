@@ -65,22 +65,22 @@ OgoRouletteが実現したかったのは3つです。
 | DB | PostgreSQL（Supabase）/ Prisma |
 | デプロイ | Vercel |
 
-Next.js・Framer Motion・Prismaはほぼ初めて触る技術でした。それでも選べたのは、Claude Codeがあったからです。
+Framer Motion は初めて触る技術でした。それでも選べたのは、Claude Codeがあったからです。
 
 ---
 
-## なぜ Claude Code を使おうと思ったか
+## なぜ Claude Code を使ったか
 
-正直に言うと、技術的な確信はありませんでした。
+Vibe Codingハッカソンが、Claude Code を使って開発するというコンセプトのイベントでした。だから使うことは最初から決まっていました。
 
-- Next.js は触ったことがある
-- Supabase は名前を知っている程度
-- Prisma はほぼ初見
-- Framer Motion は完全に未知
+ただ、正直なところ「どこまで頼れるのか」は未知数でした。
 
-普通なら「知っている技術だけで作ろう」と縮小するか、「勉強してから始めよう」と先送りします。
+個人開発で少し経験はありました。
 
-でも Claude Code があれば「**知らなくても始めてみる**」ができる気がしました。
+- Next.js・Supabase・Prisma・PostgreSQL は個人開発で使ったことがある
+- Framer Motion は完全に初めて
+
+「ある程度知っている技術 + Claude Code」がどんな組み合わせになるのか。それを確かめる場でもありました。
 
 ターミナルを開き、最初の指示を打ちました。
 
