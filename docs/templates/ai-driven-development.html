@@ -1,0 +1,1718 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI駆動開発テンプレート集</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&family=JetBrains+Mono:wght@400;700&display=swap');
+
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --surface2: #1c2128;
+    --border: #30363d;
+    --text: #e6edf3;
+    --text-muted: #8b949e;
+    --accent: #58a6ff;
+    --accent2: #3fb950;
+    --accent3: #f78166;
+    --accent4: #d2a8ff;
+    --yellow: #e3b341;
+    --page-width: 900px;
+    --radius: 10px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Noto Sans JP', 'Hiragino Sans', sans-serif;
+    font-size: 15px;
+    line-height: 1.8;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .wrapper {
+    max-width: var(--page-width);
+    margin: 0 auto;
+    padding: 0 48px 80px;
+  }
+
+  /* ─── COVER ─── */
+  .cover {
+    background: linear-gradient(160deg, #0d1117 0%, #131d2e 50%, #0d1117 100%);
+    border-bottom: 2px solid var(--border);
+    padding: 80px 0 72px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .cover::before {
+    content: '';
+    position: absolute;
+    top: -120px; left: 50%;
+    transform: translateX(-50%);
+    width: 600px; height: 600px;
+    background: radial-gradient(ellipse, rgba(88,166,255,0.12) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .cover-badge {
+    display: inline-block;
+    background: rgba(88,166,255,0.15);
+    border: 1px solid rgba(88,166,255,0.4);
+    color: var(--accent);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 6px 18px;
+    border-radius: 100px;
+    margin-bottom: 32px;
+  }
+  .cover h1 {
+    font-size: 42px;
+    font-weight: 900;
+    line-height: 1.25;
+    letter-spacing: -0.01em;
+    margin-bottom: 16px;
+  }
+  .cover h1 span { color: var(--accent); }
+  .cover-sub {
+    font-size: 18px;
+    color: var(--text-muted);
+    margin-bottom: 48px;
+  }
+  .cover-meta {
+    display: flex;
+    justify-content: center;
+    gap: 32px;
+    flex-wrap: wrap;
+  }
+  .cover-meta-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-muted);
+    font-size: 13px;
+  }
+  .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    flex-shrink: 0;
+  }
+  .dot.green { background: var(--accent2); }
+  .dot.red { background: var(--accent3); }
+  .dot.purple { background: var(--accent4); }
+
+  /* ─── SECTION LAYOUT ─── */
+  .section {
+    padding: 64px 0 0;
+  }
+  .section-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 12px;
+  }
+  .section-title {
+    font-size: 28px;
+    font-weight: 900;
+    line-height: 1.3;
+    margin-bottom: 8px;
+  }
+  .section-desc {
+    color: var(--text-muted);
+    font-size: 14px;
+    margin-bottom: 36px;
+  }
+  .divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 64px 0 0;
+  }
+
+  /* ─── CARDS ─── */
+  .card-grid {
+    display: grid;
+    gap: 16px;
+  }
+  .card-grid.col2 { grid-template-columns: 1fr 1fr; }
+  .card-grid.col3 { grid-template-columns: 1fr 1fr 1fr; }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+  }
+  .card-icon {
+    font-size: 24px;
+    margin-bottom: 12px;
+  }
+  .card h3 {
+    font-size: 15px;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+  .card p {
+    font-size: 13px;
+    color: var(--text-muted);
+    line-height: 1.7;
+  }
+
+  /* ─── CALLOUT ─── */
+  .callout {
+    background: var(--surface);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 var(--radius) var(--radius) 0;
+    padding: 20px 24px;
+    margin: 24px 0;
+    font-size: 14px;
+    line-height: 1.7;
+  }
+  .callout.warn { border-color: var(--yellow); }
+  .callout.success { border-color: var(--accent2); }
+  .callout.danger { border-color: var(--accent3); }
+  .callout strong { font-size: 13px; display: block; margin-bottom: 6px; }
+  .callout.warn strong { color: var(--yellow); }
+  .callout.success strong { color: var(--accent2); }
+  .callout.danger strong { color: var(--accent3); }
+  .callout strong.default { color: var(--accent); }
+
+  /* ─── CODE BLOCKS ─── */
+  .code-block {
+    background: #010409;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    margin: 16px 0;
+  }
+  .code-header {
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .code-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-muted);
+    letter-spacing: 0.05em;
+  }
+  .code-badge {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    background: rgba(88,166,255,0.15);
+    color: var(--accent);
+    padding: 2px 10px;
+    border-radius: 100px;
+    border: 1px solid rgba(88,166,255,0.3);
+  }
+  .code-badge.green {
+    background: rgba(63,185,80,0.15);
+    color: var(--accent2);
+    border-color: rgba(63,185,80,0.3);
+  }
+  .code-badge.purple {
+    background: rgba(210,168,255,0.15);
+    color: var(--accent4);
+    border-color: rgba(210,168,255,0.3);
+  }
+  .code-body {
+    padding: 20px 24px;
+    font-family: 'JetBrains Mono', 'Menlo', monospace;
+    font-size: 13px;
+    line-height: 1.7;
+    white-space: pre-wrap;
+    word-break: break-all;
+    color: #e6edf3;
+  }
+  .code-comment { color: #6e7681; }
+  .code-key { color: var(--accent4); }
+  .code-value { color: var(--accent2); }
+  .code-bracket { color: var(--yellow); }
+  .code-string { color: #a5d6ff; }
+  .code-highlight {
+    background: rgba(88,166,255,0.08);
+    border-left: 2px solid var(--accent);
+    padding-left: 12px;
+    margin-left: -12px;
+    display: block;
+  }
+
+  /* ─── FLOW DIAGRAM ─── */
+  .flow {
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+    margin: 32px 0;
+    overflow: hidden;
+  }
+  .flow-item {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-right: none;
+    padding: 20px 16px;
+    text-align: center;
+    position: relative;
+  }
+  .flow-item:first-child { border-radius: var(--radius) 0 0 var(--radius); }
+  .flow-item:last-child { border-right: 1px solid var(--border); border-radius: 0 var(--radius) var(--radius) 0; }
+  .flow-item::after {
+    content: '→';
+    position: absolute;
+    right: -14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--accent);
+    font-size: 18px;
+    font-weight: 700;
+    z-index: 1;
+    background: var(--bg);
+    padding: 2px 4px;
+  }
+  .flow-item:last-child::after { display: none; }
+  .flow-num {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 0.1em;
+    margin-bottom: 8px;
+  }
+  .flow-label {
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 6px;
+    line-height: 1.4;
+  }
+  .flow-desc {
+    font-size: 11px;
+    color: var(--text-muted);
+    line-height: 1.5;
+  }
+
+  /* ─── LOOP DIAGRAM ─── */
+  .loop-box {
+    background: var(--surface);
+    border: 2px solid rgba(88,166,255,0.3);
+    border-radius: 16px;
+    padding: 36px;
+    position: relative;
+    margin: 32px 0;
+  }
+  .loop-box::before {
+    content: '最強ループ';
+    position: absolute;
+    top: -14px; left: 50%;
+    transform: translateX(-50%);
+    background: var(--accent);
+    color: #000;
+    font-size: 11px;
+    font-weight: 900;
+    letter-spacing: 0.1em;
+    padding: 4px 16px;
+    border-radius: 100px;
+  }
+  .loop-steps {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .loop-step {
+    flex: 1;
+    min-width: 100px;
+    text-align: center;
+    position: relative;
+  }
+  .loop-circle {
+    width: 56px; height: 56px;
+    border-radius: 50%;
+    border: 2px solid var(--accent);
+    background: rgba(88,166,255,0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 12px;
+    font-size: 20px;
+  }
+  .loop-step-num {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 0.1em;
+    margin-bottom: 4px;
+  }
+  .loop-step-label {
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1.3;
+    margin-bottom: 4px;
+  }
+  .loop-step-desc {
+    font-size: 11px;
+    color: var(--text-muted);
+    line-height: 1.4;
+  }
+  .loop-arrow {
+    font-size: 22px;
+    color: var(--accent);
+    opacity: 0.5;
+    flex-shrink: 0;
+    margin-bottom: 40px;
+  }
+  .loop-return {
+    text-align: center;
+    margin-top: 20px;
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+  .loop-return span {
+    color: var(--accent);
+    font-weight: 700;
+  }
+
+  /* ─── TABLE ─── */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+    font-size: 13px;
+  }
+  th {
+    background: var(--surface2);
+    color: var(--text-muted);
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 10px 16px;
+    text-align: left;
+    border: 1px solid var(--border);
+  }
+  td {
+    padding: 12px 16px;
+    border: 1px solid var(--border);
+    vertical-align: top;
+    line-height: 1.6;
+  }
+  tr:nth-child(even) td { background: rgba(22,27,34,0.5); }
+
+  /* ─── LIST ─── */
+  .list {
+    list-style: none;
+    padding: 0;
+    margin: 16px 0;
+  }
+  .list li {
+    display: flex;
+    gap: 10px;
+    padding: 8px 0;
+    font-size: 14px;
+    border-bottom: 1px solid rgba(48,54,61,0.5);
+    line-height: 1.6;
+  }
+  .list li:last-child { border-bottom: none; }
+  .list-icon {
+    color: var(--accent);
+    font-weight: 700;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .list-icon.green { color: var(--accent2); }
+  .list-icon.red { color: var(--accent3); }
+  .list-icon.yellow { color: var(--yellow); }
+
+  /* ─── COMPARE ─── */
+  .compare {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin: 20px 0;
+  }
+  .compare-col {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  .compare-head {
+    padding: 12px 20px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--border);
+  }
+  .compare-head.bad { color: var(--accent3); background: rgba(247,129,102,0.08); }
+  .compare-head.good { color: var(--accent2); background: rgba(63,185,80,0.08); }
+  .compare-body {
+    padding: 16px 20px;
+    font-size: 13px;
+    line-height: 1.8;
+  }
+  .compare-body code {
+    background: rgba(0,0,0,0.3);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--text);
+  }
+
+  /* ─── BADGE / PILL ─── */
+  .badge {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 100px;
+    border: 1px solid;
+  }
+  .badge.blue { background: rgba(88,166,255,0.15); color: var(--accent); border-color: rgba(88,166,255,0.3); }
+  .badge.green { background: rgba(63,185,80,0.15); color: var(--accent2); border-color: rgba(63,185,80,0.3); }
+  .badge.red { background: rgba(247,129,102,0.15); color: var(--accent3); border-color: rgba(247,129,102,0.3); }
+  .badge.purple { background: rgba(210,168,255,0.15); color: var(--accent4); border-color: rgba(210,168,255,0.3); }
+  .badge.yellow { background: rgba(227,179,65,0.15); color: var(--yellow); border-color: rgba(227,179,65,0.3); }
+
+  /* ─── TEMPLATE BLOCK ─── */
+  .template-section {
+    margin: 40px 0;
+  }
+  .template-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+  .template-num {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 14px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-muted);
+    font-family: 'JetBrains Mono', monospace;
+    flex-shrink: 0;
+  }
+  .template-title {
+    font-size: 18px;
+    font-weight: 700;
+  }
+  .template-desc {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-bottom: 16px;
+    line-height: 1.7;
+  }
+
+  /* ─── CASE STUDY ─── */
+  .case-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin: 20px 0;
+  }
+  .case-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+  }
+  .case-phase {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 8px;
+  }
+  .case-title {
+    font-size: 15px;
+    font-weight: 700;
+    margin-bottom: 10px;
+  }
+  .case-body {
+    font-size: 13px;
+    color: var(--text-muted);
+    line-height: 1.7;
+  }
+
+  /* ─── HIGHLIGHT BOX ─── */
+  .highlight-box {
+    background: linear-gradient(135deg, rgba(88,166,255,0.1), rgba(63,185,80,0.08));
+    border: 1px solid rgba(88,166,255,0.25);
+    border-radius: 16px;
+    padding: 32px 40px;
+    text-align: center;
+    margin: 32px 0;
+  }
+  .highlight-box h3 {
+    font-size: 22px;
+    font-weight: 900;
+    margin-bottom: 12px;
+  }
+  .highlight-box p {
+    font-size: 14px;
+    color: var(--text-muted);
+    line-height: 1.8;
+    max-width: 600px;
+    margin: 0 auto;
+  }
+
+  /* ─── CHECKLIST ─── */
+  .checklist {
+    list-style: none;
+    padding: 0;
+    margin: 12px 0;
+  }
+  .checklist li {
+    display: flex;
+    gap: 10px;
+    padding: 6px 0;
+    font-size: 14px;
+    align-items: flex-start;
+  }
+  .check {
+    color: var(--accent2);
+    font-weight: 700;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .cross {
+    color: var(--accent3);
+    font-weight: 700;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  /* ─── INLINE CODE ─── */
+  code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    background: rgba(88,166,255,0.1);
+    border: 1px solid rgba(88,166,255,0.2);
+    border-radius: 4px;
+    padding: 1px 6px;
+    color: var(--accent);
+  }
+
+  /* ─── FOOTER ─── */
+  .footer {
+    margin-top: 80px;
+    padding: 40px 0;
+    border-top: 1px solid var(--border);
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 12px;
+    line-height: 1.8;
+  }
+
+  /* ─── TOC ─── */
+  .toc {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 28px 32px;
+    margin: 40px 0;
+  }
+  .toc h2 {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-muted);
+    margin-bottom: 16px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .toc-list {
+    list-style: none;
+    padding: 0;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px 32px;
+  }
+  .toc-list li {
+    font-size: 14px;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+  .toc-num {
+    color: var(--accent);
+    font-weight: 700;
+    font-size: 13px;
+    font-family: 'JetBrains Mono', monospace;
+    flex-shrink: 0;
+    width: 24px;
+  }
+
+  /* ─── STAT CARDS ─── */
+  .stat-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin: 24px 0;
+  }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px 16px;
+    text-align: center;
+  }
+  .stat-value {
+    font-size: 28px;
+    font-weight: 900;
+    color: var(--accent);
+    margin-bottom: 6px;
+    line-height: 1;
+  }
+  .stat-label {
+    font-size: 12px;
+    color: var(--text-muted);
+    line-height: 1.4;
+  }
+
+  /* responsive */
+  @media (max-width: 700px) {
+    .card-grid.col2, .card-grid.col3 { grid-template-columns: 1fr; }
+    .compare, .case-grid { grid-template-columns: 1fr; }
+    .stat-grid { grid-template-columns: 1fr 1fr; }
+    .toc-list { grid-template-columns: 1fr; }
+    .flow { flex-direction: column; }
+    .flow-item { border-right: 1px solid var(--border); border-bottom: none; }
+    .flow-item:last-child { border-bottom: 1px solid var(--border); }
+    .flow-item::after { content: '↓'; right: auto; top: auto; bottom: -14px; left: 50%; transform: translateX(-50%); }
+    .loop-steps { justify-content: center; }
+    .cover h1 { font-size: 28px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+  COVER
+════════════════════════════════════════════════════════════════════ -->
+<div class="cover">
+  <div class="wrapper">
+    <div class="cover-badge">AI-Driven Development Template</div>
+    <h1>AI駆動開発<br><span>テンプレート集</span></h1>
+    <p class="cover-sub">― 実務で使えるプロンプトと開発フロー完全版 ―</p>
+    <div class="cover-meta">
+      <div class="cover-meta-item"><div class="dot"></div>個人開発者向け</div>
+      <div class="cover-meta-item"><div class="dot green"></div>コピペで使えるテンプレ7種</div>
+      <div class="cover-meta-item"><div class="dot red"></div>OgoRoulette実践事例収録</div>
+      <div class="cover-meta-item"><div class="dot purple"></div>Claude Code / ChatGPT 対応</div>
+    </div>
+  </div>
+</div>
+
+<div class="wrapper">
+
+<!-- ─── 目次 ─── -->
+<div class="toc">
+  <h2>目次 / Table of Contents</h2>
+  <ul class="toc-list">
+    <li><span class="toc-num">01</span>はじめに — AI駆動開発とは</li>
+    <li><span class="toc-num">02</span>この資料でできること</li>
+    <li><span class="toc-num">03</span>全体フロー「最強ループ」</li>
+    <li><span class="toc-num">04</span>実践事例 — OgoRoulette</li>
+    <li><span class="toc-num">05</span>テンプレート集（7種）</li>
+    <li><span class="toc-num">06</span>プロンプト設計のコツ</li>
+    <li><span class="toc-num">07</span>よくある失敗と対策</li>
+    <li><span class="toc-num">08</span>バズるアプリの作り方</li>
+    <li><span class="toc-num">09</span>まとめ</li>
+  </ul>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════════
+  1. はじめに
+════════════════════════════════════════════════════════════════════ -->
+<hr class="divider">
+<section class="section">
+  <div class="section-label">01 / Introduction</div>
+  <h2 class="section-title">はじめに — AI駆動開発とは何か</h2>
+  <p class="section-desc">開発の常識が変わりつつある。その本質と、従来手法との違いを整理する。</p>
+
+  <div class="stat-grid">
+    <div class="stat-card">
+      <div class="stat-value">10×</div>
+      <div class="stat-label">開発速度の<br>ポテンシャル</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">7+</div>
+      <div class="stat-label">すぐ使える<br>テンプレート</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">0→1</div>
+      <div class="stat-label">アイデアから<br>リリースまで</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">100%</div>
+      <div class="stat-label">コピペで<br>再現可能</div>
+    </div>
+  </div>
+
+  <div class="card-grid col3">
+    <div class="card">
+      <div class="card-icon">🤖</div>
+      <h3>AI駆動開発とは</h3>
+      <p>AIをコード補完ツールとしてではなく、<strong>設計・実装・改善のパートナー</strong>として位置づける開発スタイル。指示→実装→評価→改善のループを高速で回す。</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">⚡</div>
+      <h3>なぜ今必要なのか</h3>
+      <p>ゼロから学習して実装するコストが激減した。知らない技術でも「まず作ってみる」ができる。個人開発の限界が大幅に広がっている。</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">🔄</div>
+      <h3>従来開発との違い</h3>
+      <p>「知識を先に習得してから実装」→「対話しながら並行学習」。AIはコードを書くが、<strong>何を作るかはあなたが決める</strong>。オーナーシップは変わらない。</p>
+    </div>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>観点</th>
+        <th>従来の個人開発</th>
+        <th>AI駆動開発</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>知らない技術を使うとき</td>
+        <td>ドキュメントを読んで勉強してから実装</td>
+        <td>AIに聞きながら並行学習で実装</td>
+      </tr>
+      <tr>
+        <td>バグの原因調査</td>
+        <td>ひたすら検索・試行錯誤</td>
+        <td>ログとコードをAIに渡して仮説を得る</td>
+      </tr>
+      <tr>
+        <td>コードレビュー</td>
+        <td>1人で読み返す or チームに依頼</td>
+        <td>AIに複数の視点でレビューさせる</td>
+      </tr>
+      <tr>
+        <td>LP・文章作成</td>
+        <td>時間をかけてゼロから書く</td>
+        <td>構造を渡してAIにたたき台を作らせる</td>
+      </tr>
+      <tr>
+        <td>スピード感</td>
+        <td>週単位</td>
+        <td>日〜時間単位</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="callout">
+    <strong class="default">重要な前提</strong>
+    AI駆動開発は「AIに丸投げ」ではない。AIは優秀な実装パートナーだが、<strong>何を作るか・なぜ作るか・品質を判断する</strong>のは常に人間側の仕事。この資料が目指すのは、その判断の質を上げることにある。
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════════════════
+  2. この資料でできること
+════════════════════════════════════════════════════════════════════ -->
+<hr class="divider">
+<section class="section">
+  <div class="section-label">02 / What You'll Get</div>
+  <h2 class="section-title">この資料でできること</h2>
+  <p class="section-desc">読み終えたあと、何が変わるか。</p>
+
+  <div class="card-grid col2">
+    <div class="card">
+      <h3>📋 再現できる内容</h3>
+      <ul class="checklist">
+        <li><span class="check">✓</span>要件定義からLP作成まで一気通貫でAIを活用する</li>
+        <li><span class="check">✓</span>プロンプトをコピペして即使えるレベルで運用する</li>
+        <li><span class="check">✓</span>「gstack → 改善 → 再評価」の評価ループを回す</li>
+        <li><span class="check">✓</span>バグ調査・リファクタをAIとペアプロで進める</li>
+        <li><span class="check">✓</span>知らない技術スタックでアプリをリリースまで持っていく</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>🎯 得られるスキル</h3>
+      <ul class="checklist">
+        <li><span class="check">✓</span>AIへの指示を精度高く言語化する力</li>
+        <li><span class="check">✓</span>コードのオーナーシップを保ちながらAIを使う感覚</li>
+        <li><span class="check">✓</span>品質を数値で評価してPDCAを回す習慣</li>
+        <li><span class="check">✓</span>失敗パターンを事前に回避するチェックリスト</li>
+        <li><span class="check">✓</span>バズを意識した体験設計の考え方</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="callout success">
+    <strong>この資料の使い方</strong>
+    Section 3〜4で全体像をつかみ、Section 5のテンプレートをコピペして実際のプロジェクトで使い始める。一度読んで終わりではなく、<strong>手元に置いて開発のたびに参照する</strong>ことを想定して設計している。
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════════════════
+  3. 全体フロー
+════════════════════════════════════════════════════════════════════ -->
+<hr class="divider">
+<section class="section">
+  <div class="section-label">03 / The Loop</div>
+  <h2 class="section-title">全体フロー「最強ループ」</h2>
+  <p class="section-desc">AI駆動開発の核心はこの5ステップのループにある。一周するたびに品質が上がる。</p>
+
+  <div class="loop-box">
+    <div class="loop-steps">
+      <div class="loop-step">
+        <div class="loop-circle">📊</div>
+        <div class="loop-step-num">STEP 01</div>
+        <div class="loop-step-label">gstack<br>全体評価</div>
+        <div class="loop-step-desc">現状のスコアと<br>改善ポイントを把握</div>
+      </div>
+      <div class="loop-arrow">→</div>
+      <div class="loop-step">
+        <div class="loop-circle">🧠</div>
+        <div class="loop-step-num">STEP 02</div>
+        <div class="loop-step-label">HEART<br>UX分解</div>
+        <div class="loop-step-desc">ユーザー体験を<br>5軸で言語化</div>
+      </div>
+      <div class="loop-arrow">→</div>
+      <div class="loop-step">
+        <div class="loop-circle">💡</div>
+        <div class="loop-step-num">STEP 03</div>
+        <div class="loop-step-label">改善案<br>生成</div>
+        <div class="loop-step-desc">AIと対話して<br>具体的な施策を出す</div>
+      </div>
+      <div class="loop-arrow">→</div>
+      <div class="loop-step">
+        <div class="loop-circle">⚙️</div>
+        <div class="loop-step-num">STEP 04</div>
+        <div class="loop-step-label">実装<br>AI活用</div>
+        <div class="loop-step-desc">テンプレートで<br>高速実装</div>
+      </div>
+      <div class="loop-arrow">→</div>
+      <div class="loop-step">
+        <div class="loop-circle">🔁</div>
+        <div class="loop-step-num">STEP 05</div>
+        <div class="loop-step-label">再評価<br>比較</div>
+        <div class="loop-step-desc">スコアの変化を<br>確認してループへ</div>
+      </div>
+    </div>
+    <div class="loop-return">↩ ループを繰り返すほど <span>品質が積み上がる</span></div>
+  </div>
+
+  <div class="card-grid col2">
+    <div class="card">
+      <h3>📊 gstack とは</h3>
+      <p>Claude Code に組み込まれた評価フレームワーク。CEO・エンジニア・デザイナーなど複数の視点でプロダクトを自動評価する。<br><br>主な評価軸：Lighthouse スコア、UI/UX品質、コードの保守性、セキュリティ、アクセシビリティ。</p>
+    </div>
+    <div class="card">
+      <h3>🧠 HEART フレームワークとは</h3>
+      <p>Google が提唱するUX評価の5軸：<br><br>
+      <strong>H</strong>appiness（満足度）<br>
+      <strong>E</strong>ngagement（エンゲージメント）<br>
+      <strong>A</strong>doption（採用率）<br>
+      <strong>R</strong>etention（継続率）<br>
+      <strong>T</strong>ask Success（タスク完了率）</p>
+    </div>
+  </div>
+
+  <div class="callout warn">
+    <strong>ループを回すときのポイント</strong>
+    一度に全部を直そうとしない。<strong>1ループ = 1〜2個の改善</strong>に絞る。変更が多いほどレビューコストが増え、バグの原因特定も難しくなる。
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════════════════
+  4. 実践事例
+════════════════════════════════════════════════════════════════════ -->
+<hr class="divider">
+<section class="section">
+  <div class="section-label">04 / Case Study</div>
+  <h2 class="section-title">実践事例 — OgoRoulette</h2>
+  <p class="section-desc">飲み会の奢り決めアプリを0からリリースまで。AIをどう使ったか、フェーズごとに解説する。</p>
+
+  <div class="callout">
+    <strong class="default">OgoRoulette とは</strong>
+    飲み会で誰が奢るかを、リアルタイムルーレットで透明に決めるWebアプリ。Next.js + Supabase + Framer Motion。Claude Code を使い、知らない技術スタックでゼロからリリースまで実装。
+  </div>
+
+  <div class="case-grid">
+    <div class="case-item">
+      <div class="case-phase">Phase 01</div>
+      <div class="case-title">アイデア決定 → 要件定義</div>
+      <div class="case-body">
+        「飲み会で盛り上がりながら奢り手を決めたい」という課題から出発。<br><br>
+        AIへの依頼：<strong>「この課題を解決するMVP機能リストを作って」</strong><br><br>
+        出力：①参加者登録、②ルーレット演出、③サーバー側当選決定（不正防止）の3機能に絞り込み。
+      </div>
+    </div>
+    <div class="case-item">
+      <div class="case-phase">Phase 02</div>
+      <div class="case-title">MVP作成</div>
+      <div class="case-body">
+        Next.js + Supabase を未経験のまま開始。CLAUDE.md に開発ルールを書いてから着手。<br><br>
+        AIへの依頼：<strong>「ルーム機能から作って。まず何を・なぜ・どう実装するか確認して」</strong><br><br>
+        Supabase Realtimeのフォールバック実装まで自律的に提案してきた。
+      </div>
+    </div>
+    <div class="case-item">
+      <div class="case-phase">Phase 03</div>
+      <div class="case-title">UX改善（Lighthouse最適化）</div>
+      <div class="case-body">
+        gstack評価でPerformance 62、Accessibility 86を検出。<br><br>
+        改善内容：<br>
+        ・Viewport zoom制限の削除（WCAG違反）<br>
+        ・Google Fonts 466KB → 90KB に削減<br>
+        ・muted テキストコントラスト 3.5:1 → 4.6:1<br><br>
+        結果：Accessibility 86 → 92
+      </div>
+    </div>
+    <div class="case-item">
+      <div class="case-phase">Phase 04</div>
+      <div class="case-title">バグ修正（本番のみ発生）</div>
+      <div class="case-body">
+        本番のみルーレット結果が表示されない。<br><br>
+        原因：アニメーション完了 vs サーバー結果受信の <strong>race condition</strong><br><br>
+        AIへの依頼：「この競合条件をどう解決する？ログを見せる」<br><br>
+        解決：waitingForWinnerフラグで到着順を吸収。
+      </div>
+    </div>
+    <div class="case-item">
+      <div class="case-phase">Phase 05</div>
+      <div class="case-title">ChunkLoadError 無限ループ</div>
+      <div class="case-body">
+        next/dynamic によるchunk分割 → 再デプロイで古いHTMLが404 → reload → 同じHTML → 無限ループ。<br><br>
+        AIへの依頼：「無限ループの原因と、キャッシュをバイパスする修正を提案して」<br><br>
+        解決：①静的importに戻す、②sessionStorageでreloadループを制限。
+      </div>
+    </div>
+    <div class="case-item">
+      <div class="case-phase">Phase 06</div>
+      <div class="case-title">LP作成 → コンテンツ展開</div>
+      <div class="case-body">
+        Lighthouse 100点を目指したLP HTMLをAIで生成。<br><br>
+        AIへの依頼：「このアプリの価値提案を整理してLP構成を提案して。ターゲットは飲み会参加者」<br><br>
+        さらに開発記事（5話シリーズ）・テクニカル記事をAIと共同で執筆。
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════════════════
+  5. テンプレート集
+════════════════════════════════════════════════════════════════════ -->
+<hr class="divider">
+<section class="section">
+  <div class="section-label">05 / Templates</div>
+  <h2 class="section-title">テンプレート集（7種）</h2>
+  <p class="section-desc">すべてコピペで使える。<code>[　]</code> の部分を自分のプロジェクトに書き換えて使う。</p>
+
+  <!-- 5-1 要件定義 -->
+  <div class="template-section">
+    <div class="template-header">
+      <div class="template-num">T-01</div>
+      <h3 class="template-title">要件定義テンプレ</h3>
+      <span class="badge blue">最重要</span>
+    </div>
+    <p class="template-desc">
+      開発を始める前に必ず使う。アイデアをMVP定義まで落とし込む。「全部作りたい病」を防ぎ、フォーカスを保つ効果がある。
+    </p>
+    <div class="code-block">
+      <div class="code-header">
+        <span class="code-title">要件定義プロンプト</span>
+        <span class="code-badge">コピペ可能</span>
+      </div>
+      <div class="code-body">あなたはプロダクトマネージャーです。
+以下のアイデアから要件定義書を作成してください。
+
+【アプリ概要】
+[ここにアプリの一言説明]
+
+【解決したい課題】
+[誰の・どんな・なぜ困っている問題を解くか]
+
+【想定ユーザー】
+[具体的なペルソナ。年齢・シーン・ITリテラシーなど]
+
+【必須機能（思いつくまま）】
+- [機能1]
+- [機能2]
+- [機能3]
+
+【技術スタック（決まっている場合）】
+[フレームワーク / DB / デプロイ先]
+
+---
+
+以下の形式で出力してください：
+
+# 1. コア機能リスト（優先度HIGH/MED/LOW付き）
+# 2. MVP定義（絶対に必要な機能だけ）
+# 3. 除外する機能と理由
+# 4. 技術的なリスクポイント（3つ以内）
+# 5. 開発ロードマップ（週単位）</div>
+    </div>
+  </div>
+
+  <!-- 5-2 UI生成 -->
+  <div class="template-section">
+    <div class="template-header">
+      <div class="template-num">T-02</div>
+      <h3 class="template-title">UI生成テンプレ</h3>
+      <span class="badge green">よく使う</span>
+    </div>
+    <p class="template-desc">
+      コンポーネント単位で依頼する。「ページ全体を作って」ではなく部品単位にすることで、レビューしやすく意図通りになる。
+    </p>
+    <div class="code-block">
+      <div class="code-header">
+        <span class="code-title">UI生成プロンプト</span>
+        <span class="code-badge">コピペ可能</span>
+      </div>
+      <div class="code-body">以下の仕様で UIコンポーネントを作成してください。
+
+【コンポーネント名】
+[ComponentName]
+
+【役割・目的】
+[このコンポーネントが何をするか1〜2文で]
+
+【デザイン要件】
+- テーマ: [ダーク / ライト]
+- スタイル: [ミニマル / カラフル / カジュアル]
+- 優先デバイス: [スマホ / PC / 両対応]
+- カラーパレット: [accent色 / background色]
+
+【機能要件】
+- [インタラクション、状態、アニメーションなど]
+
+【Props定義（TypeScript）】
+- [propName]: [型] — [説明]
+
+【使用技術】
+Next.js / TypeScript / Tailwind CSS / [追加ライブラリ]
+
+---
+
+【禁止事項】（必ずここに入れる）
+- インラインスタイル禁止
+- router.back() 禁止（Link href を使う）
+- 頼んだ箇所以外は変更しない
+- 実装前に「何を・なぜ・どう実装するか」を一言確認する</div>
+    </div>
+  </div>
+
+  <!-- 5-3 バグ調査 -->
+  <div class="template-section">
+    <div class="template-header">
+      <div class="template-num">T-03</div>
+      <h3 class="template-title">バグ調査テンプレ</h3>
+      <span class="badge blue">最重要</span>
+    </div>
+    <p class="template-desc">
+      「動かない」とだけ伝えても調査が遅い。5W1Hで状況を整理して渡すことで、AIが的確な仮説を出せるようになる。
+    </p>
+    <div class="code-block">
+      <div class="code-header">
+        <span class="code-title">バグ調査プロンプト</span>
+        <span class="code-badge">コピペ可能</span>
+      </div>
+      <div class="code-body">バグの調査と修正方針を教えてください。
+
+【症状】
+[何が起きているか、見た目・動作で説明]
+
+【再現条件】
+- 発生する環境: [本番 / ローカル / 特定のブラウザ]
+- 再現頻度: [常に / 確率的 / 特定の操作後]
+- 再現手順:
+  1. [ステップ1]
+  2. [ステップ2]
+
+【期待する動作】
+[本来こうなるべき]
+
+【エラーログ（コピペ）】
+```
+[コンソールのエラーをそのまま貼る]
+```
+
+【関連コード（該当ファイル・関数）】
+```typescript
+[疑わしいコードを貼る]
+```
+
+【試したこと】
+- [試した修正1]: → [結果]
+- [試した修正2]: → [結果]
+
+---
+
+以下の形式で回答してください：
+1. 原因の仮説（可能性の高い順に3つ）
+2. 各仮説の確認方法
+3. 推奨する修正方針
+4. 修正時の注意点</div>
+    </div>
+  </div>
+
+  <!-- 5-4 リファクタ -->
+  <div class="template-section">
+    <div class="template-header">
+      <div class="template-num">T-04</div>
+      <h3 class="template-title">リファクタテンプレ</h3>
+      <span class="badge purple">コード品質</span>
+    </div>
+    <p class="template-desc">
+      「きれいにして」は曖昧すぎる。何を目的にするリファクタなのかを明示することで、意図しない変更を防ぐ。
+    </p>
+    <div class="code-block">
+      <div class="code-header">
+        <span class="code-title">リファクタプロンプト</span>
+        <span class="code-badge">コピペ可能</span>
+      </div>
+      <div class="code-body">以下のコードをリファクタリングしてください。
+
+【リファクタの目的】（必ず1つ選ぶ）
+- [ ] 可読性の向上
+- [ ] パフォーマンスの改善
+- [ ] 型安全性の強化
+- [ ] テスタビリティの向上
+- [ ] 重複コードの削除
+
+【対象コード】
+```typescript
+[リファクタしたいコードを貼る]
+```
+
+【制約】
+- 外部から見た動作は変えない（インターフェース維持）
+- 使用しているライブラリは変えない
+- テストがある場合はパスすること
+
+---
+
+【禁止事項】
+- 頼んでいない箇所を変更しない
+- 動作確認なしに大きなリファクタをしない
+- リファクタ前後で動作が変わる場合は必ず事前に警告する
+
+出力：
+1. リファクタ後のコード
+2. 変更点のリスト（箇条書き）
+3. 動作に影響しうる変更があれば明示</div>
+    </div>
+  </div>
+
+  <!-- 5-5 gstack -->
+  <div class="template-section">
+    <div class="template-header">
+      <div class="template-num">T-05</div>
+      <h3 class="template-title">gstackレビュー用テンプレ</h3>
+      <span class="badge yellow">評価・改善</span>
+    </div>
+    <p class="template-desc">
+      作ったものを客観的に評価させる。Lighthouse スコア、UX品質、コードの保守性を一度に整理できる。
+    </p>
+    <div class="code-block">
+      <div class="code-header">
+        <span class="code-title">gstackレビュープロンプト</span>
+        <span class="code-badge">コピペ可能</span>
+      </div>
+      <div class="code-body">以下のアプリをgstackフレームワークで評価してください。
+
+【アプリURL】
+[https://your-app.vercel.app]
+
+【評価してほしい観点】
+- [ ] パフォーマンス（Lighthouseスコア）
+- [ ] アクセシビリティ（WCAG 2.1準拠）
+- [ ] UI/UXの品質（モバイル・PC両対応）
+- [ ] SEO対応
+- [ ] エラーハンドリング
+- [ ] セキュリティの基本チェック
+
+【現在の課題認識（あれば）】
+[自分が気になっている点を書く]
+
+---
+
+以下の形式で出力してください：
+
+# ISSUE一覧
+| 優先度 | カテゴリ | 問題 | 影響 | 修正方針 |
+|--------|---------|------|------|---------|
+| HIGH   | ...      | ...  | ...  | ...     |
+
+# 特に改善効果が高い TOP3
+1. ...
+2. ...
+3. ...
+
+# 次のアクション（実装順）
+1. ...
+2. ...
+3. ...</div>
+    </div>
+  </div>
+
+  <!-- 5-6 LP生成 -->
+  <div class="template-section">
+    <div class="template-header">
+      <div class="template-num">T-06</div>
+      <h3 class="template-title">LP生成テンプレ</h3>
+      <span class="badge green">コンテンツ</span>
+    </div>
+    <p class="template-desc">
+      ランディングページの構成をAIで生成する。価値提案・ターゲット・CTA を明確にすることで、説得力のあるLPができる。
+    </p>
+    <div class="code-block">
+      <div class="code-header">
+        <span class="code-title">LP生成プロンプト</span>
+        <span class="code-badge">コピペ可能</span>
+      </div>
+      <div class="code-body">以下の情報をもとに、LPのHTMLを作成してください。
+
+【アプリ名】
+[アプリ名]
+
+【ターゲットユーザー】
+[具体的なペルソナ・シーン]
+
+【解決する課題（Before）】
+[ユーザーが今困っていること]
+
+【提供する価値（After）】
+[アプリを使った後、どうなるか]
+
+【主要機能（3つ以内）】
+1. [機能名]: [一言説明]
+2. [機能名]: [一言説明]
+3. [機能名]: [一言説明]
+
+【CTA（行動喚起）】
+[ボタンのテキスト・リンク先]
+
+---
+
+【デザイン要件】
+- テーマ: [ダーク / ライト]
+- Lighthouseスコア 95+ を目標
+- モバイルファースト
+- Google Fontsを最小限に（1〜2ウェイトのみ）
+- 外部依存なし（CDN不使用、単一HTMLファイル）
+
+【セクション構成】
+1. Hero（キャッチコピー + CTA）
+2. 課題提示（Before）
+3. 解決策（After + 機能紹介）
+4. 社会的証明（あれば）
+5. CTA（再掲）</div>
+    </div>
+  </div>
+
+  <!-- 5-7 ブログ生成 -->
+  <div class="template-section">
+    <div class="template-header">
+      <div class="template-num">T-07</div>
+      <h3 class="template-title">ブログ生成テンプレ</h3>
+      <span class="badge purple">コンテンツ</span>
+    </div>
+    <p class="template-desc">
+      技術記事・体験記・事例記事を生成する。「体験した事実」を渡すと、読者が引き込まれる記事ができる。
+    </p>
+    <div class="code-block">
+      <div class="code-header">
+        <span class="code-title">ブログ生成プロンプト</span>
+        <span class="code-badge">コピペ可能</span>
+      </div>
+      <div class="code-body">以下の体験・知識をもとにブログ記事を書いてください。
+
+【記事タイプ】（1つ選ぶ）
+- [ ] 技術解説（バグ・実装・仕様）
+- [ ] 体験記（開発ストーリー・振り返り）
+- [ ] 比較・考察
+
+【タイトル案】
+[タイトルのイメージ（決まっていなくてもOK）]
+
+【伝えたい核心（1文で）】
+[この記事を読んで、読者に何を持ち帰ってほしいか]
+
+【実際に起きた出来事・体験した事実】
+[時系列で箇条書きにする]
+- [起きたこと1]
+- [起きたこと2]
+- [解決したこと or まだ解決していないこと]
+
+【コードや数値（あれば）】
+[ログ・コード・スコアなど具体的な数値]
+
+---
+
+【文体・スタイル要件】
+- 一人称は「自分」
+- 短い段落（3〜4行で改行）
+- 理論より体験を先に書く
+- 見出し（##）ごとに独立したストーリーにする
+- 「---」で区切る
+- 最後に次の記事or次のアクションへの導線
+
+【禁止事項】
+- 抽象論だけで終わらない
+- 「〜と思います」多用しない
+- 結論を最後まで引っ張りすぎない</div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════════════════
+  6. プロンプト設計のコツ
+════════════════════════════════════════════════════════════════════ -->
+<hr class="divider">
+<section class="section">
+  <div class="section-label">06 / Prompt Design</div>
+  <h2 class="section-title">プロンプト設計のコツ</h2>
+  <p class="section-desc">良いプロンプトと悪いプロンプトは何が違うか。4つのポイントで整理する。</p>
+
+  <div class="compare">
+    <div class="compare-col">
+      <div class="compare-head bad">NG — 曖昧すぎる</div>
+      <div class="compare-body">
+        「いい感じにしてください」<br>
+        「このバグを直して」<br>
+        「UIを改善して」<br>
+        「テストを書いて」<br><br>
+        ❌ AIが何を優先すべきか判断できない<br>
+        ❌ 意図しない変更が混入する<br>
+        ❌ レビューの基準がない
+      </div>
+    </div>
+    <div class="compare-col">
+      <div class="compare-head good">OK — 具体的・制約付き</div>
+      <div class="compare-body">
+        「戻るボタンのhrefを<code>/home</code>に変更する。他の箇所は変更しない」<br>
+        「ログを渡す。原因の仮説を3つ挙げてから修正案を提示して」<br>
+        「コントラスト比を4.5:1以上にする（WCAG AA準拠）」<br><br>
+        ✅ 変更範囲が明確<br>
+        ✅ 期待する出力形式が決まっている<br>
+        ✅ レビューポイントが分かる
+      </div>
+    </div>
+  </div>
+
+  <div class="card-grid col2">
+    <div class="card">
+      <h3>💡 抽象 → 具体の出し方</h3>
+      <ul class="list">
+        <li><span class="list-icon">1.</span><div>「なぜ必要か」を先に書く</div></li>
+        <li><span class="list-icon">2.</span><div>「何をしてほしいか」を動詞で書く（作る・変更する・調査する）</div></li>
+        <li><span class="list-icon">3.</span><div>「制約・禁止事項」を必ず入れる</div></li>
+        <li><span class="list-icon">4.</span><div>「出力形式」を指定する（箇条書き・コード・表）</div></li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>🎭 AIに役割を持たせる</h3>
+      <ul class="list">
+        <li><span class="list-icon green">→</span><div>「あなたはシニアエンジニアです」→ コードの堅牢性が上がる</div></li>
+        <li><span class="list-icon green">→</span><div>「あなたはUXデザイナーです」→ 体験視点の提案が来る</div></li>
+        <li><span class="list-icon green">→</span><div>「あなたはユーザーの立場で」→ 辛口のフィードバックが来る</div></li>
+        <li><span class="list-icon green">→</span><div>「批判的な視点で問題点を3つ挙げて」→ 盲点が見つかる</div></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="callout success">
+    <strong>プロンプトで最も重要な1行</strong>
+    「頼んだ箇所以外は変更しない。実装前に何を・なぜ・どう実装するか一言確認する。」<br><br>
+    この1行をすべてのプロンプトに入れると、意図しない変更と確認なしの実装が激減する。
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════════════════
+  7. よくある失敗と対策
+════════════════════════════════════════════════════════════════════ -->
+<hr class="divider">
+<section class="section">
+  <div class="section-label">07 / Common Failures</div>
+  <h2 class="section-title">よくある失敗と対策</h2>
+  <p class="section-desc">AI駆動開発で躓くポイントはパターンがある。事前に知っておくだけで回避できる。</p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>失敗パターン</th>
+        <th>症状</th>
+        <th>対策</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>AIに任せすぎる</strong></td>
+        <td>「自分のコードではない」感、バグ原因が特定できない、レビューが形骸化する</td>
+        <td>「なぜこう書いた？」を必ず聞く。理解できないコードはマージしない。複雑な実装は方針だけAIに出させて自分で書く</td>
+      </tr>
+      <tr>
+        <td><strong>指示が曖昧</strong></td>
+        <td>頼んでいないことも変更される、何度も修正が発生する、レビュー範囲が広がりすぎる</td>
+        <td>T-01〜T-07のテンプレを使う。変更範囲・禁止事項を必ず明記する</td>
+      </tr>
+      <tr>
+        <td><strong>スコープが広すぎる</strong></td>
+        <td>1回の依頼で変更が多すぎる、バグが出たとき原因が分からない</td>
+        <td>「1依頼 = 1機能」に絞る。大きな変更は分割してデプロイ</td>
+      </tr>
+      <tr>
+        <td><strong>レビュー不足</strong></td>
+        <td>本番で初めてバグを発見する、セキュリティホールに気づかない</td>
+        <td>小さい変更でも必ず diff を読む。T-05（gstackレビュー）を定期的に実行する</td>
+      </tr>
+      <tr>
+        <td><strong>コンテキスト未共有</strong></td>
+        <td>前のセッションで決めたルールを毎回説明し直す、一貫性のないコードになる</td>
+        <td>CLAUDE.md にルール・禁止事項・設計方針を書く。セッション開始時に読ませる</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="highlight-box">
+    <h3>CLAUDE.md は「取扱説明書」</h3>
+    <p>AIとのセッションが変わるたびに記憶はリセットされる。<strong>プロジェクトルール・禁止事項・設計思想</strong>をCLAUDE.mdに書いておくことで、毎回説明するコストがゼロになる。「AIに渡す仕様書」と思うと分かりやすい。</p>
+  </div>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-title">CLAUDE.md — 最小構成テンプレ</span>
+      <span class="code-badge green">設定ファイル</span>
+    </div>
+    <div class="code-body"># [プロジェクト名] — 開発ルール
+
+## 絶対に守ること
+- router.back() は使用禁止。必ず明示的な Link href を使う
+- 頼んだ箇所以外は変更しない
+- 実装前に「何を・なぜ・どう実装するか」を一言確認する
+- 理解できないコードは書かない（説明を求めてから実装する）
+
+## 技術スタック
+- フレームワーク: Next.js (App Router)
+- スタイリング: Tailwind CSS v4
+- DB: Supabase
+- デプロイ: Vercel
+
+## 設計方針
+- [重要な設計決定を書く]
+- [アーキテクチャの判断理由を書く]
+
+## 禁止事項
+- [使ってはいけないAPIやパターン]
+- [過去に問題になったこと]</div>
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════════════════
+  8. バズるアプリの作り方
+════════════════════════════════════════════════════════════════════ -->
+<hr class="divider">
+<section class="section">
+  <div class="section-label">08 / Going Viral</div>
+  <h2 class="section-title">バズるアプリを作る考え方</h2>
+  <p class="section-desc">機能が揃っているだけでは拡散しない。感情と体験の設計が必要。</p>
+
+  <div class="card-grid col3">
+    <div class="card">
+      <div class="card-icon">❤️</div>
+      <h3>体験重視</h3>
+      <p>「動く」だけでなく「使いたい」と思わせる。演出・アニメーション・声出しポイントを意識する。<br><br><em>例：ルーレットが止まる瞬間の「ドキドキ」</em></p>
+    </div>
+    <div class="card">
+      <div class="card-icon">📱</div>
+      <h3>SNS拡散設計</h3>
+      <p>「スクショしたくなる」「シェアしたくなる」瞬間を作る。結果画面・スコア・ランキングは拡散されやすい。<br><br><em>例：「〇〇が奢る！」という画面</em></p>
+    </div>
+    <div class="card">
+      <div class="card-icon">🎭</div>
+      <h3>感情設計</h3>
+      <p>ユーザーが体験するべき感情を先に決める。ドキドキ→安堵→笑い→共有という感情の流れを設計する。<br><br><em>例：当選者が出た瞬間のリアクション</em></p>
+    </div>
+  </div>
+
+  <div class="callout warn">
+    <strong>「疑われない」が最重要</strong>
+    ルーレットや抽選アプリで最も重要なのは「透明性」。当選者をサーバーが決定し、クライアントが操作できない設計にすることで「信頼」が生まれる。技術的な正しさが体験の信頼を作る。
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>要素</th>
+        <th>バズらない設計</th>
+        <th>バズる設計</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>結果の出し方</td>
+        <td>テキストがポップアップする</td>
+        <td>全員の画面でルーレットが同時に止まる</td>
+      </tr>
+      <tr>
+        <td>演出</td>
+        <td>なし</td>
+        <td>紙吹雪・効果音・ハイライトアニメーション</td>
+      </tr>
+      <tr>
+        <td>透明性</td>
+        <td>1人の画面で操作</td>
+        <td>全員が同じ画面をリアルタイムで見る</td>
+      </tr>
+      <tr>
+        <td>シェア設計</td>
+        <td>なし</td>
+        <td>結果画面がスクショしやすい・SNS投稿文がある</td>
+      </tr>
+      <tr>
+        <td>UXの流れ</td>
+        <td>操作→結果</td>
+        <td>期待→緊張→演出→結果→笑い→シェア</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════════════════
+  9. まとめ
+════════════════════════════════════════════════════════════════════ -->
+<hr class="divider">
+<section class="section">
+  <div class="section-label">09 / Summary</div>
+  <h2 class="section-title">まとめ</h2>
+  <p class="section-desc">AI駆動開発の本質と、今日から始めるためのアクション。</p>
+
+  <div class="highlight-box">
+    <h3>AI駆動開発の本質</h3>
+    <p>AIは「速く書けるツール」ではなく、<strong>「自分が言語化できていないことを実装に落としてくれるパートナー」</strong>だ。<br>何を作るか・なぜ作るか・品質を判断する — これは常に人間の仕事。</p>
+  </div>
+
+  <div class="card-grid col3">
+    <div class="card">
+      <h3>📝 今日やること</h3>
+      <ul class="checklist">
+        <li><span class="check">✓</span>CLAUDE.md を書く</li>
+        <li><span class="check">✓</span>T-01（要件定義）でMVPを絞る</li>
+        <li><span class="check">✓</span>「1依頼 = 1機能」ルールを決める</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>⚙️ 1週間でやること</h3>
+      <ul class="checklist">
+        <li><span class="check">✓</span>T-05（gstackレビュー）で現状評価</li>
+        <li><span class="check">✓</span>最強ループを1周回す</li>
+        <li><span class="check">✓</span>テンプレートを自分用にカスタマイズ</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>🚀 1ヶ月でやること</h3>
+      <ul class="checklist">
+        <li><span class="check">✓</span>MVPをリリースする</li>
+        <li><span class="check">✓</span>ループを3周以上回す</li>
+        <li><span class="check">✓</span>体験を記事化してシェアする</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="callout success">
+    <strong>継続するための考え方</strong>
+    完璧を目指してリリースを遅らせるより、不完全でもリリースして改善し続ける方が速い。AI駆動開発はその「改善し続ける」ループを高速化するためにある。<strong>まず出す、評価する、直す</strong> ── この順番を守る。
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>テンプレート名</th>
+        <th>使うタイミング</th>
+        <th>重要度</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>T-01</td>
+        <td>要件定義テンプレ</td>
+        <td>開発開始前</td>
+        <td><span class="badge blue">最重要</span></td>
+      </tr>
+      <tr>
+        <td>T-02</td>
+        <td>UI生成テンプレ</td>
+        <td>コンポーネント実装時</td>
+        <td><span class="badge green">よく使う</span></td>
+      </tr>
+      <tr>
+        <td>T-03</td>
+        <td>バグ調査テンプレ</td>
+        <td>バグ発生時</td>
+        <td><span class="badge blue">最重要</span></td>
+      </tr>
+      <tr>
+        <td>T-04</td>
+        <td>リファクタテンプレ</td>
+        <td>コード整理時</td>
+        <td><span class="badge purple">コード品質</span></td>
+      </tr>
+      <tr>
+        <td>T-05</td>
+        <td>gstackレビュー用テンプレ</td>
+        <td>定期的な品質確認</td>
+        <td><span class="badge yellow">評価・改善</span></td>
+      </tr>
+      <tr>
+        <td>T-06</td>
+        <td>LP生成テンプレ</td>
+        <td>リリース・告知時</td>
+        <td><span class="badge green">コンテンツ</span></td>
+      </tr>
+      <tr>
+        <td>T-07</td>
+        <td>ブログ生成テンプレ</td>
+        <td>振り返り・記事化時</td>
+        <td><span class="badge purple">コンテンツ</span></td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- footer -->
+<div class="footer">
+  <p><strong>AI駆動開発テンプレート集</strong> — 実務で使えるプロンプトと開発フロー完全版</p>
+  <p style="margin-top:8px">OgoRoulette 開発実践から抽出 | 2026</p>
+  <p style="margin-top:8px">🔗 <strong>https://ogo-roulette.vercel.app</strong> — 実際のアプリを試す</p>
+</div>
+
+</div><!-- /wrapper -->
+</body>
+</html>
