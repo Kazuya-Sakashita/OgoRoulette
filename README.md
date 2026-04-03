@@ -2,13 +2,9 @@
 
 > おごりをルーレットで決めよう
 
-飲み会やランチで「誰が奢るか」を、ルーレットを使って楽しく・公平に決めるWebアプリです。
+**本番環境**: https://ogo-roulette.vercel.app/
 
----
-
-## 解決したい課題
-
-「誰が払う？」という微妙な空気を、ルーレットという体験に変えることで、
+飲み会やランチで「誰が奢るか」を、ルーレットという体験に変えることで、
 
 - もめずに決まる
 - 盛り上がって決まる
@@ -47,12 +43,14 @@
 |---------|------|
 | フレームワーク | [Next.js](https://nextjs.org/) 16 (App Router) |
 | UI | React 19 / Tailwind CSS v4 / Radix UI / shadcn/ui |
+| アニメーション | Framer Motion 11 |
 | 言語 | TypeScript 5.7 |
-| 認証 | [Supabase](https://supabase.com/) Auth（Google OAuth） |
+| 認証 | [Supabase](https://supabase.com/) Auth（Google / LINE / X） |
 | DB | PostgreSQL（Supabase） |
 | ORM | Prisma 6 |
 | バリデーション | Zod |
 | テスト | Vitest |
+| デプロイ | Vercel |
 
 ---
 
@@ -97,8 +95,11 @@
 │   ├── room-owner.ts       # オーナー判定ロジック
 │   ├── supabase/           # Supabase クライアント
 │   └── prisma.ts           # Prisma クライアント
-└── prisma/
-    └── schema.prisma       # DBスキーマ定義
+├── prisma/
+│   └── schema.prisma       # DBスキーマ定義
+└── docs/
+    ├── ai-driven-development/  # AI駆動開発 完全ガイド（27ページ教科書）
+    └── templates/              # テンプレート集
 ```
 
 ---
@@ -114,7 +115,7 @@
 ### インストール
 
 ```bash
-git clone https://github.com/your-username/OgoRoulette.git
+git clone https://github.com/Kazuya-Sakashita/OgoRoulette.git
 cd OgoRoulette
 pnpm install
 ```
@@ -188,3 +189,14 @@ pnpm test
 - ゲストモードでは履歴・保存機能は利用できません
 - ルーム機能はログインが必要です
 - 環境変数が未設定の場合、認証・DB連携は動作しません
+
+---
+
+## AI駆動開発ガイド
+
+このアプリの開発プロセスを教材化したドキュメントを `docs/ai-driven-development/` に収録しています。
+
+- **完全ガイド** (`guide.html` / PDF 27ページ) — 要件定義からリリースまでの全工程
+- **テンプレート集** (`templates/`) — コピペで使える7種のプロンプトテンプレート
+- **プロンプト集** (`prompts/`) — カテゴリ別20+のプロンプト
+- **ケーススタディ** (`cases/`) — 実際に遭遇した問題と解決策4本
