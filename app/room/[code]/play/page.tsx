@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button"
 import { RouletteWheel } from "@/components/roulette-wheel"
 import { WinnerCard } from "@/components/winner-card"
 import { Confetti } from "@/components/confetti"
+import { PrismBurst } from "@/components/prism-burst"
 import { CountdownOverlay } from "@/components/countdown-overlay"
 import { createClient } from "@/lib/supabase/client"
 import { getDisplayName } from "@/lib/display-name"
@@ -104,6 +105,7 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
   const [pendingWinnerIndex, setPendingWinnerIndex] = useState<number | undefined>(undefined)
   const [winner, setWinner] = useState<WinnerData | null>(null)
   const [showConfetti, setShowConfetti] = useState(false)
+  const [showPrismBurst, setShowPrismBurst] = useState(false)
   // Increment to remount Confetti and trigger a fresh burst (e.g. Phase A → B transition)
   const [confettiBurstKey, setConfettiBurstKey] = useState(0)
   // ISSUE-047: ranking は全スピン履歴から集計した専用 API で取得
@@ -689,6 +691,8 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
       playResultSound()
       vibrate(HapticPattern.result)
       setShowConfetti(true)
+      setShowPrismBurst(true)
+      setTimeout(() => setShowPrismBurst(false), 1800)
       clearTimeout(confettiTimerRef.current ?? undefined)
       // 6000ms matches the Confetti component's internal intense-mode timer (intense ? 6000 : 4000)
       confettiTimerRef.current = setTimeout(() => setShowConfetti(false), 6000)
@@ -732,6 +736,8 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
         playResultSound()
         vibrate(HapticPattern.result)
         setShowConfetti(true)
+        setShowPrismBurst(true)
+        setTimeout(() => setShowPrismBurst(false), 1800)
         clearTimeout(confettiTimerRef.current ?? undefined)
         confettiTimerRef.current = setTimeout(() => setShowConfetti(false), 6000)
       } else {
@@ -829,6 +835,12 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
           onRespin={isOwner ? () => { resetRecording(); handleRespin() } : undefined}
         />
       )}
+
+      {/* Prism burst — rainbow ring explosion at winner reveal moment */}
+      <PrismBurst
+        active={showPrismBurst}
+        winnerColor={winner ? SEGMENT_COLORS[winner.index % SEGMENT_COLORS.length] : undefined}
+      />
 
       <Confetti
         key={confettiBurstKey}

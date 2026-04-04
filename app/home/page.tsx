@@ -1,12 +1,12 @@
 "use client"
 
-import dynamic from "next/dynamic"
 import { Button } from "@/components/ui/button"
 import { RouletteWheel } from "@/components/roulette-wheel"
-const Confetti = dynamic(() => import("@/components/confetti").then(m => ({ default: m.Confetti })), { ssr: false })
-const WinnerCard = dynamic(() => import("@/components/winner-card").then(m => ({ default: m.WinnerCard })), { ssr: false })
-const RecordingCanvas = dynamic(() => import("@/components/recording-canvas").then(m => ({ default: m.RecordingCanvas })), { ssr: false })
-const ShareSheet = dynamic(() => import("@/components/share-sheet").then(m => ({ default: m.ShareSheet })), { ssr: false })
+import { Confetti } from "@/components/confetti"
+import { PrismBurst } from "@/components/prism-burst"
+import { WinnerCard } from "@/components/winner-card"
+import { RecordingCanvas } from "@/components/recording-canvas"
+import { ShareSheet } from "@/components/share-sheet"
 import { CountdownOverlay } from "@/components/countdown-overlay"
 import { QrCode, Sparkles, Plus, X as XIcon, History, ChevronDown, ChevronUp, Calculator, LogOut, Check, UserCircle, LogIn } from "lucide-react"
 import { useState, useEffect, useRef } from "react"
@@ -54,6 +54,7 @@ export default function HomePage() {
   const [newName, setNewName] = useState("")
   const [winner, setWinner] = useState<{ name: string; index: number } | null>(null)
   const [showConfetti, setShowConfetti] = useState(false)
+  const [showPrismBurst, setShowPrismBurst] = useState(false)
   const confettiTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [countdown, setCountdown] = useState<number | null>(null)
   const countdownTimersRef = useRef<ReturnType<typeof setTimeout>[]>([])
@@ -303,6 +304,8 @@ export default function HomePage() {
       vibrate(HapticPattern.result)
       setWinner({ name: winnerName, index: winnerIndex })
       setShowConfetti(true)
+      setShowPrismBurst(true)
+      setTimeout(() => setShowPrismBurst(false), 1800)
       clearTimeout(confettiTimerRef.current ?? undefined)
       confettiTimerRef.current = setTimeout(() => setShowConfetti(false), 4000)
 
@@ -445,6 +448,12 @@ export default function HomePage() {
 
       {/* Countdown overlay — shown before spin starts */}
       <CountdownOverlay countdown={countdown} participants={participants} />
+
+      {/* Prism burst — rainbow ring explosion at winner reveal moment */}
+      <PrismBurst
+        active={showPrismBurst}
+        winnerColor={winner ? SEGMENT_COLORS[winner.index % SEGMENT_COLORS.length] : undefined}
+      />
 
       {/* Confetti effect — intense + winner color during result reveal */}
       <Confetti
