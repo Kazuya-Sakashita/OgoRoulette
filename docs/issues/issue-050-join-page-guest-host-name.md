@@ -1,7 +1,7 @@
 # ISSUE-050: 招待ページでゲストホストの名前が「ゲストさん」になる
 
 ## ステータス
-🔴 未対応
+✅ 完了 — `app/join/[code]/page.tsx:191` で `room?.members.find(m => m.isHost)?.nickname` フォールバック実装済み（getDisplayName 対応版）
 
 ## 概要
 ゲスト（未ログイン）がルームを作成した場合、招待ページ（`/join/[code]`）の招待文が
