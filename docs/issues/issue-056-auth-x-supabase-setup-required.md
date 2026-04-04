@@ -1,7 +1,7 @@
 # ISSUE-056: X（Twitter）ログインには Supabase ダッシュボード設定が必要（デプロイ前作業）
 
 ## ステータス
-🔴 未着手（デプロイ前に実施必須）
+✅ 完了 — Twitter Developer Portal OAuth 2.0 設定・Supabase ダッシュボード Twitter プロバイダー有効化 済み（2026-04-05）
 
 ## 概要
 X ログインのフロントエンド実装は完了したが、実際に動作させるには Supabase ダッシュボードと Twitter Developer Portal での設定が必要。
