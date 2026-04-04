@@ -1,7 +1,7 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { X as XIcon, Crown, Calculator, RotateCcw, Bookmark, Check, LogIn, Share2 } from "lucide-react"
+import { X as XIcon, Crown, Calculator, RotateCcw, Bookmark, Check, LogIn, Share2, ChevronDown, ChevronUp } from "lucide-react"
 import { useState, useEffect, useCallback, RefObject } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import Image from "next/image"
@@ -15,6 +15,7 @@ import {
   shareToX,
   shareToLine,
 } from "@/lib/share-service"
+import { generateShareCard } from "@/lib/share-card-generator"
 
 interface WinnerCardProps {
   winner: string
@@ -80,6 +81,11 @@ export function WinnerCard({
 
   // Phase A: cinematic reveal  Phase B: details sheet
   const [phase, setPhase] = useState<"reveal" | "details">("reveal")
+
+  // ISSUE-181: Phase B accordion — details collapsed by default
+  const [showDetails, setShowDetails] = useState(false)
+  // ISSUE-183: share card generation state
+  const [shareCardDone, setShareCardDone] = useState(false)
 
   // Save group inline state
   const [showSaveGroup, setShowSaveGroup] = useState(false)
@@ -195,6 +201,46 @@ export function WinnerCard({
       // User cancelled or share failed — silently ignore
     }
   }, [videoBlob, onShareVideo, recordingCanvasRef, winner, shareUrl]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  /**
+   * ISSUE-183: Phase B プライマリシェアボタン。
+   * Canvas でブランド入り静止画カードを生成 → Web Share API で画像ファイルをシェア。
+   * ファイルシェア不可の場合は URL シェア → クリップボードコピーへフォールバック。
+   */
+  const handlePrimaryShare = useCallback(async () => {
+    // If video is ready, delegate to video share sheet (highest quality)
+    if (videoBlob && onShareVideo) {
+      onShareVideo()
+      return
+    }
+
+    const imageBlob = await generateShareCard(winner, color).catch(() => null)
+    const text = shareTextValue
+
+    try {
+      if (imageBlob) {
+        const imageFile = new File([imageBlob], `ogoroulette_${winner}.png`, { type: "image/png" })
+        if (typeof navigator.canShare === "function" && navigator.canShare({ files: [imageFile] })) {
+          await navigator.share({ files: [imageFile], text, url: shareUrl })
+          setShareCardDone(true)
+          return
+        }
+      }
+
+      if (navigator.share) {
+        await navigator.share({ title: "OgoRoulette", text, url: shareUrl })
+        setShareCardDone(true)
+        return
+      }
+
+      await navigator.clipboard.writeText(`${text}\n${shareUrl}`)
+      setShareCardDone(true)
+    } catch (e) {
+      if ((e as Error).name !== "AbortError") {
+        // シェアキャンセル以外のエラーは無視
+      }
+    }
+  }, [videoBlob, onShareVideo, winner, color, shareTextValue, shareUrl]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleNativeShare = async () => {
     if (navigator.share) {
@@ -450,8 +496,15 @@ export function WinnerCard({
                 </button>
 
                 <div className="px-6 pb-8 pt-2">
+                  {/* ISSUE-181: Phase B 2-CTA redesign */}
+
                   {/* Winner mini-header */}
-                  <div className="flex items-center gap-3 mb-5">
+                  <motion.div
+                    className="flex items-center gap-3 mb-5"
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.05 }}
+                  >
                     <div
                       className="w-12 h-12 rounded-full flex items-center justify-center text-xl font-black shrink-0"
                       style={{
@@ -471,50 +524,46 @@ export function WinnerCard({
                         {winner}さん
                       </h3>
                     </div>
-                    <Crown
-                      className="w-6 h-6 ml-auto shrink-0"
-                      style={{ color: "#FBBF24" }}
-                    />
-                  </div>
+                    <Crown className="w-6 h-6 ml-auto shrink-0" style={{ color: "#FBBF24" }} />
+                  </motion.div>
 
-                  {/* ── Primary CTA: Video share ────────────────────── */}
-                  {videoBlob && onShareVideo && (
-                    <motion.button
-                      onClick={onShareVideo}
-                      className="w-full h-14 rounded-2xl mb-3 font-bold text-base text-white flex items-center justify-center gap-2 active:scale-95 transition-all"
-                      style={{
-                        background: `linear-gradient(135deg, ${color}, #EC4899)`,
-                        boxShadow: `0 4px 28px ${color}60`,
-                      }}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.15 }}
-                    >
-                      🎬 動画でシェア
-                    </motion.button>
-                  )}
+                  {/* ── PRIMARY CTA: シェアする (ISSUE-181 + ISSUE-183) ── */}
+                  <motion.button
+                    onClick={handlePrimaryShare}
+                    className="w-full h-14 rounded-2xl mb-3 font-bold text-base text-white flex items-center justify-center gap-2 active:scale-95 transition-all"
+                    style={{
+                      background: shareCardDone
+                        ? "rgba(255,255,255,0.12)"
+                        : `linear-gradient(135deg, ${color}, #EC4899)`,
+                      boxShadow: shareCardDone ? "none" : `0 4px 28px ${color}60`,
+                    }}
+                    initial={{ opacity: 0, scale: 0.94 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.15, type: "spring", stiffness: 300, damping: 22 }}
+                  >
+                    {shareCardDone ? (
+                      <><Check className="w-5 h-5" /> シェアしました！</>
+                    ) : videoBlob ? (
+                      <><Share2 className="w-5 h-5" /> 動画でシェア 🎬</>
+                    ) : (
+                      <><Share2 className="w-5 h-5" /> シェアする 🎉</>
+                    )}
+                  </motion.button>
 
-                  {/* ── Secondary share: text + URL ─────────────────── */}
-                  <div className="flex gap-2 mb-5">
-                    <Button
-                      onClick={handleNativeShare}
-                      variant="outline"
-                      size="sm"
-                      className="flex-1 h-10 rounded-xl border-white/10 bg-white/5 hover:bg-white/10 text-white text-xs"
-                    >
-                      <svg className="w-3.5 h-3.5 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <circle cx="18" cy="5" r="3" /><circle cx="6" cy="12" r="3" /><circle cx="18" cy="19" r="3" />
-                        <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" /><line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
-                      </svg>
-                      シェア
-                    </Button>
+                  {/* X / LINE secondary */}
+                  <motion.div
+                    className="flex gap-2 mb-5"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.22 }}
+                  >
                     <Button
                       onClick={() => handleShare("x")}
                       variant="outline"
                       size="sm"
-                      className="flex-1 h-10 rounded-xl border-white/10 bg-white/5 hover:bg-white/10 text-white text-xs"
+                      className="flex-1 h-9 rounded-xl border-white/10 bg-white/5 hover:bg-white/10 text-white text-xs"
                     >
-                      <svg className="w-3.5 h-3.5 mr-1" viewBox="0 0 24 24" fill="currentColor">
+                      <svg className="w-3 h-3 mr-1" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
                       </svg>
                       X
@@ -523,266 +572,240 @@ export function WinnerCard({
                       onClick={() => handleShare("line")}
                       variant="outline"
                       size="sm"
-                      className="flex-1 h-10 rounded-xl border-white/10 bg-white/5 hover:bg-white/10 text-white text-xs"
+                      className="flex-1 h-9 rounded-xl border-white/10 bg-white/5 hover:bg-white/10 text-white text-xs"
                     >
                       <svg className="w-3.5 h-3.5 mr-1" viewBox="0 0 24 24" fill="#06C755">
                         <path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.627-.63h2.386c.349 0 .63.285.63.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.627-.63.349 0 .631.285.631.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.349 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.281.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314" />
                       </svg>
                       LINE
                     </Button>
-                  </div>
+                  </motion.div>
 
-                  {/* ── Re-spin ──────────────────────────────────────── */}
-                  {isOwner && onRespin && (
-                    <Button
-                      onClick={onRespin}
-                      className="w-full h-11 rounded-2xl bg-gradient-accent hover:opacity-90 text-white font-semibold text-sm transition-all mb-4"
-                    >
-                      <RotateCcw className="w-4 h-4 mr-2" />
-                      もう一回！
-                    </Button>
-                  )}
-
-                  {/* ── Save group ───────────────────────────────────── */}
-                  {onSaveGroup && !savedThisSession && (
-                    <div className="mb-4">
-                      {showSaveGroup ? (
-                        <div className="flex gap-2">
-                          <input
-                            type="text"
-                            value={saveGroupName}
-                            onChange={(e) => setSaveGroupName(e.target.value)}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter" && saveGroupName.trim()) {
-                                onSaveGroup(saveGroupName.trim())
-                                setSavedThisSession(true)
-                                setShowSaveGroup(false)
-                                setSaveGroupName("")
-                              }
-                              if (e.key === "Escape") {
-                                setShowSaveGroup(false)
-                                setSaveGroupName("")
-                              }
-                            }}
-                            placeholder="グループ名（例: 飲み会メンバー）"
-                            maxLength={20}
-                            autoFocus
-                            className="flex-1 h-9 px-3 rounded-xl bg-white/10 border border-white/20 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
-                          />
-                          <button
-                            onClick={() => {
-                              if (saveGroupName.trim()) {
-                                onSaveGroup(saveGroupName.trim())
-                                setSavedThisSession(true)
-                                setShowSaveGroup(false)
-                                setSaveGroupName("")
-                              }
-                            }}
-                            disabled={!saveGroupName.trim()}
-                            className="w-9 h-9 rounded-xl bg-primary/80 flex items-center justify-center text-white disabled:opacity-40"
-                          >
-                            <Check className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => { setShowSaveGroup(false); setSaveGroupName("") }}
-                            className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center text-muted-foreground"
-                          >
-                            <XIcon className="w-4 h-4" />
-                          </button>
-                        </div>
-                      ) : (
-                        <button
-                          onClick={() => setShowSaveGroup(true)}
-                          className="w-full flex items-center justify-center gap-2 h-11 rounded-2xl border border-primary/40 bg-primary/10 hover:bg-primary/20 text-sm font-medium text-primary transition-all"
-                        >
-                          <Bookmark className="w-4 h-4" />
-                          このメンバーを次回も使う
-                        </button>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Saved confirmation */}
-                  {savedThisSession && (
-                    <div className="mb-4 flex items-center justify-center gap-2 h-10 rounded-2xl bg-primary/15 border border-primary/30 text-sm text-primary">
-                      <Check className="w-4 h-4" />
-                      いつものメンバーに登録しました
-                    </div>
-                  )}
-
-                  {/* Treat count badge + title */}
-                  {typeof treatCount === "number" && treatCount > 0 && (
-                    <div className="flex items-center gap-2 mb-5">
-                      <div
-                        className="flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-semibold"
-                        style={{ background: `${color}22`, color, border: `1px solid ${color}40` }}
-                      >
-                        <span>🍺</span>
-                        <span>通算{treatCount}回奢り</span>
-                      </div>
-                      {treatTitle && (
-                        <span className="text-sm text-white/60">{treatTitle}</span>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Payment Breakdown */}
-                  {hasBillInfo && (
-                    <div className="mb-6 p-4 rounded-2xl bg-white/5 border border-white/10">
-                      <div className="flex items-center justify-between mb-4">
-                        <div className="flex items-center gap-2">
-                          <Calculator className="w-4 h-4 text-primary" />
-                          <span className="text-sm font-medium text-muted-foreground">
-                            お支払い内訳
-                          </span>
-                        </div>
-                        {treatType && (
-                          <span
-                            className="px-2 py-0.5 rounded-full text-xs font-semibold"
-                            style={{ background: `${color}25`, color }}
-                          >
-                            {treatType}
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Winner row */}
-                      <div
-                        className="p-3 rounded-xl mb-2"
-                        style={{
-                          background: `${color}20`,
-                          border: `1px solid ${color}40`,
-                        }}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <div
-                              className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold shrink-0"
-                              style={{ background: color, color: "#0B1B2B" }}
+                  {/* ── SECONDARY CTA: グループ保存 (ISSUE-181 格上げ) ── */}
+                  <motion.div
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.28 }}
+                    className="mb-4"
+                  >
+                    {onSaveGroup && !savedThisSession && (
+                      <>
+                        {showSaveGroup ? (
+                          <div className="flex gap-2">
+                            <input
+                              type="text"
+                              value={saveGroupName}
+                              onChange={(e) => setSaveGroupName(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter" && saveGroupName.trim()) {
+                                  onSaveGroup(saveGroupName.trim())
+                                  setSavedThisSession(true)
+                                  setShowSaveGroup(false)
+                                  setSaveGroupName("")
+                                }
+                                if (e.key === "Escape") {
+                                  setShowSaveGroup(false)
+                                  setSaveGroupName("")
+                                }
+                              }}
+                              placeholder="グループ名（例: 飲み会メンバー）"
+                              maxLength={20}
+                              autoFocus
+                              className="flex-1 h-9 px-3 rounded-xl bg-white/10 border border-white/20 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
+                            />
+                            <button
+                              onClick={() => {
+                                if (saveGroupName.trim()) {
+                                  onSaveGroup(saveGroupName.trim())
+                                  setSavedThisSession(true)
+                                  setShowSaveGroup(false)
+                                  setSaveGroupName("")
+                                }
+                              }}
+                              disabled={!saveGroupName.trim()}
+                              className="w-9 h-9 rounded-xl bg-primary/80 flex items-center justify-center text-white disabled:opacity-40"
                             >
-                              {winner.charAt(0)}
-                            </div>
-                            <div className="text-left">
-                              <p className="text-sm font-medium text-white">{winner}</p>
-                              <p className="text-xs text-muted-foreground">
-                                {treat > 0 ? "奢り" : "免除"}
-                              </p>
-                            </div>
+                              <Check className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => { setShowSaveGroup(false); setSaveGroupName("") }}
+                              className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center text-muted-foreground"
+                            >
+                              <XIcon className="w-4 h-4" />
+                            </button>
                           </div>
-                          <p className="text-xl font-bold" style={{ color }}>
-                            {formatCurrency(treat)}
-                          </p>
-                        </div>
+                        ) : (
+                          <button
+                            onClick={() => setShowSaveGroup(true)}
+                            className="w-full flex items-center justify-center gap-2 h-12 rounded-2xl border border-primary/40 bg-primary/10 hover:bg-primary/20 text-sm font-semibold text-primary transition-all"
+                          >
+                            <Bookmark className="w-4 h-4" />
+                            このメンバーを次回も使う
+                          </button>
+                        )}
+                      </>
+                    )}
+                    {savedThisSession && (
+                      <div className="flex items-center justify-center gap-2 h-10 rounded-2xl bg-primary/15 border border-primary/30 text-sm text-primary">
+                        <Check className="w-4 h-4" />
+                        いつものメンバーに登録しました
                       </div>
+                    )}
+                  </motion.div>
 
-                      {/* Non-winner rows */}
-                      <div className="space-y-2">
-                        {participants
-                          .filter((_, i) => i !== winnerIndex)
-                          .map((participant, index) => (
-                            <div
-                              key={index}
-                              className="flex items-center justify-between p-3 rounded-xl bg-white/5"
-                            >
-                              <div className="flex items-center gap-2">
-                                <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-sm font-medium text-foreground shrink-0">
-                                  {participant.charAt(0)}
+                  {/* ── TEXT LINKS: もう一度 / ホームへ (ISSUE-181 demote) ── */}
+                  <motion.div
+                    className="flex items-center justify-center gap-4 mb-5"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.35 }}
+                  >
+                    {isOwner && onRespin && (
+                      <button
+                        onClick={onRespin}
+                        className="flex items-center gap-1.5 text-sm text-white/50 hover:text-white transition-colors"
+                      >
+                        <RotateCcw className="w-3.5 h-3.5" />
+                        もう一度
+                      </button>
+                    )}
+                    {isOwner && onRespin && <span className="text-white/20 text-sm">|</span>}
+                    <Link href="/home" onClick={onClose} className="text-sm text-white/50 hover:text-white transition-colors">
+                      ホームへ
+                    </Link>
+                  </motion.div>
+
+                  {/* ── ACCORDION: 詳細を見る (ISSUE-181 折りたたみ) ── */}
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.4 }}
+                    className="mb-4"
+                  >
+                    <button
+                      onClick={() => setShowDetails((v) => !v)}
+                      className="w-full flex items-center justify-center gap-1.5 py-2 text-sm text-white/40 hover:text-white/70 transition-colors"
+                    >
+                      {showDetails ? (
+                        <><ChevronUp className="w-4 h-4" /> 詳細を閉じる</>
+                      ) : (
+                        <><ChevronDown className="w-4 h-4" /> 詳細を見る（ランキング・金額）</>
+                      )}
+                    </button>
+
+                    <AnimatePresence>
+                      {showDetails && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: "auto" }}
+                          exit={{ opacity: 0, height: 0 }}
+                          transition={{ duration: 0.25 }}
+                          className="overflow-hidden"
+                        >
+                          {/* Treat count badge */}
+                          {typeof treatCount === "number" && treatCount > 0 && (
+                            <div className="flex items-center gap-2 mt-3 mb-3">
+                              <div
+                                className="flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-semibold"
+                                style={{ background: `${color}22`, color, border: `1px solid ${color}40` }}
+                              >
+                                <span>🍺</span>
+                                <span>通算{treatCount}回奢り</span>
+                              </div>
+                              {treatTitle && <span className="text-sm text-white/60">{treatTitle}</span>}
+                            </div>
+                          )}
+
+                          {/* Payment Breakdown */}
+                          {hasBillInfo && (
+                            <div className="mb-4 p-4 rounded-2xl bg-white/5 border border-white/10">
+                              <div className="flex items-center justify-between mb-4">
+                                <div className="flex items-center gap-2">
+                                  <Calculator className="w-4 h-4 text-primary" />
+                                  <span className="text-sm font-medium text-muted-foreground">お支払い内訳</span>
                                 </div>
-                                <div className="text-left">
-                                  <p className="text-sm font-medium text-white">
-                                    {participant}
-                                  </p>
-                                  <p className="text-xs text-muted-foreground">
-                                    {split > 0 ? "割り勘" : "無料"}
-                                  </p>
+                                {treatType && (
+                                  <span className="px-2 py-0.5 rounded-full text-xs font-semibold" style={{ background: `${color}25`, color }}>
+                                    {treatType}
+                                  </span>
+                                )}
+                              </div>
+                              <div className="p-3 rounded-xl mb-2" style={{ background: `${color}20`, border: `1px solid ${color}40` }}>
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-2">
+                                    <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold shrink-0" style={{ background: color, color: "#0B1B2B" }}>
+                                      {winner.charAt(0)}
+                                    </div>
+                                    <div className="text-left">
+                                      <p className="text-sm font-medium text-white">{winner}</p>
+                                      <p className="text-xs text-muted-foreground">{treat > 0 ? "奢り" : "免除"}</p>
+                                    </div>
+                                  </div>
+                                  <p className="text-xl font-bold" style={{ color }}>{formatCurrency(treat)}</p>
                                 </div>
                               </div>
-                              <p className="text-lg font-semibold text-white">
-                                {formatCurrency(split)}
-                              </p>
+                              <div className="space-y-2">
+                                {participants.filter((_, i) => i !== winnerIndex).map((participant, index) => (
+                                  <div key={index} className="flex items-center justify-between p-3 rounded-xl bg-white/5">
+                                    <div className="flex items-center gap-2">
+                                      <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-sm font-medium text-foreground shrink-0">
+                                        {participant.charAt(0)}
+                                      </div>
+                                      <div className="text-left">
+                                        <p className="text-sm font-medium text-white">{participant}</p>
+                                        <p className="text-xs text-muted-foreground">{split > 0 ? "割り勘" : "無料"}</p>
+                                      </div>
+                                    </div>
+                                    <p className="text-lg font-semibold text-white">{formatCurrency(split)}</p>
+                                  </div>
+                                ))}
+                              </div>
+                              <div className="mt-3 pt-3 border-t border-white/10 flex justify-between items-center">
+                                <span className="text-sm text-muted-foreground">合計</span>
+                                <span className="text-lg font-bold text-white">{formatCurrency(bill)}</span>
+                              </div>
                             </div>
-                          ))}
-                      </div>
+                          )}
 
-                      <div className="mt-3 pt-3 border-t border-white/10 flex justify-between items-center">
-                        <span className="text-sm text-muted-foreground">合計</span>
-                        <span className="text-lg font-bold text-white">
-                          {formatCurrency(bill)}
-                        </span>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Group ranking */}
-                  {ranking && ranking.some((r) => r.count > 0) && (
-                    <div className="mb-6 p-4 rounded-2xl bg-white/5 border border-white/10">
-                      <div className="flex items-center gap-2 mb-3">
-                        <Crown className="w-4 h-4 text-primary" />
-                        <span className="text-sm font-medium text-muted-foreground">奢りランキング</span>
-                      </div>
-                      <div className="space-y-2">
-                        {ranking.slice(0, 5).map((entry, i) => {
-                          const medal = i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `${i + 1}.`
-                          const isWinner = entry.name === winner
-                          return (
-                            <div
-                              key={entry.name}
-                              className="flex items-center gap-2 px-3 py-2 rounded-xl"
-                              style={
-                                isWinner
-                                  ? { background: `${color}18`, border: `1px solid ${color}35` }
-                                  : { background: "rgba(255,255,255,0.04)" }
-                              }
-                            >
-                              <span className="text-base w-6 shrink-0">{medal}</span>
-                              <span
-                                className={`flex-1 text-sm font-medium truncate ${isWinner ? "text-white" : "text-white/70"}`}
-                              >
-                                {entry.name}
-                              </span>
-                              <span className="text-xs text-muted-foreground shrink-0">
-                                {entry.count}回
-                              </span>
+                          {/* Group ranking */}
+                          {ranking && ranking.some((r) => r.count > 0) && (
+                            <div className="mb-4 p-4 rounded-2xl bg-white/5 border border-white/10">
+                              <div className="flex items-center gap-2 mb-3">
+                                <Crown className="w-4 h-4 text-primary" />
+                                <span className="text-sm font-medium text-muted-foreground">奢りランキング</span>
+                              </div>
+                              <div className="space-y-2">
+                                {ranking.slice(0, 5).map((entry, i) => {
+                                  const medal = i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `${i + 1}.`
+                                  const isWinnerEntry = entry.name === winner
+                                  return (
+                                    <div
+                                      key={entry.name}
+                                      className="flex items-center gap-2 px-3 py-2 rounded-xl"
+                                      style={isWinnerEntry ? { background: `${color}18`, border: `1px solid ${color}35` } : { background: "rgba(255,255,255,0.04)" }}
+                                    >
+                                      <span className="text-base w-6 shrink-0">{medal}</span>
+                                      <span className={`flex-1 text-sm font-medium truncate ${isWinnerEntry ? "text-white" : "text-white/70"}`}>
+                                        {entry.name}
+                                      </span>
+                                      <span className="text-xs text-muted-foreground shrink-0">{entry.count}回</span>
+                                    </div>
+                                  )
+                                })}
+                              </div>
                             </div>
-                          )
-                        })}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Viral CTA — invite friends to use the app */}
-                  <div className="mb-5 p-4 rounded-2xl bg-white/5 border border-white/10 text-center">
-                    <p className="text-xs text-muted-foreground mb-2">
-                      🎰 このアプリ、盛り上がりますよ
-                    </p>
-                    <p className="text-sm font-semibold text-foreground mb-3">
-                      友達にも教えてあげよう
-                    </p>
-                    <button
-                      onClick={() => {
-                        const url = "https://ogo-roulette.vercel.app/"
-                        const text = "飲み会の奢りをルーレットで決めるアプリ見つけた！盛り上がるよ → "
-                        if (navigator.share) {
-                          navigator.share({ title: "OgoRoulette", text, url }).catch(() => {})
-                        } else {
-                          window.open(
-                            `https://x.com/intent/tweet?text=${encodeURIComponent(text + url)}`,
-                            "_blank",
-                            "noopener"
-                          )
-                        }
-                      }}
-                      className="w-full h-10 flex items-center justify-center gap-2 rounded-xl text-white text-sm font-semibold"
-                      style={{ background: "linear-gradient(to right, #F97316, #EC4899)" }}
-                    >
-                      <Share2 className="w-4 h-4" />
-                      友達に教える
-                    </button>
-                  </div>
+                          )}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </motion.div>
 
                   {/* Guest→Login conversion CTA */}
                   {isGuest && (
-                    <div
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.45 }}
                       className="mb-5 p-4 rounded-2xl"
                       style={{
                         background: "linear-gradient(135deg, rgba(99,102,241,0.15) 0%, rgba(168,85,247,0.10) 100%)",
@@ -794,21 +817,14 @@ export function WinnerCard({
                           <LogIn className="w-4 h-4 text-indigo-400" />
                         </div>
                         <div>
-                          <p className="text-sm font-semibold text-white leading-snug">
-                            この履歴、端末が変わると消えます
-                          </p>
-                          <p className="text-xs text-white/55 mt-0.5 leading-relaxed">
-                            ログインしてクラウドに保存しておこう
-                          </p>
+                          <p className="text-sm font-semibold text-white leading-snug">この履歴、端末が変わると消えます</p>
+                          <p className="text-xs text-white/55 mt-0.5 leading-relaxed">ログインしてクラウドに保存しておこう</p>
                         </div>
                       </div>
                       <div className="flex gap-2">
                         <button
-                          onClick={() => {
-                            const returnTo = encodeURIComponent(window.location.pathname)
-                            window.location.href = `/?returnTo=${returnTo}`
-                          }}
-                          className="flex-1 h-10 flex items-center justify-center gap-1.5 rounded-xl bg-white hover:bg-gray-50 active:bg-gray-100 text-gray-800 text-xs font-semibold transition-all"
+                          onClick={() => { window.location.href = `/?returnTo=${encodeURIComponent(window.location.pathname)}` }}
+                          className="flex-1 h-10 flex items-center justify-center gap-1.5 rounded-xl bg-white hover:bg-gray-50 text-gray-800 text-xs font-semibold transition-all"
                         >
                           <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24">
                             <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
@@ -819,24 +835,18 @@ export function WinnerCard({
                           Google
                         </button>
                         <button
-                          onClick={() => {
-                            const returnTo = encodeURIComponent(window.location.pathname)
-                            window.location.href = `/api/auth/line/start?returnTo=${returnTo}`
-                          }}
+                          onClick={() => { window.location.href = `/api/auth/line/start?returnTo=${encodeURIComponent(window.location.pathname)}` }}
                           className="flex-1 h-10 flex items-center justify-center gap-1.5 rounded-xl text-white text-xs font-semibold transition-all"
                           style={{ backgroundColor: "#06C755" }}
                         >
                           <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="white">
-                            <path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.627-.63h2.386c.349 0 .63.285.63.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.627-.63.349 0 .631.285.631.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.281.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314" />
+                            <path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.627-.63h2.386c.349 0 .63.285.63.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.627-.63.349 0 .631.285.631.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.349 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.281.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314" />
                           </svg>
                           LINE
                         </button>
                         <button
-                          onClick={() => {
-                            const returnTo = window.location.pathname
-                            startSupabaseOAuth("x", returnTo).catch(() => {})
-                          }}
-                          className="flex-1 h-10 flex items-center justify-center gap-1.5 rounded-xl bg-black hover:bg-gray-900 active:bg-gray-800 text-white text-xs font-semibold transition-all"
+                          onClick={() => { startSupabaseOAuth("x", window.location.pathname).catch(() => {}) }}
+                          className="flex-1 h-10 flex items-center justify-center gap-1.5 rounded-xl bg-black hover:bg-gray-900 text-white text-xs font-semibold transition-all"
                         >
                           <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="currentColor">
                             <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
@@ -844,45 +854,13 @@ export function WinnerCard({
                           X
                         </button>
                       </div>
-                    </div>
+                    </motion.div>
                   )}
 
-                  {/* Next actions */}
-                  <div className="space-y-2">
-                    {isOwner && roomCode && !onRespin && (
-                      <Button
-                        asChild
-                        className="w-full h-12 rounded-2xl bg-gradient-accent hover:opacity-90 text-white font-semibold text-sm transition-all"
-                      >
-                        <Link href="/room/create" onClick={onClose}>
-                          <RotateCcw className="w-4 h-4 mr-2" />
-                          新しい抽選を作る
-                        </Link>
-                      </Button>
-                    )}
-                    <Button
-                      asChild
-                      variant="outline"
-                      className="w-full h-12 rounded-2xl border-white/20 bg-transparent text-white hover:bg-white/10 font-semibold text-sm transition-all"
-                    >
-                      <Link href="/home" onClick={onClose}>
-                        ホームへ戻る
-                      </Link>
-                    </Button>
-                  </div>
-
                   {/* App branding */}
-                  <div className="mt-5 pt-4 border-t border-white/10 flex items-center justify-center gap-2">
-                    <Image
-                      src="/images/logo-icon.png"
-                      alt="OgoRoulette"
-                      width={20}
-                      height={20}
-                      className="rounded-sm"
-                    />
-                    <span className="text-xs font-medium text-muted-foreground">
-                      OgoRoulette
-                    </span>
+                  <div className="mt-2 pt-4 border-t border-white/10 flex items-center justify-center gap-2">
+                    <Image src="/images/logo-icon.png" alt="OgoRoulette" width={20} height={20} className="rounded-sm" />
+                    <span className="text-xs font-medium text-muted-foreground">OgoRoulette</span>
                   </div>
                 </div>
               </div>

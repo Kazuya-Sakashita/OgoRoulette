@@ -77,6 +77,17 @@ export const SHARE_TEMPLATES: ShareTemplate[] = [
 
 export function buildShareUrl(payload: SharePayload): string {
   if (typeof window === "undefined") return ""
+
+  // ISSUE-183: ルームコードがある場合はウイルスループURL（/join?room=...&ref=share）を使用。
+  // タップした人がそのままルームに参加できる導線になる。
+  if (payload.roomCode) {
+    const params = new URLSearchParams()
+    params.set("room", payload.roomCode)
+    params.set("ref", "share")
+    params.set("winner", payload.winner)
+    return `${window.location.origin}/join?${params.toString()}`
+  }
+
   const params = new URLSearchParams()
   // result/_result-content.tsx reads "treater"; OGP metadata reads "winner" || "treater"
   params.set("treater", payload.winner)
@@ -85,7 +96,6 @@ export function buildShareUrl(payload: SharePayload): string {
   if (payload.participants?.length) params.set("participants", payload.participants.join(","))
   if (payload.totalBill) params.set("total", String(payload.totalBill))
   if (payload.treatAmount) params.set("treat", String(payload.treatAmount))
-  if (payload.roomCode) params.set("room", payload.roomCode)
   return `${window.location.origin}/result?${params.toString()}`
 }
 
