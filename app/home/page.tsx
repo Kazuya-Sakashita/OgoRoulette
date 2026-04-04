@@ -389,7 +389,12 @@ export default function HomePage() {
   }
 
   // ISSUE-196: 再スピン — WinnerCard を閉じて同メンバーで即スピン
+  // ISSUE-206: 二重タップ防止 ref
+  const isRespinningRef = useRef(false)
   const handleRespin = () => {
+    if (isRespinningRef.current) return
+    isRespinningRef.current = true
+    setTimeout(() => { isRespinningRef.current = false }, 500)
     setWinner(null)
     setLastTreatCount(undefined)
     setLastTreatTitle(undefined)
@@ -450,6 +455,8 @@ export default function HomePage() {
   }
 
   const removeParticipant = (index: number) => {
+    // ISSUE-203: カウントダウン中・スピン中は削除不可（勝者インデックスズレ防止）
+    if (isSpinning || countdown !== null) return
     if (participants.length > 2) {
       setParticipants(participants.filter((_, i) => i !== index))
     }
@@ -1104,8 +1111,9 @@ export default function HomePage() {
                 {participants.length > 2 && (
                   <button
                     onClick={() => removeParticipant(index)}
+                    disabled={isSpinning || countdown !== null}
                     aria-label={`${name}を削除`}
-                    className="opacity-0 group-hover:opacity-100 [@media(hover:none)]:opacity-100 w-5 h-5 rounded-full bg-destructive/20 flex items-center justify-center text-destructive hover:bg-destructive/30 transition-all"
+                    className="opacity-0 group-hover:opacity-100 [@media(hover:none)]:opacity-100 w-5 h-5 rounded-full bg-destructive/20 flex items-center justify-center text-destructive hover:bg-destructive/30 transition-all disabled:opacity-0 disabled:pointer-events-none"
                   >
                     <XIcon className="w-3 h-3" />
                   </button>
