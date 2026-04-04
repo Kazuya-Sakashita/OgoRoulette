@@ -33,6 +33,7 @@ import { getDisplayName } from "@/lib/display-name"
 import { usePWAInstall } from "@/lib/use-pwa-install"
 import { unlockAudioContext, playPressSound, playSpinStartSound, playTickSound, playResultSound, playNearMissSound } from "@/lib/spin-sound"
 import { vibrate, HapticPattern } from "@/lib/haptic"
+import { trackEvent, AnalyticsEvent } from "@/lib/analytics"
 
 export default function HomePage() {
   const [isSpinning, setIsSpinning] = useState(false)
@@ -48,6 +49,11 @@ export default function HomePage() {
     update(mql)
     mql.addEventListener('change', update)
     return () => mql.removeEventListener('change', update)
+  }, [])
+
+  // ISSUE-190: ホーム画面の表示を記録（ファネル計測の起点）
+  useEffect(() => {
+    trackEvent(AnalyticsEvent.HOME_VIEWED)
   }, [])
   const [participants, setParticipants] = useState(["さくら", "たろう", "はな", "けんた"])
   const [showAddInput, setShowAddInput] = useState(false)
@@ -249,6 +255,7 @@ export default function HomePage() {
   const handleSpinWithGroup = (id: string) => {
     unlockAudioContext()
     playPressSound()
+    trackEvent(AnalyticsEvent.GROUP_SELECTED)
     const members = selectGroup(id)
     setParticipants(members)
     startSpin(members.length)
@@ -412,6 +419,7 @@ export default function HomePage() {
     const members = modalParticipants.filter((p) => p.trim())
     if (members.length < 2) return
     await saveGroup(name, members)
+    trackEvent(AnalyticsEvent.GROUP_SAVED)
     setSaveGroupSuccess(true)
     setTimeout(closeSaveInput, 1500)
   }
@@ -421,6 +429,7 @@ export default function HomePage() {
     const members = participants.filter((p) => p.trim())
     if (members.length < 2) return
     await saveGroup(name, members)
+    trackEvent(AnalyticsEvent.GROUP_SAVED)
   }
 
   const removeParticipant = (index: number) => {
@@ -810,7 +819,10 @@ export default function HomePage() {
                   </p>
                 </div>
                 <button
-                  onClick={() => handleSpinWithGroup(activeGroup.id)}
+                  onClick={() => {
+                    trackEvent(AnalyticsEvent.REENGAGEMENT_CTA_CLICKED, { group_id: activeGroup.id })
+                    handleSpinWithGroup(activeGroup.id)
+                  }}
                   className="shrink-0 px-4 py-2 rounded-xl text-sm font-semibold text-white bg-gradient-accent hover:opacity-90 active:scale-95 transition-all"
                 >
                   回す

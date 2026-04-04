@@ -219,7 +219,10 @@ export function useSpin({
               headers: buildGuestAuthHeaders(),
             })
             if (res.ok || res.status === 404) {
-              if (res.ok) fetchRanking()
+              if (res.ok) {
+                fetchRanking()
+                trackEvent(AnalyticsEvent.ROOM_COMPLETED)
+              }
               return
             }
             if (res.status === 409) return

@@ -16,6 +16,7 @@ import {
   shareToLine,
 } from "@/lib/share-service"
 import { generateShareCard } from "@/lib/share-card-generator"
+import { trackEvent, AnalyticsEvent } from "@/lib/analytics"
 
 interface WinnerCardProps {
   winner: string
@@ -208,6 +209,8 @@ export function WinnerCard({
    * ファイルシェア不可の場合は URL シェア → クリップボードコピーへフォールバック。
    */
   const handlePrimaryShare = useCallback(async () => {
+    trackEvent(AnalyticsEvent.SHARE_PRIMARY_CLICKED)
+
     // If video is ready, delegate to video share sheet (highest quality)
     if (videoBlob && onShareVideo) {
       onShareVideo()
@@ -215,6 +218,7 @@ export function WinnerCard({
     }
 
     const imageBlob = await generateShareCard(winner, color).catch(() => null)
+    if (imageBlob) trackEvent(AnalyticsEvent.SHARE_CARD_GENERATED)
     const text = shareTextValue
 
     try {
@@ -254,9 +258,11 @@ export function WinnerCard({
   const handleShare = (platform: "x" | "line") => {
     switch (platform) {
       case "x":
+        trackEvent(AnalyticsEvent.SHARE_X_CLICKED)
         shareToX(shareTextValue, shareUrl)
         break
       case "line":
+        trackEvent(AnalyticsEvent.SHARE_LINE_CLICKED)
         shareToLine(shareTextValue, shareUrl)
         break
     }
@@ -683,7 +689,10 @@ export function WinnerCard({
                     className="mb-4"
                   >
                     <button
-                      onClick={() => setShowDetails((v) => !v)}
+                      onClick={() => {
+                        if (!showDetails) trackEvent(AnalyticsEvent.DETAILS_ACCORDION_OPENED)
+                        setShowDetails((v) => !v)
+                      }}
                       className="w-full flex items-center justify-center gap-1.5 py-2 text-sm text-white/40 hover:text-white/70 transition-colors"
                     >
                       {showDetails ? (
