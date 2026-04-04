@@ -4,7 +4,7 @@ import Link from 'next/link'
 export const metadata: Metadata = {
   title: 'OgoRoulette — 飲み会・ランチのおごりをルーレットで公平に決めよう',
   description: '飲み会・合コン・社内ランチ。おごる人をリアルタイムルーレットで公平に決める無料Webアプリ。QRコードで全員の画面が同期。スマホだけで使える。',
-  keywords: ['おごり', '決め方', '飲み会', 'ゲーム', 'ルーレット', '幹事', '割り勘', '合コン', '社内ランチ', 'QRコード'],
+  keywords: ['おごり', '決め方', '飲み会', 'ゲーム', 'ルーレット', '幹事', '割り勘', '合コン', '社内ランチ', 'QRコード', '順番決め アプリ', '担当決め スマホ', '罰ゲーム 決め方', 'じゃんけん 代わり アプリ', 'グループ ランダム 選出'],
   openGraph: {
     title: 'OgoRoulette — 今日の奢り、運命に任せろ。',
     description: '飲み会・ランチ・打ち上げ。誰が奢るか、ルーレットで一発決定。公平で盛り上がる無料Webアプリ。',
@@ -408,6 +408,47 @@ export default function LPPage() {
               <div>
                 <div className="scene__title">家族・友達との食事</div>
                 <div className="scene__desc">「今日は誰かがサービス」という楽しみとして気軽に使える。</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* USE CASES */}
+      <section className="scenes">
+        <div className="container">
+          <div className="section-label">
+            <span className={"badge badge--gold"}>使い方いろいろ</span>
+          </div>
+          <h2 className="section-title">奢り以外でも<br />使える。</h2>
+
+          <div className="scenes__list">
+            <div className="scene__item">
+              <div className="scene__emoji">🎯</div>
+              <div>
+                <div className="scene__title">順番決め</div>
+                <div className="scene__desc">発表順・掃除当番・プレゼン順を公平にランダムで決定。「じゃんけんが苦手」な人もすっきり。</div>
+              </div>
+            </div>
+            <div className="scene__item">
+              <div className="scene__emoji">🎮</div>
+              <div>
+                <div className="scene__title">罰ゲーム</div>
+                <div className="scene__desc">ゲームの罰当て・ドリンクの種類決め・お題のランダム選出に。盛り上がること保証。</div>
+              </div>
+            </div>
+            <div className="scene__item">
+              <div className="scene__emoji">📋</div>
+              <div>
+                <div className="scene__title">担当決め</div>
+                <div className="scene__desc">当番・役割・リーダーをフェアに決定。「誰かが押し付けられた」という空気をゼロに。</div>
+              </div>
+            </div>
+            <div className="scene__item">
+              <div className="scene__emoji">🎁</div>
+              <div>
+                <div className="scene__title">プレゼント・サプライズ</div>
+                <div className="scene__desc">誰がサプライズ幹事かを演出で発表。ルーレットで決まる瞬間が盛り上がりポイントに。</div>
               </div>
             </div>
           </div>

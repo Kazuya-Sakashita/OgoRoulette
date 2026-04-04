@@ -360,6 +360,35 @@ export default function HowToUsePage() {
         </div>
       </section>
 
+      {/* ════════ USE CASES (ISSUE-199) ════════ */}
+      <section className="mx-auto max-w-[420px] px-5 pb-10">
+        <FadeUp className="text-center mb-6">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 text-xs text-muted-foreground mb-4">
+            <Sparkles className="w-3 h-3 text-primary" />
+            奢り以外にも使える
+          </div>
+          <h2 className="text-xl font-bold text-foreground">
+            実はなんでも<br />決められる。
+          </h2>
+        </FadeUp>
+        <FadeUp delay={0.1}>
+          <div className="grid grid-cols-2 gap-3">
+            {[
+              { emoji: "🎯", title: "順番決め", desc: "発表順・掃除当番・プレゼン順を公平に" },
+              { emoji: "🎮", title: "罰ゲーム", desc: "ゲームの罰当て・ドリンクの種類決め" },
+              { emoji: "📋", title: "担当決め", desc: "当番・役割・リーダーをフェアに" },
+              { emoji: "🎁", title: "プレゼント", desc: "サプライズ幹事を演出で発表" },
+            ].map(({ emoji, title, desc }) => (
+              <div key={title} className="flex flex-col gap-2 p-4 rounded-2xl glass-card border border-white/10">
+                <span className="text-2xl">{emoji}</span>
+                <p className="text-sm font-semibold text-foreground">{title}</p>
+                <p className="text-xs text-muted-foreground leading-relaxed">{desc}</p>
+              </div>
+            ))}
+          </div>
+        </FadeUp>
+      </section>
+
       {/* ════════ EXCITEMENT ════════ */}
       <section className="mx-auto max-w-[420px] px-5 py-12">
         <FadeUp className="text-center mb-8">

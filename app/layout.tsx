@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   metadataBase: new URL('https://ogo-roulette.vercel.app'),
   title: 'OgoRoulette — おごりをルーレットで決めよう',
   description: '飲み会・合コン・社内ランチ。おごりを公平にルーレットで決める無料アプリ。QRコードでみんなで参加してワイワイ楽しもう。',
-  keywords: ['おごり', 'ルーレット', '割り勘', '飲み会', '合コン', 'QRコード'],
+  keywords: ['おごり', 'ルーレット', '割り勘', '飲み会', '合コン', 'QRコード', '順番決め', '担当決め', '罰ゲーム 決め方', 'じゃんけん 代わり', 'グループ ランダム'],
   openGraph: {
     title: 'OgoRoulette — おごりをルーレットで決めよう',
     description: '飲み会・合コン・社内ランチ。おごりを公平にルーレットで決める無料アプリ。',
