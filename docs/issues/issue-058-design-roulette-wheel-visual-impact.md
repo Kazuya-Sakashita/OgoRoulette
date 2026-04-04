@@ -1,7 +1,7 @@
 # ISSUE-058: ルーレットホイールが画面内で小さく、回転の迫力が足りない
 
 ## ステータス
-🟡 部分実装済み — Phase 2（グロー演出・Confetti・PrismBurst）は完了。残件: play ページのホイール max 280px 制限（home は 360px）の拡大のみ
+✅ 完了 — Phase 2（グロー演出・Confetti・PrismBurst）+ ホイール最大サイズ 360px 拡大（2026-04-05）
 
 ## 優先度
 **Critical**
