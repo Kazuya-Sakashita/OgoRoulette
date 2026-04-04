@@ -13,14 +13,6 @@ export const metadata: Metadata = {
     description: '飲み会・合コン・社内ランチ。おごりを公平にルーレットで決める無料アプリ。',
     url: 'https://ogo-roulette.vercel.app',
     siteName: 'OgoRoulette',
-    images: [
-      {
-        url: '/images/og-image.png',
-        width: 1200,
-        height: 630,
-        alt: 'OgoRoulette — おごりをルーレットで決めよう',
-      },
-    ],
     locale: 'ja_JP',
     type: 'website',
   },
@@ -28,7 +20,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'OgoRoulette — おごりをルーレットで決めよう',
     description: '飲み会・合コン・社内ランチ。おごりを公平にルーレットで決める無料アプリ。',
-    images: ['/images/og-image.png'],
+    images: ['/opengraph-image'],
   },
   icons: {
     icon: [
