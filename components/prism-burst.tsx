@@ -48,8 +48,12 @@ export function PrismBurst({ active, winnerColor }: PrismBurstProps) {
   const [visible, setVisible] = useState(false)
   const [burstKey, setBurstKey] = useState(0)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  // iOS Safari: overflow:hidden の祖先要素が position:fixed の包含ブロックになる問題を
-  // createPortal で回避。document.body 直下にマウントすることでビューポート基準になる。
+  // iOS: overflow:hidden の祖先要素が position:fixed の包含ブロックになる問題を
+  // createPortal で回避。
+  // document.body ではなく document.documentElement (<html>) にマウントする。
+  // Chrome iOS では WKWebView の実装により body がスクロールコンテナになるため、
+  // body への portal でも fixed がビューポート基準にならない。
+  // <html> 要素はスクロールコンテナになりにくく、両ブラウザで安全。
   const [mounted, setMounted] = useState(false)
   useEffect(() => { setMounted(true) }, [])
 
@@ -213,6 +217,6 @@ export function PrismBurst({ active, winnerColor }: PrismBurstProps) {
         </div>
       )}
     </AnimatePresence>,
-    document.body
+    document.documentElement
   )
 }
