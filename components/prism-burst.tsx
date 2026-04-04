@@ -90,7 +90,10 @@ export function PrismBurst({ active, winnerColor }: PrismBurstProps) {
                     rgba(220,200,255,0.75) 38%,
                     transparent           72%)`,
               filter: "blur(8px)",
-              willChange: "transform, opacity",
+              // willChange を省略 — Chrome iOS (WKWebView) では
+              // will-change: transform が GPU レイヤーを生成し、
+              // position:fixed コンテナとのコンポジション合成に失敗して
+              // 要素が invisible になる問題を回避する。
             }}
             initial={{ scale: 0.1, opacity: 0 }}
             animate={{
@@ -141,7 +144,10 @@ export function PrismBurst({ active, winnerColor }: PrismBurstProps) {
                   transparent                                   56%
                 )`,
                 filter: `blur(${ring.blur}px)`,
-                willChange: "transform, opacity",
+                // willChange を省略 — Chrome iOS (WKWebView) では
+              // will-change: transform が GPU レイヤーを生成し、
+              // position:fixed コンテナとのコンポジション合成に失敗して
+              // 要素が invisible になる問題を回避する。
               }}
               initial={{ scale: 0.20, opacity: 0 }}
               animate={{
@@ -172,7 +178,10 @@ export function PrismBurst({ active, winnerColor }: PrismBurstProps) {
                 hsla(60,  85%, 68%, 0.07) 53%,
                 transparent               63%
               )`,
-              willChange: "transform, opacity",
+              // willChange を省略 — Chrome iOS (WKWebView) では
+              // will-change: transform が GPU レイヤーを生成し、
+              // position:fixed コンテナとのコンポジション合成に失敗して
+              // 要素が invisible になる問題を回避する。
             }}
             initial={{ x: "-100%", opacity: 0 }}
             animate={{
