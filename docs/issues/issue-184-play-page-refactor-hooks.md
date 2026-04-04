@@ -93,7 +93,7 @@ export function useSpin(room: Room | null, currentUser: User | null, ...) {
 
 ## ステータス
 
-**未着手** — 2026-04-04
+**完了** — 2026-04-05
 
 ## 優先度
 
