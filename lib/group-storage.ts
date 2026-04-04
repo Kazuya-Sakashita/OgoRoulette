@@ -5,6 +5,9 @@ export interface SavedGroup {
   participants: string[]
   updatedAt: number
   lastUsedAt?: number  // timestamp of last group selection
+  // ISSUE-182: リテンション — 最後にスピンした日時と当選者名
+  lastSpinAt?: number
+  lastWinner?: string
 }
 
 export interface TreatStats {
@@ -98,6 +101,19 @@ export function touchGroupLocally(id: string): void {
   localStorage.setItem(GROUPS_KEY, JSON.stringify(sorted))
 }
 
+/**
+ * ISSUE-182: スピン結果後にグループの lastSpinAt と lastWinner を更新する。
+ * リテンション再開CTA（ホーム画面最上部）の表示データに使用される。
+ */
+export function updateGroupLastSpin(id: string, winner: string): void {
+  const groups = loadGroups()
+  const target = groups.find((g) => g.id === id)
+  if (!target) return
+  target.lastSpinAt = Date.now()
+  target.lastWinner = winner
+  localStorage.setItem(GROUPS_KEY, JSON.stringify(groups))
+}
+
 /** Update name and/or participants for a local group */
 export function updateGroupLocal(
   id: string,
@@ -144,6 +160,9 @@ export function syncGroupsFromCloud(cloudGroups: CloudGroup[]): SavedGroup[] {
         participants: cloudUpdatedAt > local[idx].updatedAt ? cloud.participants : local[idx].participants,
         updatedAt: Math.max(local[idx].updatedAt, cloudUpdatedAt),
         lastUsedAt: Math.max(local[idx].lastUsedAt ?? 0, cloudLastUsedAt ?? 0) || undefined,
+        // ISSUE-182: lastSpinAt / lastWinner はローカルで管理 — cloud sync では上書きしない
+        lastSpinAt: local[idx].lastSpinAt,
+        lastWinner: local[idx].lastWinner,
       }
     } else {
       // Cloud-only group: add locally

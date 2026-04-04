@@ -195,6 +195,13 @@ export function GroupList({
                       <p className="text-xs text-muted-foreground truncate mt-0.5">
                         {group.participants.join(" · ")}
                       </p>
+                      {/* ISSUE-182: 前回スピン情報 */}
+                      {group.lastSpinAt && (
+                        <p className="text-xs text-muted-foreground/70 truncate mt-0.5">
+                          前回 {relativeTime(group.lastSpinAt)}
+                          {group.lastWinner && <> · 奢り: {group.lastWinner}</>}
+                        </p>
+                      )}
                     </div>
                   </button>
 

@@ -63,7 +63,7 @@ export default function HomePage() {
   const [showProfileSheet, setShowProfileSheet] = useState(false)
   const router = useRouter()
 
-  const { groups: savedGroups, isLoaded: groupsLoaded, selectedGroupId, selectGroup, saveGroup, updateGroup, deleteGroup } = useGroups(user)
+  const { groups: savedGroups, isLoaded: groupsLoaded, selectedGroupId, selectGroup, saveGroup, updateGroup, deleteGroup, recordGroupSpin } = useGroups(user)
   // ISSUE-101: PWA install prompt — shows "ホーム画面に追加" banner on supported browsers
   const { canInstall, promptInstall } = usePWAInstall()
   const [createRoomLoading, setCreateRoomLoading] = useState(false)
@@ -308,6 +308,11 @@ export default function HomePage() {
       setTimeout(() => setShowPrismBurst(false), 1800)
       clearTimeout(confettiTimerRef.current ?? undefined)
       confettiTimerRef.current = setTimeout(() => setShowConfetti(false), 4000)
+
+      // ISSUE-182: グループが選択されていた場合、スピン結果をグループに記録（リテンション再開CTA用）
+      if (selectedGroupId) {
+        recordGroupSpin(selectedGroupId, winnerName)
+      }
 
       // Record treat in LocalStorage and compute gamification data
       const amount = hasBillInput ? treatAmount : 0
@@ -784,6 +789,36 @@ export default function HomePage() {
 
         {/* Group A: グループ選択・金額設定 — desktop: right column top */}
         <div className="lg:col-start-2 lg:row-start-1">
+
+        {/* ISSUE-182: リテンション再開CTA — 最後にスピンしたグループを再開 */}
+        {groupsLoaded && (() => {
+          const activeGroup = savedGroups.find((g) => g.lastSpinAt)
+          if (!activeGroup) return null
+          const daysDiff = Math.floor((Date.now() - (activeGroup.lastSpinAt ?? 0)) / 86_400_000)
+          const when = daysDiff === 0 ? "今日" : daysDiff === 1 ? "昨日" : `${daysDiff}日前`
+          return (
+            <div className="mb-4 p-4 rounded-2xl glass-card border border-primary/30 bg-primary/5">
+              <p className="text-xs font-semibold text-primary mb-2">🎰 またこのメンバーで？</p>
+              <div className="flex items-center gap-3">
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold text-foreground truncate">{activeGroup.name}</p>
+                  <p className="text-xs text-muted-foreground truncate">
+                    {activeGroup.participants.join(" · ")}
+                  </p>
+                  <p className="text-xs text-muted-foreground/70 mt-0.5">
+                    {when}{activeGroup.lastWinner && <> · 前回の奢り: <span className="text-foreground/70">{activeGroup.lastWinner}</span></>}
+                  </p>
+                </div>
+                <button
+                  onClick={() => handleSpinWithGroup(activeGroup.id)}
+                  className="shrink-0 px-4 py-2 rounded-xl text-sm font-semibold text-white bg-gradient-accent hover:opacity-90 active:scale-95 transition-all"
+                >
+                  回す
+                </button>
+              </div>
+            </div>
+          )
+        })()}
 
         {/* いつものメンバー — shown above roulette for 1-tap access */}
         <GroupList

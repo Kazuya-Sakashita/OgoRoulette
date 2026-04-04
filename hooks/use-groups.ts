@@ -8,6 +8,7 @@ import {
   touchGroupLocally,
   updateGroupLocal,
   updateGroupCloudId,
+  updateGroupLastSpin,
   syncGroupsFromCloud,
   type SavedGroup,
   type CloudGroup,
@@ -143,5 +144,11 @@ export function useGroups(user: User | null) {
     [user, groups, selectedGroupId, refresh]
   )
 
-  return { groups, isLoaded, selectedGroupId, selectGroup, saveGroup, updateGroup, deleteGroup }
+  /** ISSUE-182: スピン完了後にグループのlastSpinAt/lastWinnerを記録 */
+  const recordGroupSpin = useCallback((id: string, winner: string) => {
+    updateGroupLastSpin(id, winner)
+    refresh()
+  }, [refresh])
+
+  return { groups, isLoaded, selectedGroupId, selectGroup, saveGroup, updateGroup, deleteGroup, recordGroupSpin }
 }
