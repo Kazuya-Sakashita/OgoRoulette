@@ -8,7 +8,7 @@ import { WinnerCard } from "@/components/winner-card"
 import { RecordingCanvas } from "@/components/recording-canvas"
 import { ShareSheet } from "@/components/share-sheet"
 import { CountdownOverlay } from "@/components/countdown-overlay"
-import { QrCode, Sparkles, Plus, X as XIcon, History, ChevronDown, ChevronUp, Calculator, LogOut, Check, UserCircle, LogIn } from "lucide-react"
+import { QrCode, Sparkles, Plus, X as XIcon, History, ChevronDown, ChevronUp, Calculator, LogOut, Check, UserCircle, LogIn, Volume2, VolumeX } from "lucide-react"
 import { useState, useEffect, useRef } from "react"
 import Link from "next/link"
 import Image from "next/image"
@@ -32,6 +32,7 @@ import { useVideoRecorder } from "@/lib/use-video-recorder"
 import { getDisplayName } from "@/lib/display-name"
 import { usePWAInstall } from "@/lib/use-pwa-install"
 import { unlockAudioContext, playPressSound, playSpinStartSound, playTickSound, playResultSound, playNearMissSound } from "@/lib/spin-sound"
+import { useSoundSetting } from "@/lib/use-sound-setting"
 import { vibrate, HapticPattern } from "@/lib/haptic"
 import { trackEvent, AnalyticsEvent } from "@/lib/analytics"
 
@@ -41,6 +42,8 @@ export default function HomePage() {
   const [wheelSize, setWheelSize] = useState(280)
   // ISSUE-161: session spin counter for desktop stats bar
   const [sessionSpinCount, setSessionSpinCount] = useState(0)
+  // ISSUE-195: サウンド ON/OFF 設定
+  const { soundEnabled, toggle: toggleSound } = useSoundSetting()
   // ISSUE-162: first-visit hint — pulse on SPIN button until first spin
   const [showSpinHint, setShowSpinHint] = useState(false)
   useEffect(() => {
@@ -171,6 +174,9 @@ export default function HomePage() {
     return () => subscription.unsubscribe()
   }, [])
 
+  // ISSUE-195: soundEnabled ガード付き音声再生ヘルパー（各コールバックで使用）
+  const playIfEnabled = (fn: () => void) => { if (soundEnabled) fn() }
+
   // Sessions sync — seed treat stats in LocalStorage from cloud history
   useEffect(() => {
     if (!user) return
@@ -211,11 +217,12 @@ export default function HomePage() {
   // スピン開始の共通ロジック — participantCount を受け取ることで参加者 state に依存しない
   // 回転開始コールバック（RouletteWheel → onSpinStart）
   const handleSpinStart = () => {
-    playSpinStartSound()
+    playIfEnabled(playSpinStartSound)
   }
 
   // 減速フェーズコールバック（RouletteWheel → onSlowingDown）
   const handleSlowingDown = () => {
+    if (!soundEnabled) return
     const delays = [0, 500, 950]
     delays.forEach((d) => {
       setTimeout(() => playTickSound(), d)
@@ -224,7 +231,7 @@ export default function HomePage() {
 
   // ニアミス演出コールバック（RouletteWheel → onNearMiss）
   const handleNearMiss = () => {
-    playNearMissSound()
+    playIfEnabled(playNearMissSound)
   }
 
   const startSpin = (participantCount: number) => {
@@ -247,14 +254,14 @@ export default function HomePage() {
 
   const handleSpin = () => {
     unlockAudioContext() // iOS: ユーザータップで AudioContext を unlock
-    playPressSound()
+    playIfEnabled(playPressSound)
     startSpin(participants.length)
   }
 
   // グループカードの「▶ 回す」ボタン — 1タップでそのグループのメンバーをセットしてスピン開始
   const handleSpinWithGroup = (id: string) => {
     unlockAudioContext()
-    playPressSound()
+    playIfEnabled(playPressSound)
     trackEvent(AnalyticsEvent.GROUP_SELECTED)
     const members = selectGroup(id)
     setParticipants(members)
@@ -307,7 +314,7 @@ export default function HomePage() {
     }
     // ISSUE-155: 300ms silence after wheel stops — creates anticipation before reveal
     setTimeout(() => {
-      playResultSound()
+      playIfEnabled(playResultSound)
       vibrate(HapticPattern.result)
       setWinner({ name: winnerName, index: winnerIndex })
       setShowConfetti(true)
@@ -316,9 +323,9 @@ export default function HomePage() {
       clearTimeout(confettiTimerRef.current ?? undefined)
       confettiTimerRef.current = setTimeout(() => setShowConfetti(false), 4000)
 
-      // ISSUE-182: グループが選択されていた場合、スピン結果をグループに記録（リテンション再開CTA用）
+      // ISSUE-182/198: グループが選択されていた場合、スピン結果をグループに記録（履歴・リテンション用）
       if (selectedGroupId) {
-        recordGroupSpin(selectedGroupId, winnerName)
+        recordGroupSpin(selectedGroupId, winnerName, participants)
       }
 
       // Record treat in LocalStorage and compute gamification data
@@ -479,10 +486,10 @@ export default function HomePage() {
         winnerColor={winner ? SEGMENT_COLORS[winner.index % SEGMENT_COLORS.length] : undefined}
       />
 
-      {/* Confetti effect — intense + winner color during result reveal */}
+      {/* Confetti effect — ISSUE-197: 3回戦以降は intense モード */}
       <Confetti
         active={showConfetti}
-        intense={!!winner}
+        intense={sessionSpinCount >= 3}
         winnerColor={winner ? SEGMENT_COLORS[winner.index % SEGMENT_COLORS.length] : undefined}
       />
 
@@ -511,6 +518,7 @@ export default function HomePage() {
           onSaveGroup={isCurrentGroupSaved ? undefined : handleSaveGroupFromWinner}
           isGuest={!user}
           onRespin={handleRespin}
+          sessionSpinCount={sessionSpinCount}
         />
       )}
 
@@ -707,6 +715,16 @@ export default function HomePage() {
             </span>
           </div>
           <div className="flex items-center gap-1">
+            {/* ISSUE-195: サウンドトグル */}
+            <Button
+              onClick={toggleSound}
+              variant="ghost"
+              size="icon"
+              className="text-muted-foreground hover:text-foreground"
+              aria-label={soundEnabled ? "サウンドをオフにする" : "サウンドをオンにする"}
+            >
+              {soundEnabled ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
+            </Button>
             {user && (
               <Button asChild variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
                 <Link href="/history">
