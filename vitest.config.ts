@@ -9,5 +9,7 @@ export default defineConfig({
   },
   test: {
     environment: 'node',
+    // .claude/ 配下のスキルテストを除外する
+    exclude: ['.claude/**', 'node_modules/**', 'tests/e2e/**'],
   },
 })

@@ -11,6 +11,9 @@
     "postinstall": "prisma generate",
     "db:push": "dotenv -e .env.local -- prisma db push",
     "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "test:all": "vitest run && playwright test",
     "db:studio": "dotenv -e .env.local -- prisma studio",
     "typecheck": "tsc --noEmit"
   },
@@ -77,6 +80,7 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.5",
+    "@playwright/test": "^1.59.1",
     "@tailwindcss/postcss": "^4.2.0",
     "@types/node": "^22",
     "@types/react": "19.2.14",
@@ -84,6 +88,7 @@
     "dotenv-cli": "^11.0.0",
     "eslint": "^9.39.4",
     "eslint-config-next": "^16.2.0",
+    "happy-dom": "^20.8.9",
     "playwright": "^1.59.1",
     "postcss": "^8.5",
     "prisma": "6.2.1",
