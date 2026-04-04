@@ -119,6 +119,7 @@ useEffect(() => {
 - [x] `components/sw-register.tsx` にクライアントサイドキャッシュ削除を追加
 - [x] `npm run build` でエラーなし
 - [x] コミット済み（`1179e5d`）
+- [x] SW tombstone デプロイ後、iPhone Chrome でプリズム演出（PrismBurst）が正常表示されることを確認
 - [ ] 本番デプロイ後、DevTools → Application → Cache Storage で `ogoroulette-v1` が消えていることを確認
 - [ ] デプロイをまたいだ ChunkLoadError が再現しないことを確認
 
@@ -139,6 +140,28 @@ useEffect(() => {
 ## 関連カテゴリ
 
 Engineering / Reliability / PWA
+
+## 副次的に解消した問題
+
+**iPhone Chrome でプリズム演出（PrismBurst）が表示されなかった問題**
+
+PrismBurst は Framer Motion を廃止して CSS `@keyframes` に書き換えた新バージョンがデプロイ済みだったが、
+iPhone Chrome では依然として表示されない状態が続いていた。
+SW tombstone デプロイ後に解消されたことで、**旧 SW が `_next/static/chunks/` の古いチャンク
+（Framer Motion 版の PrismBurst コード）をキャッシュから返し続けていたことが根本原因**と判明した。
+
+```
+新コード（CSS @keyframes 版）をデプロイ
+  ↓ 旧 SW が古いチャンクをキャッシュから返す
+iPhone Chrome には Framer Motion 版が動き続ける
+  ↓ SW tombstone で全キャッシュ消去
+新チャンクがネットワークから取得される
+  ↓
+CSS @keyframes 版が初めて有効になり、プリズム演出が表示される ✓
+```
+
+この事例は「コードを正しく修正・デプロイしても、SW キャッシュが古いコードを提供し続けるため
+変更が反映されない」という SW の stale キャッシュ問題の典型例。
 
 ## 備考
 
