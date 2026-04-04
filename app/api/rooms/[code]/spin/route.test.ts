@@ -45,7 +45,7 @@ vi.mock('@/lib/guest-token', () => ({
 
 // --- rate-limit モック（テスト間の累積カウントを防止） ---
 vi.mock('@/lib/rate-limit', () => ({
-  checkRateLimit: vi.fn().mockReturnValue({ allowed: true, remaining: 9, resetAt: Date.now() + 60_000 }),
+  checkRateLimit: vi.fn().mockResolvedValue({ allowed: true, remaining: 9, resetAt: Date.now() + 60_000 }),
   getClientIp: vi.fn().mockReturnValue('127.0.0.1'),
 }))
 

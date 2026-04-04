@@ -1,7 +1,7 @@
 # ISSUE-201: Vercel Serverless でレートリミットが無効（globalThis 非共有）
 
 ## ステータス
-🔴 未着手
+✅ 完了 — 2026-04-05
 
 ## 優先度
 **Critical**

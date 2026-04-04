@@ -12,7 +12,7 @@ import { validateReturnTo } from "@/lib/safe-redirect"
 export async function GET(request: NextRequest) {
   // レート制限: 同一 IP から 10分間に 5回まで（LINE Admin API 呼び出しコスト削減）
   const ip = getClientIp(request.headers)
-  const { allowed, resetAt } = checkRateLimit(ip, "line-start", 5, 10 * 60_000)
+  const { allowed, resetAt } = await checkRateLimit(ip, "line-start", 5, 10 * 60_000)
   if (!allowed) {
     const origin = process.env.NEXT_PUBLIC_APP_URL || new URL(request.url).origin
     const retryAfter = Math.ceil((resetAt - Date.now()) / 1000)

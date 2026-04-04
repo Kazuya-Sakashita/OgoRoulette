@@ -77,7 +77,7 @@ export async function POST(request: Request) {
 
   // ISSUE-026: レート制限 — 同一 IP から 1分間に 5ルームまで
   const ip = getClientIp(request.headers)
-  const { allowed, resetAt } = checkRateLimit(ip, "room-create", 5, 60_000)
+  const { allowed, resetAt } = await checkRateLimit(ip, "room-create", 5, 60_000)
   if (!allowed) {
     return NextResponse.json(
       { error: "リクエストが多すぎます。しばらくしてからお試しください。" },

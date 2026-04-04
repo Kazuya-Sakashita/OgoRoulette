@@ -9,7 +9,7 @@ import { getDisplayName } from "@/lib/display-name"
 export async function POST(request: Request) {
   // レート制限: 同一 IP から 1分間に 10回まで
   const ip = getClientIp(request.headers)
-  const { allowed, resetAt } = checkRateLimit(ip, "join", 10, 60_000)
+  const { allowed, resetAt } = await checkRateLimit(ip, "join", 10, 60_000)
   if (!allowed) {
     return NextResponse.json(
       { error: "リクエストが多すぎます。しばらくしてからお試しください。" },

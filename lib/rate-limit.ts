@@ -1,13 +1,14 @@
-// シンプルなインメモリ・レート制限
-// NOTE: Vercel Serverless の複数インスタンス間では共有されない。
-//       スケールアップ時は @upstash/ratelimit + Upstash Redis への移行を推奨。
+// レートリミット
+// - Vercel KV（KV_REST_API_URL + KV_REST_API_TOKEN が設定されている場合）: サーバー横断で有効
+// - 未設定の場合: インメモリフォールバック（ローカル開発用）
+
+// ─── インメモリストア（フォールバック用）───────────────────
 
 interface RateLimitEntry {
   count: number
   resetAt: number
 }
 
-// グローバルで Map を保持（Prisma と同じパターン）
 const globalForRateLimit = globalThis as unknown as {
   rateLimitStore: Map<string, RateLimitEntry> | undefined
 }
@@ -15,12 +16,10 @@ const globalForRateLimit = globalThis as unknown as {
 const store: Map<string, RateLimitEntry> =
   globalForRateLimit.rateLimitStore ?? new Map()
 
-if (process.env.NODE_ENV !== "production") {
+if (!globalForRateLimit.rateLimitStore) {
   globalForRateLimit.rateLimitStore = store
 }
 
-// 古いエントリを定期的に削除（メモリリーク防止）
-// 実際の削除は checkRateLimit 呼び出し時に確認し、10000エントリ超えで一括クリア
 const STORE_MAX_SIZE = 10_000
 
 function evictExpired(): void {
@@ -31,23 +30,13 @@ function evictExpired(): void {
   }
 }
 
-/**
- * IPアドレスとエンドポイント名をキーにレート制限を確認する。
- *
- * @param ip       クライアント IP（`x-forwarded-for` または `x-real-ip` の値）
- * @param endpoint ルートを識別する任意の文字列（例: "join", "line-start"）
- * @param limit    ウィンドウ内に許可するリクエスト数
- * @param windowMs ウィンドウの長さ（ミリ秒）
- * @returns allowed: true なら通過、false なら 429 を返すべき
- */
-export function checkRateLimit(
+function checkRateLimitMemory(
   ip: string,
   endpoint: string,
   limit: number,
   windowMs: number
 ): { allowed: boolean; remaining: number; resetAt: number } {
   evictExpired()
-
   const key = `${endpoint}:${ip}`
   const now = Date.now()
   const entry = store.get(key)
@@ -64,6 +53,64 @@ export function checkRateLimit(
 
   entry.count++
   return { allowed: true, remaining: limit - entry.count, resetAt: entry.resetAt }
+}
+
+// ─── Vercel KV バックエンド ──────────────────────────────
+
+const KV_CONFIGURED = !!(
+  process.env.KV_REST_API_URL &&
+  process.env.KV_REST_API_TOKEN
+)
+
+async function checkRateLimitKV(
+  ip: string,
+  endpoint: string,
+  limit: number,
+  windowMs: number
+): Promise<{ allowed: boolean; remaining: number; resetAt: number }> {
+  const { kv } = await import("@vercel/kv")
+  const windowStart = Math.floor(Date.now() / windowMs)
+  const resetAt = (windowStart + 1) * windowMs
+  const kvKey = `rl:${endpoint}:${ip}:${windowStart}`
+
+  const count = await kv.incr(kvKey)
+  if (count === 1) {
+    // 初回: TTL を設定（windowMs + 5秒バッファ）
+    await kv.expire(kvKey, Math.ceil(windowMs / 1000) + 5)
+  }
+
+  const allowed = count <= limit
+  const remaining = Math.max(0, limit - count)
+  return { allowed, remaining, resetAt }
+}
+
+// ─── 公開 API ──────────────────────────────────────────────
+
+/**
+ * IPアドレスとエンドポイント名をキーにレート制限を確認する。
+ * Vercel KV が設定されている場合はサーバー横断で機能する。
+ *
+ * @param ip       クライアント IP
+ * @param endpoint ルートを識別する任意の文字列（例: "join", "spin"）
+ * @param limit    ウィンドウ内に許可するリクエスト数
+ * @param windowMs ウィンドウの長さ（ミリ秒）
+ * @returns allowed: true なら通過、false なら 429 を返すべき
+ */
+export async function checkRateLimit(
+  ip: string,
+  endpoint: string,
+  limit: number,
+  windowMs: number
+): Promise<{ allowed: boolean; remaining: number; resetAt: number }> {
+  if (KV_CONFIGURED) {
+    try {
+      return await checkRateLimitKV(ip, endpoint, limit, windowMs)
+    } catch (err) {
+      // KV が一時的に利用不可の場合はメモリフォールバック
+      console.warn("[rate-limit] KV unavailable, falling back to memory:", err)
+    }
+  }
+  return checkRateLimitMemory(ip, endpoint, limit, windowMs)
 }
 
 /** NextRequest の headers から最善の IP を取得する */

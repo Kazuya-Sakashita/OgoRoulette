@@ -1,7 +1,7 @@
 # ISSUE-204: PrismBurst が @keyframes を DOM に蓄積する（潜在的メモリリーク）
 
 ## ステータス
-🔴 未着手
+✅ 完了 — 2026-04-05
 
 ## 優先度
 **Major**

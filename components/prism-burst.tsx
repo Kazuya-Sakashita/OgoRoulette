@@ -52,6 +52,21 @@ function buildKeyframes(k: number): string {
   return rings + flash + aurora
 }
 
+// ─── シングルトン style 要素 ─────────────────────────────
+// ISSUE-204: 毎バーストごとに <style> タグを作成/破棄すると CSSOM が肥大化する。
+// document.head に常駐する1つの <style> 要素を使い回す（上書き方式）。
+let _prismStyleEl: HTMLStyleElement | null = null
+
+function injectPrismKeyframes(k: number): void {
+  if (typeof document === "undefined") return
+  if (!_prismStyleEl) {
+    _prismStyleEl = document.createElement("style")
+    _prismStyleEl.setAttribute("data-prism-burst", "")
+    document.head.appendChild(_prismStyleEl)
+  }
+  _prismStyleEl.textContent = buildKeyframes(k)
+}
+
 // ─── メインコンポーネント ────────────────────────────────
 // Framer Motion を完全撤廃し CSS animation に切り替え
 // 理由: Framer Motion は will-change:transform を内部で自動設定するため、
@@ -71,12 +86,14 @@ export function PrismBurst({ active, winnerColor }: PrismBurstProps) {
     if (!active) return
 
     if (timerRef.current) clearTimeout(timerRef.current)
-    setBurstKey(k => k + 1)
+    const nextKey = burstKey + 1
+    injectPrismKeyframes(nextKey)  // ISSUE-204: シングルトン style に上書き注入
+    setBurstKey(nextKey)
     setVisible(true)
     timerRef.current = setTimeout(() => setVisible(false), BURST_DURATION_MS)
 
     return () => { if (timerRef.current) clearTimeout(timerRef.current) }
-  }, [active])
+  }, [active]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!mounted || !visible) return null
 
@@ -98,10 +115,7 @@ export function PrismBurst({ active, winnerColor }: PrismBurstProps) {
       style={{ zIndex: 62 }}
       aria-hidden="true"
     >
-      {/* @keyframes を document.head ではなく portal 内の style タグで注入
-          burstKey が変わるたびに新しいアニメーション名になるため再発火する */}
-      {/* eslint-disable-next-line react/no-danger */}
-      <style dangerouslySetInnerHTML={{ __html: buildKeyframes(k) }} />
+      {/* @keyframes は injectPrismKeyframes() でシングルトン style 要素に注入済み */}
 
       {/* ── 中心フラッシュ ───────────────────────────────── */}
       <div

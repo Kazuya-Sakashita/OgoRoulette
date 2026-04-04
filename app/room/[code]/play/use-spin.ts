@@ -66,6 +66,26 @@ export function useSpin({
   // Cleanup confetti timer on unmount
   useEffect(() => () => clearTimeout(confettiTimerRef.current ?? undefined), [])
 
+  // ISSUE-202: メンバークライアントは spin API を呼ばないため clockOffsetMs が常に 0 になる。
+  // マウント時に /api/time で NTP 方式の時刻同期を行い、clockOffsetMsRef を補正する。
+  useEffect(() => {
+    if (isOwner) return
+    const t0 = performance.now()
+    const t0Date = Date.now()
+    fetch("/api/time").then((res) => {
+      const serverTime = Number(res.headers.get("X-Server-Time") ?? 0)
+      if (!serverTime) return
+      const rtt = performance.now() - t0
+      // adjustedNow = Date.now() + offset がサーバー現在時刻に近くなるよう補正
+      // offset = serverTime - t0Date + rtt/2 とし、RTT の半分をサーバー処理時点として近似
+      const offset = serverTime - t0Date + Math.round(rtt / 2)
+      clockOffsetMsRef.current = offset
+      setClockOffsetMs(offset)
+    }).catch(() => {
+      // ネットワークエラー時は offset=0 のまま（演出ズレは許容）
+    })
+  }, [isOwner]) // eslint-disable-line react-hooks/exhaustive-deps
+
   const buildGuestAuthHeaders = (): Record<string, string> => {
     if (currentUser || !guestHostTokenRef.current) return {}
     return { "X-Guest-Host-Token": guestHostTokenRef.current }
