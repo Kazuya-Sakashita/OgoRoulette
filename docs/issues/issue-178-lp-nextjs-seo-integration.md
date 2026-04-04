@@ -117,12 +117,22 @@ async redirects() {
 
 ## 完了条件
 
-- [ ] `https://ogo-roulette.vercel.app/lp` が Next.js ページとして配信される
-- [ ] LP の `<title>` と `<meta description>` に対象キーワードが含まれている
-- [ ] JSON-LD 構造化データが含まれている
+- [x] `https://ogo-roulette.vercel.app/lp` が Next.js ページ（静的）として配信される
+- [x] LP の `<title>` と `<meta description>` に対象キーワードが含まれている
+- [x] JSON-LD 構造化データ（WebApplication スキーマ）が含まれている
+- [x] `/lp.html` へのアクセスが `/lp` にリダイレクトされる（next.config.mjs 設定済み）
+- [x] LP → `/home` への CTA が `<Link>` コンポーネントで実装されている
+- [x] `npm run build` でビルド成功（○ Static として /lp が出力される）
 - [ ] Google Search Console でインデックス申請済み
-- [ ] `/lp/index.html` へのアクセスが `/lp` にリダイレクトされる
-- [ ] LP → `/home` への CTA が機能している
+
+## ステータス
+
+**完了（デプロイ待ち）** — 2026-04-04
+- `app/lp/page.tsx`（JSX 変換）+ `app/lp/layout.tsx`（CSS import）+ `app/lp/styles.css` を新規作成
+- CSS Module（element セレクター制約）ではなく layout 経由の通常 CSS ファイルとして実装
+- `metadata` + JSON-LD（WebApplication スキーマ）で SEO 対応
+- `next.config.mjs` に `/lp.html` → `/lp` の 301 リダイレクト設定追加
+- `public/lp.html` は削除していない（デプロイ確認後に別途削除）
 
 ## 優先度
 

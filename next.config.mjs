@@ -10,6 +10,15 @@ const nextConfig = {
       { protocol: "https", hostname: "**.line-scdn.net" },
     ],
   },
+  async redirects() {
+    return [
+      {
+        source: "/lp.html",
+        destination: "/lp",
+        permanent: true,
+      },
+    ]
+  },
 }
 
 export default nextConfig
