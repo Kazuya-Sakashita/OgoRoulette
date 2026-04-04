@@ -152,8 +152,13 @@ export default function JoinRoomPage({ params }: { params: Promise<{ code: strin
   }
 
   return (
-    <main className="min-h-screen bg-background">
-      <div className="mx-auto max-w-[390px] md:max-w-lg min-h-screen flex flex-col px-5 py-6 md:justify-center">
+    <main className="min-h-screen bg-background relative overflow-hidden">
+      {/* ISSUE-061: 背景アンビエントオーブ */}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="absolute -top-32 left-1/2 -translate-x-1/2 w-[480px] h-[480px] rounded-full opacity-20"
+          style={{ background: "radial-gradient(circle, #F97316 0%, transparent 65%)", filter: "blur(60px)" }} />
+      </div>
+      <div className="relative mx-auto max-w-[390px] md:max-w-lg min-h-screen flex flex-col px-5 py-6 md:justify-center">
         {/* Header */}
         <header className="flex items-center gap-4 mb-8">
           <Button asChild variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
@@ -196,7 +201,7 @@ export default function JoinRoomPage({ params }: { params: Promise<{ code: strin
             </div>
 
             {/* Room Info */}
-            <div className="flex items-center justify-center gap-4 p-4 rounded-xl bg-secondary/50 mb-6">
+            <div className="flex items-center justify-center gap-4 p-4 rounded-xl bg-secondary/50 mb-3">
               <div className="text-center">
                 <p className="text-2xl font-bold text-foreground">{room?._count.members || 0}</p>
                 <p className="text-xs text-muted-foreground">参加中</p>
@@ -207,6 +212,26 @@ export default function JoinRoomPage({ params }: { params: Promise<{ code: strin
                 <p className="text-xs text-muted-foreground">定員</p>
               </div>
             </div>
+
+            {/* ISSUE-061: 参加済みメンバーチップ（社会的証明） */}
+            {room && room.members.length > 0 && (
+              <div className="flex flex-wrap justify-center gap-1.5 mb-5">
+                {room.members.slice(0, 6).map((m) => (
+                  <span key={m.id} className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/8 border border-white/10 text-xs text-muted-foreground">
+                    <span className="w-4 h-4 rounded-full bg-primary/30 flex items-center justify-center text-[9px] font-bold text-primary">
+                      {(m.nickname ?? "?").charAt(0)}
+                    </span>
+                    {m.nickname ?? "参加者"}
+                    {m.isHost && <span className="text-primary/60 text-[9px]">host</span>}
+                  </span>
+                ))}
+                {room.members.length > 6 && (
+                  <span className="px-2.5 py-1 rounded-full bg-white/8 border border-white/10 text-xs text-muted-foreground">
+                    +{room.members.length - 6}人
+                  </span>
+                )}
+              </div>
+            )}
 
             {/* Preset name picker */}
             {mode === "preset" && room && room.presetMemberNames.length > 0 && (

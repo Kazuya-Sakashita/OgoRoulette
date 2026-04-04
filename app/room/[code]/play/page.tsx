@@ -70,7 +70,13 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
   const isCompleted = room?.status === "COMPLETED"
   const expiresAtMs = room?.expiresAt ? new Date(room.expiresAt).getTime() : null
   const isExpired = expiresAtMs !== null && expiresAtMs < Date.now()
-  const isExpiringSoon = expiresAtMs !== null && !isExpired && expiresAtMs - Date.now() < 24 * 60 * 60 * 1000
+  // ISSUE-062: 残り時間に応じた段階的バリアント
+  const expiryHoursLeft = expiresAtMs !== null && !isExpired ? (expiresAtMs - Date.now()) / 3_600_000 : null
+  const expiryVariant: "danger" | "warning" | "info" | null =
+    expiryHoursLeft === null ? null :
+    expiryHoursLeft <= 3  ? "danger" :
+    expiryHoursLeft <= 24 ? "warning" :
+    expiryHoursLeft <= 72 ? "info" : null
 
   // --- Bill ---
   const {
@@ -334,16 +340,26 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
           </p>
         )}
 
+        {/* ISSUE-062: 段階的有効期限バナー */}
         {isExpired && (
           <div className="mb-3 px-3 py-2 rounded-xl bg-red-500/15 border border-red-500/30 flex items-center justify-between gap-2">
             <p className="text-xs text-red-400 font-medium">このルームは有効期限が切れています</p>
             <Link href="/room/create" className="text-xs text-red-400 underline shrink-0">新しいルームを作る</Link>
           </div>
         )}
-        {isExpiringSoon && expiresAtMs && (
-          <div className="mb-3 px-3 py-2 rounded-xl bg-yellow-500/10 border border-yellow-500/25">
-            <p className="text-xs text-yellow-400">
-              有効期限: {new Date(expiresAtMs).toLocaleDateString("ja-JP", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" })}
+        {!isExpired && expiryVariant && expiresAtMs && (
+          <div className={`mb-3 px-3 py-2 rounded-xl ${
+            expiryVariant === "danger"  ? "bg-red-500/15 border border-red-500/30" :
+            expiryVariant === "warning" ? "bg-yellow-500/10 border border-yellow-500/25" :
+                                          "bg-blue-500/10 border border-blue-500/20"
+          }`}>
+            <p className={`text-xs ${
+              expiryVariant === "danger"  ? "text-red-400 font-medium" :
+              expiryVariant === "warning" ? "text-yellow-400" :
+                                            "text-blue-400"
+            }`}>
+              {expiryVariant === "danger" ? "⚠️ まもなく期限切れ — " : "有効期限: "}
+              {new Date(expiresAtMs).toLocaleDateString("ja-JP", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" })}
             </p>
           </div>
         )}

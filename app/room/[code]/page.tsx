@@ -323,25 +323,34 @@ export default function RoomPage({ params }: { params: Promise<{ code: string }>
           </Button>
         </header>
 
-        {/* ISSUE-010: 有効期限バナー */}
+        {/* ISSUE-010/062: 段階的有効期限バナー */}
         {room.expiresAt && (() => {
           const expiresMs = new Date(room.expiresAt!).getTime()
-          const isExpired = expiresMs < Date.now()
-          const isExpiringSoon = !isExpired && expiresMs - Date.now() < 24 * 60 * 60 * 1000
-          if (isExpired) return (
+          const hoursLeft = (expiresMs - Date.now()) / 3_600_000
+          if (hoursLeft <= 0) return (
             <div className="mb-4 px-3 py-2 rounded-xl bg-red-500/15 border border-red-500/30 flex items-center justify-between gap-2">
               <p className="text-xs text-red-400 font-medium">このルームは有効期限が切れています</p>
               <Link href="/room/create" className="text-xs text-red-400 underline shrink-0">新しいルームを作る</Link>
             </div>
           )
-          if (isExpiringSoon) return (
-            <div className="mb-4 px-3 py-2 rounded-xl bg-yellow-500/10 border border-yellow-500/25">
-              <p className="text-xs text-yellow-400">
-                有効期限: {new Date(expiresMs).toLocaleDateString("ja-JP", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" })}
+          const variant = hoursLeft <= 3 ? "danger" : hoursLeft <= 24 ? "warning" : hoursLeft <= 72 ? "info" : null
+          if (!variant) return null
+          return (
+            <div className={`mb-4 px-3 py-2 rounded-xl ${
+              variant === "danger"  ? "bg-red-500/15 border border-red-500/30" :
+              variant === "warning" ? "bg-yellow-500/10 border border-yellow-500/25" :
+                                      "bg-blue-500/10 border border-blue-500/20"
+            }`}>
+              <p className={`text-xs ${
+                variant === "danger"  ? "text-red-400 font-medium" :
+                variant === "warning" ? "text-yellow-400" :
+                                        "text-blue-400"
+              }`}>
+                {variant === "danger" ? "⚠️ まもなく期限切れ — " : "有効期限: "}
+                {new Date(expiresMs).toLocaleDateString("ja-JP", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" })}
               </p>
             </div>
           )
-          return null
         })()}
 
         {/* QR Code Section - Main Focus for Owner */}

@@ -999,8 +999,14 @@ export default function HomePage() {
         {/* Group B: ルーレット — desktop: left column, sticky */}
         <div className="flex-1 flex flex-col items-center justify-center py-2 lg:col-start-1 lg:row-start-1 lg:row-span-2 lg:sticky lg:top-6 lg:py-8">
 
-        {/* Roulette Wheel - Centerpiece */}
-          <div className="relative mb-2">
+        {/* Roulette Wheel - Centerpiece (ISSUE-063: ホイール全体タップ可能) */}
+          <div
+            className="relative mb-2"
+            onClick={!isSpinning && participants.length >= 2 && countdown === null ? handleSpin : undefined}
+            style={{ cursor: !isSpinning && participants.length >= 2 && countdown === null ? "pointer" : "default" }}
+            aria-label={!isSpinning && participants.length >= 2 ? "ルーレットを回す" : undefined}
+            role={!isSpinning && participants.length >= 2 ? "button" : undefined}
+          >
             {/* Ambient background glow */}
             <div className="absolute inset-0 scale-[1.6] bg-primary/10 rounded-full blur-3xl pointer-events-none" />
 
