@@ -15,30 +15,14 @@ interface PrismBurstProps {
 // scaleEnd: 最終スケール倍率
 // delay / duration: アニメーションタイミング (s)
 // peakOpacity: 最大不透明度（HEART ルール: 0.85 上限）
-// rotation: conic-gradient の開始角度オフセット
-// blur: ガウスぼかし (px) — inner div に適用（mask との分離 → Safari 対応）
+// rotation: radial-gradient の起点色相 (hsl deg)
+// blur: ガウスぼかし (px)
 const RINGS = [
   { scaleEnd: 2.0, delay: 0.00, duration: 1.00, peakOpacity: 0.85, rotation:   0, blur: 2 },
   { scaleEnd: 3.2, delay: 0.14, duration: 1.10, peakOpacity: 0.65, rotation:  48, blur: 3 },
   { scaleEnd: 4.6, delay: 0.27, duration: 1.20, peakOpacity: 0.45, rotation:  96, blur: 4 },
   { scaleEnd: 6.0, delay: 0.39, duration: 1.30, peakOpacity: 0.28, rotation: 144, blur: 6 },
 ] as const
-
-// ─── マスク関数 ─────────────────────────────────────────
-// conic-gradient (=プリズム面) をリング形状に切り抜く
-// inner/outer: リング内縁・外縁の位置 (%, 0–100 の範囲)
-function ringMask(inner: number, outer: number): string {
-  const edge = 3
-  return `radial-gradient(
-    circle at center,
-    transparent      ${inner - edge}%,
-    rgba(0,0,0,0.6)  ${inner}%,
-    white            ${inner + edge}%,
-    white            ${outer - edge}%,
-    rgba(0,0,0,0.6)  ${outer}%,
-    transparent      ${outer + edge}%
-  )`
-}
 
 // 当選確定から 1.3s (最終リング delay + duration) + 100ms buffer
 const BURST_DURATION_MS = 1450
@@ -70,9 +54,6 @@ export function PrismBurst({ active, winnerColor }: PrismBurstProps) {
       if (timerRef.current) clearTimeout(timerRef.current)
     }
   }, [active])
-
-  // conic-gradient の ring mask
-  const mask = ringMask(38, 56)
 
   if (!mounted) return null
 
@@ -124,16 +105,20 @@ export function PrismBurst({ active, winnerColor }: PrismBurstProps) {
           />
 
           {/* ── プリズムリング ───────────────────────────────────
-              【Safari 対応】mask-image と filter を別要素に分離:
-                outer motion.div : mask-image（リング形状クリップ）
-                inner div        : conic-gradient + filter:blur
-              こうすることで WebKit の「同一要素に mask + filter
-              を併用すると mask が無効になる」バグを回避する。
+              【Chrome iOS 対応】conic-gradient + mask-image の
+              2要素構成を廃止し、radial-gradient 単体でリング形状と
+              色を同時に定義する。
+
+              理由: Chrome iOS (WKWebView) では scale アニメーション中に
+              -webkit-mask-image + conic-gradient の合成が失敗し
+              リングが完全に invisible になる。radial-gradient は
+              iOS Safari / Chrome iOS 双方で確実に描画される。
+
+              色設計: ring.rotation をベースに 3 色のグラデーションを
+              リング帯内で変化させることで虹色リールに近い演出を維持。
 
               【中央配置】top/left 50% + Framer Motion x/y -50%
-              で要素中心をビューポート中心に固定。scale アニメは
-              transform-origin:center（デフォルト）を基点とするため
-              中心から確実に拡大する。                           */}
+              で要素中心をビューポート中心に固定。                */}
           {RINGS.map((ring, i) => (
             <motion.div
               key={i}
@@ -143,17 +128,23 @@ export function PrismBurst({ active, winnerColor }: PrismBurstProps) {
                 left: "50%",
                 x: "-50%",
                 y: "-50%",
-                // 基点: 画面最小辺の 30%
                 width:  "30vmin",
                 height: "30vmin",
-                // リング形状マスク（outer 要素に配置）
-                maskImage:       mask,
-                WebkitMaskImage: mask,
+                // radial-gradient でリング形状 + 色を一括定義
+                // transparent 帯がリングの内側・外側を切り抜く
+                background: `radial-gradient(
+                  circle at center,
+                  transparent                                   34%,
+                  hsla(${ring.rotation},             90%, 65%, 0.95) 38%,
+                  hsla(${(ring.rotation + 60)  % 360}, 90%, 62%, 0.80) 45%,
+                  hsla(${(ring.rotation + 120) % 360}, 90%, 62%, 0.60) 52%,
+                  transparent                                   56%
+                )`,
+                filter: `blur(${ring.blur}px)`,
                 willChange: "transform, opacity",
               }}
               initial={{ scale: 0.20, opacity: 0 }}
               animate={{
-                // 二段加速: まず素早く広がり、後半ゆっくりフェード
                 scale:   [0.20, ring.scaleEnd * 0.55, ring.scaleEnd],
                 opacity: [0,    ring.peakOpacity,      0            ],
               }}
@@ -163,26 +154,7 @@ export function PrismBurst({ active, winnerColor }: PrismBurstProps) {
                 ease: [0.08, 0.65, 0.22, 1],
                 times: [0, 0.32, 1],
               }}
-            >
-              {/* Inner div: conic-gradient + blur（mask と分離） */}
-              <div
-                className="w-full h-full rounded-full"
-                style={{
-                  background: `conic-gradient(
-                    from ${ring.rotation}deg,
-                    hsl(0,   100%, 65%),
-                    hsl(45,  100%, 65%),
-                    hsl(90,  100%, 58%),
-                    hsl(150, 100%, 58%),
-                    hsl(210, 100%, 62%),
-                    hsl(270, 100%, 65%),
-                    hsl(320, 100%, 65%),
-                    hsl(360, 100%, 65%)
-                  )`,
-                  filter: `blur(${ring.blur}px)`,
-                }}
-              />
-            </motion.div>
+            />
           ))}
 
           {/* ── オーロラスウィープ ──────────────────────────────
