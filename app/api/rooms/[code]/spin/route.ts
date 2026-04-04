@@ -216,12 +216,13 @@ export async function POST(
       }).catch(() => {})
     }
 
+    const responseTime = Date.now()
     return NextResponse.json({
       winnerIndex,
       winnerName,
       sessionId: session.id,
       spinStartedAt: spinStartedAt.getTime(), // Unix ms — 全クライアントが基準にする
-    })
+    }, { headers: { "X-Server-Time": String(responseTime) } })
   } catch (error) {
     const statusCode = (error as { statusCode?: number }).statusCode
     if (statusCode) {

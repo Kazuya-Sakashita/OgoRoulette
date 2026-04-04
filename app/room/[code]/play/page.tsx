@@ -132,8 +132,10 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
 
   // Countdown display — driven by spinStartedAtMs vs Date.now()
   const [spinStartedAtMs, setSpinStartedAtMs] = useState<number | null>(null)
-  // ルーム同期: メンバーがアニメーション開始時点で spinStartedAt から何 ms 経過しているか
-  const [spinElapsedMs, setSpinElapsedMs] = useState<number>(0)
+  // ルーム同期: RouletteWheel に渡すアニメーション残り ms
+  const [spinRemainingMs, setSpinRemainingMs] = useState<number>(4500)
+  const [clockOffsetMs, setClockOffsetMs] = useState<number>(0)
+  const clockOffsetMsRef = useRef<number>(0)
   const [countdownValue, setCountdownValue] = useState<number | null>(null)
 
   // Video recording
@@ -497,12 +499,24 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
       // room.status === "COMPLETED" 後の再表示は別パス（line ~493）で処理されるため、
       // IN_SESSION 中はスキップなしで常にアニメーションを再生する。
       setTimeout(() => {
-        const elapsed = Math.max(0, Date.now() - startMs)
-        // ISSUE-146: elapsed が大きいと duration = max(0.5s, ...) が 0.5s になり
-        // 「回っていない」と感じる短さになる。3000ms にキャップして最低 1.5s を保証する
-        // （4.5s - 3.0s = 1.5s）。どれだけ遅延していても視認できる回転を表示する。
-        const ELAPSED_CAP_MS = 3000
-        setSpinElapsedMs(Math.min(elapsed, ELAPSED_CAP_MS))
+        const now = Date.now()
+        const adjustedNow = now + clockOffsetMsRef.current
+        const elapsed = Math.max(0, adjustedNow - startMs)
+
+        const SPIN_FULL_MS = 4500 // FULL_DURATION * 1000
+        const SKIP_THRESHOLD_MS = 5500 // バウンス含む全体時間
+
+        if (elapsed >= SKIP_THRESHOLD_MS) {
+          // スピン完了済み → アニメーションスキップして即結果
+          spinScheduledRef.current = false
+          setPhase("result")
+          return
+        }
+
+        // 残り時間を計算して RouletteWheel に渡す
+        const cappedElapsed = Math.min(elapsed, 3000) // 最大3秒まで
+        const remaining = Math.max(500, SPIN_FULL_MS - cappedElapsed)
+        setSpinRemainingMs(remaining)
         setPhase("spinning")
       }, delay)
     }
@@ -603,6 +617,10 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
       }
 
       trackEvent(AnalyticsEvent.SPIN_API_SUCCESS)
+      const serverTime = Number(res.headers.get("X-Server-Time") ?? Date.now())
+      const offset = serverTime - Date.now()
+      clockOffsetMsRef.current = offset
+      setClockOffsetMs(offset)
       const data = await res.json()
       // サーバーが決定した spinStartedAt まで待ってからアニメーション開始
       // clock skew 上限: SPIN_COUNTDOWN_MS + 2秒（最大5秒）を超えないようにキャップ
@@ -610,7 +628,7 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
       const delay = Math.max(0, Math.min(data.spinStartedAt - Date.now(), MAX_SPIN_DELAY_MS))
       setSpinStartedAtMs(data.spinStartedAt)
       setPendingWinnerIndex(data.winnerIndex)
-      setSpinElapsedMs(0) // オーナーは常にフル duration で開始
+      setSpinRemainingMs(4500) // オーナーは常にフル duration で開始
       setTimeout(() => {
         if (!spinScheduledRef.current) {
           spinScheduledRef.current = true
@@ -629,7 +647,7 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
     setPendingWinnerIndex(undefined)
     setSpinError(null)
     setSpinStartedAtMs(null)
-    setSpinElapsedMs(0)
+    setSpinRemainingMs(4500)
     spinScheduledRef.current = false
     prevSessionIdRef.current = null
     pendingMemberWinnerRef.current = null
@@ -1104,7 +1122,7 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
               onSlowingDown={handleSlowingDown}
               onNearMiss={handleNearMiss}
               wheelRotationRef={wheelRotationRef}
-              spinElapsedMs={spinElapsedMs}
+              spinRemainingMs={spinRemainingMs}
               spinSeed={spinStartedAtMs ?? undefined}
             />
           </div>

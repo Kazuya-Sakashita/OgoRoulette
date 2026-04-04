@@ -16,8 +16,8 @@ interface RouletteWheelProps {
   onNearMiss?: () => void     // ISSUE-098: ニアミス演出直前（当選確定の280ms前）
   /** Ref written each frame with the current rotation in degrees — used by RecordingCanvas */
   wheelRotationRef?: MutableRefObject<number>
-  /** ルーム同期: spinStartedAt から遅れてアニメーション開始した場合の経過 ms。duration を短縮する */
-  spinElapsedMs?: number
+  /** ルーム同期: アニメーションの残り ms。この値を duration として使用する */
+  spinRemainingMs?: number
   /** ルーム同期: minSpins 決定論化のための seed（spinStartedAt ms）。全クライアントで同値 */
   spinSeed?: number
 }
@@ -32,7 +32,7 @@ export function RouletteWheel({
   onSlowingDown,
   onNearMiss,
   wheelRotationRef,
-  spinElapsedMs,
+  spinRemainingMs,
   spinSeed,
 }: RouletteWheelProps) {
   const rotation = useMotionValue(0)
@@ -57,8 +57,8 @@ export function RouletteWheel({
   const onNearMissRef = useRef(onNearMiss)
   useEffect(() => { onNearMissRef.current = onNearMiss }, [onNearMiss])
 
-  const spinElapsedMsRef = useRef(spinElapsedMs)
-  useEffect(() => { spinElapsedMsRef.current = spinElapsedMs }, [spinElapsedMs])
+  const spinRemainingMsRef = useRef(spinRemainingMs)
+  useEffect(() => { spinRemainingMsRef.current = spinRemainingMs }, [spinRemainingMs])
   const spinSeedRef = useRef(spinSeed)
   useEffect(() => { spinSeedRef.current = spinSeed }, [spinSeed])
 
@@ -112,11 +112,12 @@ export function RouletteWheel({
       : 5 + Math.floor(Math.random() * 3)
     const targetRotation = currentRotation + (360 * minSpins) + angleDiff
 
-    // ルーム同期: メンバーが spinStartedAt より遅れてアニメーション開始した場合 duration を短縮する
-    // これによりオーナーとほぼ同時に停止する
+    // ルーム同期: spinRemainingMs が渡された場合はその値を duration として使用する
+    // 渡されない場合（オーナー初回など）はフル duration を使う
     const FULL_DURATION = 4.5
-    const elapsedSec = Math.max(0, (spinElapsedMsRef.current ?? 0) / 1000)
-    const duration = Math.max(0.5, FULL_DURATION - elapsedSec)
+    const duration = spinRemainingMsRef.current !== undefined
+      ? Math.max(0.5, spinRemainingMsRef.current / 1000)
+      : FULL_DURATION
 
     // 減速フェーズ開始を 1.2秒前にコールバックで通知（カチカチ演出・振動のタイミング）
     // duration に合わせてタイミングを調整する

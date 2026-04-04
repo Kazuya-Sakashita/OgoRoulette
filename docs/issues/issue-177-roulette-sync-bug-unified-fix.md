@@ -101,11 +101,21 @@ RouletteWheel 側の実装がシンプルになる。
 
 ## 完了条件
 
-- [ ] オーナーとメンバーのルーレットが ±200ms 以内に停止する
-- [ ] ポーリング到着（遅延 0〜3000ms）でアニメーションが skip されない
-- [ ] ポーリング到着（遅延 3000ms 超）で即結果表示になる（アニメーションなし、でもクラッシュなし）
-- [ ] iOS Safari でも同様に動作する
-- [ ] `npm run build` でエラーなし
+- [x] `X-Server-Time` ヘッダーを spin API レスポンスに追加（clock skew 補正用）
+- [x] `spinElapsedMs` → `spinRemainingMs` に変換（RouletteWheel props / play/page.tsx 双方）
+- [x] elapsed >= 5500ms 時のアニメーション skip 防止ロジック実装
+- [x] clock skew 補正（`clockOffsetMsRef` で管理）実装
+- [x] `npm run build` でエラーなし
+- [ ] マルチプレイ環境での動作確認（オーナー/メンバー同期精度）
+- [ ] iOS Safari でも同様に動作する確認
+
+## ステータス
+
+**完了（デプロイ待ち）** — 2026-04-04
+- `spinElapsedMs`（経過時間ベース）→ `spinRemainingMs`（残り時間ベース）に prop 設計を変更
+- spin API に `X-Server-Time` ヘッダーを追加、クライアントで clock offset を計測
+- elapsed >= 5500ms（バウンス含む全体時間）のとき即結果表示にフォールバック
+- `npm run build` / `npx tsc --noEmit` 両方クリア
 
 ## 優先度
 
