@@ -2,6 +2,7 @@
 
 import { motion, AnimatePresence } from "framer-motion"
 import { useEffect, useRef, useState } from "react"
+import { createPortal } from "react-dom"
 
 interface PrismBurstProps {
   /** 当選確定時に true にする。false→true のエッジで発火 */
@@ -47,6 +48,10 @@ export function PrismBurst({ active, winnerColor }: PrismBurstProps) {
   const [visible, setVisible] = useState(false)
   const [burstKey, setBurstKey] = useState(0)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // iOS Safari: overflow:hidden の祖先要素が position:fixed の包含ブロックになる問題を
+  // createPortal で回避。document.body 直下にマウントすることでビューポート基準になる。
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => { setMounted(true) }, [])
 
   useEffect(() => {
     if (!active) return
@@ -65,7 +70,9 @@ export function PrismBurst({ active, winnerColor }: PrismBurstProps) {
   // conic-gradient の ring mask
   const mask = ringMask(38, 56)
 
-  return (
+  if (!mounted) return null
+
+  return createPortal(
     <AnimatePresence>
       {visible && (
         // flex を使わず inset-0 に直接 position: absolute で各要素を中央配置
@@ -205,6 +212,7 @@ export function PrismBurst({ active, winnerColor }: PrismBurstProps) {
 
         </div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   )
 }
