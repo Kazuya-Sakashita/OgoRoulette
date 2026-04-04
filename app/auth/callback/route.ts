@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server"
 import { prisma } from "@/lib/prisma"
 import { NextResponse } from "next/server"
+import { validateReturnTo } from "@/lib/safe-redirect"
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url)
@@ -35,7 +36,7 @@ export async function GET(request: Request) {
 
       // ISSUE-028/035: next を相対パスに限定し、x-forwarded-host は信頼しない
       // NEXT_PUBLIC_APP_URL を既存 LINE OAuth 等と同じ変数名に統一
-      const safeNext = next.startsWith("/") ? next : "/home"
+      const safeNext = validateReturnTo(next)
       const siteUrl = process.env.NEXT_PUBLIC_APP_URL ?? origin
       return NextResponse.redirect(`${siteUrl}${safeNext}`)
     }

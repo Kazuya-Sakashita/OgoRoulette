@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { randomBytes } from "crypto"
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
+import { validateReturnTo } from "@/lib/safe-redirect"
 
 // GET /api/auth/line/start
 // WHAT: LINE OAuth フローを開始する
@@ -39,8 +40,8 @@ export async function GET(request: NextRequest) {
   })
 
   // ISSUE-044: returnTo をクッキーに保存してコールバックで復元する
-  const returnTo = request.nextUrl.searchParams.get("returnTo")
-  if (returnTo && returnTo.startsWith("/") && !returnTo.startsWith("//")) {
+  const returnTo = validateReturnTo(request.nextUrl.searchParams.get("returnTo"))
+  if (returnTo !== "/home") {
     response.cookies.set("line_oauth_return_to", returnTo, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",

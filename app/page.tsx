@@ -7,6 +7,7 @@ import Image from "next/image"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
 import { startSupabaseOAuth, startLineAuth } from "@/lib/auth"
+import { validateReturnTo } from "@/lib/safe-redirect"
 import { RouletteWheel } from "@/components/roulette-wheel"
 import { QrCode, Users } from "lucide-react"
 
@@ -39,7 +40,7 @@ export default function WelcomePage() {
         const params = new URLSearchParams(window.location.search)
         const returnTo = params.get("returnTo")
         // Validate: relative path only, no protocol-relative URLs
-        const safeReturn = returnTo && returnTo.startsWith("/") && !returnTo.startsWith("//") ? returnTo : "/home"
+        const safeReturn = validateReturnTo(returnTo)
         router.push(safeReturn)
       }
     }

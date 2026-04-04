@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { createServerClient } from "@supabase/ssr"
 import { prisma } from "@/lib/prisma"
 import { createAdminClient } from "@/lib/supabase/admin"
+import { validateReturnTo } from "@/lib/safe-redirect"
 
 // GET /api/auth/line/callback
 // WHAT: LINE OAuth コールバックを処理し、Supabase セッションを確立する
@@ -183,8 +184,8 @@ export async function GET(request: NextRequest) {
     // ミドルウェアと同じパターン: verifyOtp が呼ぶ setAll でリダイレクトレスポンスに cookie をセット
     // 複数回 setAll が呼ばれても全 cookie を蓄積し、最後にまとめて適用する
     // ISSUE-044: line_oauth_return_to クッキーがあればそこに戻る
-    const rawReturnTo = request.cookies.get("line_oauth_return_to")?.value ?? ""
-    const safeReturnTo = rawReturnTo.startsWith("/") && !rawReturnTo.startsWith("//") ? rawReturnTo : "/home"
+    const rawReturnTo = request.cookies.get("line_oauth_return_to")?.value ?? null
+    const safeReturnTo = validateReturnTo(rawReturnTo)
     const redirectResponse = NextResponse.redirect(`${origin}${safeReturnTo}`)
     const pendingCookies: Array<{ name: string; value: string; options: Parameters<typeof redirectResponse.cookies.set>[2] }> = []
 
