@@ -56,6 +56,16 @@ const REACTIONS = [
   "ありがとう!",
 ]
 
+// ISSUE-194: 奢り回数に応じたパーソナライズリアクション
+function getPersonalizedReaction(treatCount?: number): string {
+  if (typeof treatCount === "number") {
+    if (treatCount >= 10) return (["またお前か！！", "レジェンド！", "伝説の奢り王！"] as const)[treatCount % 3]
+    if (treatCount >= 5) return (["さすが常連！", "もはや職業奢り！", "いつもありがとう！"] as const)[treatCount % 3]
+    if (treatCount >= 3) return (["またか！笑", "三度目の正直！", "恒例行事だね！"] as const)[treatCount % 3]
+  }
+  return REACTIONS[Math.floor(Math.random() * REACTIONS.length)]
+}
+
 export function WinnerCard({
   winner,
   winnerIndex,
@@ -78,7 +88,7 @@ export function WinnerCard({
   onAdvanceToDetails,
 }: WinnerCardProps) {
   const color = SEGMENT_COLORS[winnerIndex % SEGMENT_COLORS.length]
-  const [reaction] = useState(() => REACTIONS[Math.floor(Math.random() * REACTIONS.length)])
+  const [reaction] = useState(() => getPersonalizedReaction(treatCount))
 
   // Phase A: cinematic reveal  Phase B: details sheet
   const [phase, setPhase] = useState<"reveal" | "details">("reveal")
@@ -126,11 +136,7 @@ export function WinnerCard({
     // ISSUE-093: instant share button appears 1.5 s after reveal
     const t4 = setTimeout(() => setShowInstantShare(true), 1500)
     const t5 = setTimeout(() => setShowHint(true), 1800)
-    // ISSUE-155: Auto-advance to Phase B after 3.2s (was 4s) — tighter pacing
-    const t6 = setTimeout(() => {
-      setPhase("details")
-      onAdvanceToDetails?.()
-    }, 3200)
+    // ISSUE-193: t6 auto-advance removed — user advances by tap (30s fallback below)
 
     return () => {
       clearTimeout(t1)
@@ -138,8 +144,16 @@ export function WinnerCard({
       clearTimeout(t3)
       clearTimeout(t4)
       clearTimeout(t5)
-      clearTimeout(t6)
     }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ISSUE-193: 30s fallback — advance to Phase B if user never taps Phase A
+  useEffect(() => {
+    const fallback = setTimeout(() => {
+      setPhase((prev) => (prev === "reveal" ? "details" : prev))
+      onAdvanceToDetails?.()
+    }, 30_000)
+    return () => clearTimeout(fallback)
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const advanceToDetails = () => {
@@ -378,6 +392,19 @@ export function WinnerCard({
                 {reaction}
               </motion.p>
 
+              {/* ISSUE-194: Treat count badge in Phase A */}
+              {typeof treatCount === "number" && treatCount > 0 && (
+                <motion.div
+                  className="mt-3 px-4 py-1.5 rounded-full text-sm font-bold"
+                  style={{ background: `${color}33`, color, border: `1px solid ${color}55` }}
+                  initial={{ scale: 0, opacity: 0 }}
+                  animate={showReaction ? { scale: 1, opacity: 1 } : { scale: 0, opacity: 0 }}
+                  transition={{ delay: 0.3, type: "spring", stiffness: 400, damping: 20 }}
+                >
+                  🍺 通算{treatCount}回目{treatTitle ? ` — ${treatTitle}` : ""}
+                </motion.div>
+              )}
+
               {/* Amount badge if bill info is set */}
               {hasBillInfo && (
                 <motion.div
@@ -435,14 +462,14 @@ export function WinnerCard({
               )}
             </AnimatePresence>
 
-            {/* Hint at bottom */}
+            {/* ISSUE-193: Hint at bottom — "タップして続ける" with pulse */}
             <motion.p
-              className="absolute bottom-12 text-white/35 text-sm tracking-wider"
+              className="absolute bottom-12 text-white/35 text-sm tracking-wider animate-pulse"
               initial={{ opacity: 0 }}
               animate={showHint ? { opacity: 1 } : { opacity: 0 }}
               transition={{ duration: 0.5 }}
             >
-              タップして内訳を確認 →
+              タップして続ける
             </motion.p>
           </motion.div>
         )}
@@ -659,24 +686,23 @@ export function WinnerCard({
                     )}
                   </motion.div>
 
-                  {/* ── TEXT LINKS: もう一度 / ホームへ (ISSUE-181 demote) ── */}
+                  {/* ── ACTIONS: もう一回！/ ホームへ (ISSUE-196: respin elevated) ── */}
                   <motion.div
-                    className="flex items-center justify-center gap-4 mb-5"
+                    className="flex items-center justify-center gap-3 mb-5"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: 0.35 }}
                   >
-                    {isOwner && onRespin && (
+                    {onRespin && (
                       <button
-                        onClick={onRespin}
-                        className="flex items-center gap-1.5 text-sm text-white/50 hover:text-white transition-colors"
+                        onClick={() => { onRespin(); onClose() }}
+                        className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-white/20 text-white/80 text-sm font-semibold hover:bg-white/10 transition-colors"
                       >
                         <RotateCcw className="w-3.5 h-3.5" />
-                        もう一度
+                        もう一回！
                       </button>
                     )}
-                    {isOwner && onRespin && <span className="text-white/20 text-sm">|</span>}
-                    <Link href="/home" onClick={onClose} className="text-sm text-white/50 hover:text-white transition-colors">
+                    <Link href="/home" onClick={onClose} className="px-4 py-2 text-sm text-white/40 hover:text-white transition-colors">
                       ホームへ
                     </Link>
                   </motion.div>

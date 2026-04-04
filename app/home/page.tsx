@@ -381,6 +381,16 @@ export default function HomePage() {
     resetRecording()
   }
 
+  // ISSUE-196: 再スピン — WinnerCard を閉じて同メンバーで即スピン
+  const handleRespin = () => {
+    setWinner(null)
+    setLastTreatCount(undefined)
+    setLastTreatTitle(undefined)
+    setLastRanking(undefined)
+    resetRecording()
+    startSpin(participants.length)
+  }
+
   const addParticipant = () => {
     if (newName.trim() && participants.length < 8) {
       setParticipants([...participants, newName.trim()])
@@ -500,6 +510,7 @@ export default function HomePage() {
           onShareVideo={() => setShowShareSheet(true)}
           onSaveGroup={isCurrentGroupSaved ? undefined : handleSaveGroupFromWinner}
           isGuest={!user}
+          onRespin={handleRespin}
         />
       )}
 
