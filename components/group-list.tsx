@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
-import { Plus, Check, Pencil, Trash2, X as XIcon, Play, Users, MoreHorizontal } from "lucide-react"
+import { Plus, Check, Pencil, Trash2, X as XIcon, Play, Users, MoreHorizontal, ScrollText } from "lucide-react"
 import type { SavedGroup } from "@/lib/group-storage"
 
 interface GroupListProps {
@@ -46,6 +46,7 @@ export function GroupList({
 }: GroupListProps) {
   const [editState, setEditState] = useState<EditState | null>(null)
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
+  const [showHistoryId, setShowHistoryId] = useState<string | null>(null)
   const menuRef = useRef<HTMLDivElement | null>(null)
 
   const startEdit = (group: SavedGroup) => {
@@ -200,10 +201,27 @@ export function GroupList({
                         <p className="text-xs text-muted-foreground/70 truncate mt-0.5">
                           前回 {relativeTime(group.lastSpinAt)}
                           {group.lastWinner && <> · 奢り: {group.lastWinner}</>}
+                          {group.spinHistory && group.spinHistory.length > 1 && (
+                            <span className="text-muted-foreground/50"> · 通算{group.spinHistory.length}回</span>
+                          )}
                         </p>
                       )}
                     </div>
                   </button>
+
+                  {/* ISSUE-198: 履歴ボタン（2件以上のとき表示） */}
+                  {group.spinHistory && group.spinHistory.length > 1 && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setShowHistoryId(showHistoryId === group.id ? null : group.id)
+                      }}
+                      aria-label="スピン履歴を見る"
+                      className="shrink-0 w-8 h-8 rounded-xl flex items-center justify-center transition-all text-muted-foreground hover:bg-white/10 hover:text-foreground"
+                    >
+                      <ScrollText className="w-3.5 h-3.5" />
+                    </button>
+                  )}
 
                   {/* Actions menu trigger */}
                   <button
@@ -235,6 +253,19 @@ export function GroupList({
                       <Play className={`w-3.5 h-3.5 ${isSelected ? "fill-white" : "fill-primary"}`} />
                     </button>
                   )}
+                </div>
+              )}
+
+              {/* ISSUE-198: 履歴リスト（トグル表示） */}
+              {showHistoryId === group.id && group.spinHistory && group.spinHistory.length > 0 && (
+                <div className="mt-1 px-3 py-2 rounded-xl bg-white/5 border border-white/10 space-y-1.5">
+                  {group.spinHistory.slice(0, 10).map((record, i) => (
+                    <div key={i} className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <span className="font-semibold text-foreground truncate max-w-[6rem]">{record.winner}</span>
+                      <span className="shrink-0">{relativeTime(record.spinAt)}</span>
+                      <span className="opacity-50 shrink-0">({record.participants.length}人)</span>
+                    </div>
+                  ))}
                 </div>
               )}
 

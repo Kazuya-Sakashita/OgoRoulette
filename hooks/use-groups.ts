@@ -144,9 +144,9 @@ export function useGroups(user: User | null) {
     [user, groups, selectedGroupId, refresh]
   )
 
-  /** ISSUE-182: スピン完了後にグループのlastSpinAt/lastWinnerを記録 */
-  const recordGroupSpin = useCallback((id: string, winner: string) => {
-    updateGroupLastSpin(id, winner)
+  /** ISSUE-182/198: スピン完了後にグループの lastSpinAt/lastWinner/spinHistory を記録 */
+  const recordGroupSpin = useCallback((id: string, winner: string, participants: string[] = []) => {
+    updateGroupLastSpin(id, winner, participants)
     refresh()
   }, [refresh])
 

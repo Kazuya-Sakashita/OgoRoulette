@@ -1,3 +1,10 @@
+// ISSUE-198: スピン履歴レコード（直近 10 件を保持）
+export interface SpinRecord {
+  winner: string
+  spinAt: number       // Unix timestamp
+  participants: string[]
+}
+
 export interface SavedGroup {
   id: string
   cloudId?: string   // DB UUID — set after first cloud sync
@@ -8,6 +15,8 @@ export interface SavedGroup {
   // ISSUE-182: リテンション — 最後にスピンした日時と当選者名
   lastSpinAt?: number
   lastWinner?: string
+  // ISSUE-198: スピン履歴（最大 10 件）
+  spinHistory?: SpinRecord[]
 }
 
 export interface TreatStats {
@@ -102,15 +111,23 @@ export function touchGroupLocally(id: string): void {
 }
 
 /**
- * ISSUE-182: スピン結果後にグループの lastSpinAt と lastWinner を更新する。
- * リテンション再開CTA（ホーム画面最上部）の表示データに使用される。
+ * ISSUE-182/198: スピン結果後にグループの lastSpinAt / lastWinner を更新し、
+ * spinHistory に記録を追加する（最大 10 件保持）。
  */
-export function updateGroupLastSpin(id: string, winner: string): void {
+export function updateGroupLastSpin(
+  id: string,
+  winner: string,
+  participants: string[] = []
+): void {
   const groups = loadGroups()
   const target = groups.find((g) => g.id === id)
   if (!target) return
-  target.lastSpinAt = Date.now()
+  const now = Date.now()
+  target.lastSpinAt = now
   target.lastWinner = winner
+  // ISSUE-198: 履歴を先頭に追加し、最大 10 件に切り詰める
+  const record: SpinRecord = { winner, spinAt: now, participants }
+  target.spinHistory = [record, ...(target.spinHistory ?? [])].slice(0, 10)
   localStorage.setItem(GROUPS_KEY, JSON.stringify(groups))
 }
 

@@ -46,6 +46,8 @@ interface WinnerCardProps {
   isGuest?: boolean
   // Called when Phase A (cinematic reveal) advances to Phase B (details sheet)
   onAdvanceToDetails?: () => void
+  // ISSUE-197: セッション内スピン回数（エスカレーション演出）
+  sessionSpinCount?: number
 }
 
 const REACTIONS = [
@@ -86,6 +88,7 @@ export function WinnerCard({
   onSaveGroup,
   isGuest = false,
   onAdvanceToDetails,
+  sessionSpinCount,
 }: WinnerCardProps) {
   const color = SEGMENT_COLORS[winnerIndex % SEGMENT_COLORS.length]
   const [reaction] = useState(() => getPersonalizedReaction(treatCount))
@@ -391,6 +394,19 @@ export function WinnerCard({
               >
                 {reaction}
               </motion.p>
+
+              {/* ISSUE-197: セッション回数バッジ（2回戦以降に表示） */}
+              {sessionSpinCount !== undefined && sessionSpinCount >= 2 && (
+                <motion.div
+                  className="mt-3 px-4 py-1.5 rounded-full text-sm font-bold text-white/80"
+                  style={{ background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.2)" }}
+                  initial={{ scale: 0, opacity: 0 }}
+                  animate={showReaction ? { scale: 1, opacity: 1 } : { scale: 0, opacity: 0 }}
+                  transition={{ delay: 0.2, type: "spring", stiffness: 400, damping: 20 }}
+                >
+                  {sessionSpinCount >= 4 ? "🔥 もはや宴！" : `${sessionSpinCount}回戦！`}
+                </motion.div>
+              )}
 
               {/* ISSUE-194: Treat count badge in Phase A */}
               {typeof treatCount === "number" && treatCount > 0 && (
