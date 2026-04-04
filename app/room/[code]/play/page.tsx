@@ -147,8 +147,8 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
     const update = () => {
       const vw = window.innerWidth
       const vh = window.innerHeight
-      const byWidth = Math.min(280, vw - 40)
-      const byHeight = Math.min(280, vh - RESERVED_HEIGHT)
+      const byWidth = Math.min(360, vw - 40)
+      const byHeight = Math.min(360, vh - RESERVED_HEIGHT)
       setWheelSize(Math.max(200, Math.min(byWidth, byHeight)))
     }
     update()
