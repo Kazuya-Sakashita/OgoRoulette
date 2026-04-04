@@ -30,12 +30,17 @@ async function loadFont(text: string): Promise<ArrayBuffer | null> {
   }
 }
 
-// GET /api/og?winner=田中&color=%23F97316&amount=15000
+// GET /api/og?winner=田中&color=%23F97316&amount=15000&count=5
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const winner = searchParams.get("winner") || "???"
   const color = searchParams.get("color") || "#F97316"
   const amount = searchParams.get("amount")
+
+  // ISSUE-189: 参加人数（シェアURL の participants からカウントして渡す）
+  const countStr = searchParams.get("count")
+  const count = countStr ? parseInt(countStr, 10) : null
+  const validCount = count && !isNaN(count) && count > 1 ? count : null
 
   const amountNum = amount ? Number(amount) : null
   const formattedAmount =
@@ -44,7 +49,7 @@ export async function GET(request: NextRequest) {
       : null
 
   // Build the complete text for font subsetting — only include unique chars
-  const allText = `今日の奢り神様さん奢りOgoRoulette${winner}${formattedAmount ?? ""}`
+  const allText = `今日の奢り神様さん奢りOgoRoulette人の中から選ばれました${winner}${formattedAmount ?? ""}${validCount ? String(validCount) : ""}`
   const fontData = await loadFont(allText)
 
   const fonts = fontData
@@ -164,6 +169,22 @@ export async function GET(request: NextRequest) {
         >
           今日の奢り神様
         </div>
+
+        {/* ISSUE-189: 参加人数バッジ（2人以上の場合のみ表示） */}
+        {validCount && (
+          <div
+            style={{
+              fontSize: "22px",
+              color: "rgba(255,255,255,0.50)",
+              marginBottom: "8px",
+              letterSpacing: "0.03em",
+              fontFamily,
+              display: "flex",
+            }}
+          >
+            {validCount}人の中から選ばれました
+          </div>
+        )}
 
         {/* Winner name */}
         <div

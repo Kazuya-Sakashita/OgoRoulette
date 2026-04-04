@@ -157,7 +157,7 @@ open "https://www.opengraph.xyz/url/https%3A%2F%2Fogo-roulette.vercel.app%2Fresu
 
 ## ステータス
 
-**未着手** — 2026-04-04
+**完了** — 2026-04-05
 
 ## 優先度
 

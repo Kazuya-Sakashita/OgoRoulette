@@ -7,6 +7,8 @@ interface Props {
     color?: string
     amount?: string
     treater?: string
+    // ISSUE-189: participants はシェアURL から渡るカンマ区切り文字列
+    participants?: string
   }>
 }
 
@@ -15,9 +17,18 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
   const winner = params.winner || params.treater || ""
   const color = params.color || "#F97316"
   const amount = params.amount || ""
+  // ISSUE-189: 参加者数を OGP 画像に渡す（2人以上の場合のみ）
+  const participantCount = params.participants
+    ? params.participants.split(",").filter(Boolean).length
+    : 0
 
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
-  const ogImageUrl = `${baseUrl}/api/og?winner=${encodeURIComponent(winner)}&color=${encodeURIComponent(color)}${amount ? `&amount=${encodeURIComponent(amount)}` : ""}`
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://ogo-roulette.vercel.app"
+  const ogImageUrl =
+    `${baseUrl}/api/og` +
+    `?winner=${encodeURIComponent(winner)}` +
+    `&color=${encodeURIComponent(color)}` +
+    (amount ? `&amount=${encodeURIComponent(amount)}` : "") +
+    (participantCount > 1 ? `&count=${participantCount}` : "")
 
   const title = winner
     ? `${winner}さんが今日の奢り神様！ - OgoRoulette`
