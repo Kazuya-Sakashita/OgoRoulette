@@ -96,6 +96,7 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
     showConfetti, showPrismBurst, confettiBurstKey,
     spinStartedAtMs, spinRemainingMs,
     countdownValue,
+    isSlowingDown,
     handleSpin, handleRespin: handleRespinBase,
     showResult, handleSpinComplete,
     handleDetailsPhase,
@@ -258,6 +259,7 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
         handleSaveGroup={handleSaveGroup}
         currentUser={currentUser}
         handleDetailsPhase={handleDetailsPhase}
+        isSlowingDown={isSlowingDown}
       />
 
       <RoomPlayBody

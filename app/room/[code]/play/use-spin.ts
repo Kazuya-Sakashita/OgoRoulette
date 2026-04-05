@@ -52,6 +52,8 @@ export function useSpin({
   const [showConfetti, setShowConfetti] = useState(false)
   const [showPrismBurst, setShowPrismBurst] = useState(false)
   const [confettiBurstKey, setConfettiBurstKey] = useState(0)
+  // ISSUE-207: 感情ピーク — スロービルドアップ演出フラグ
+  const [isSlowingDown, setIsSlowingDown] = useState(false)
   const [spinStartedAtMs, setSpinStartedAtMs] = useState<number | null>(null)
   const [spinRemainingMs, setSpinRemainingMs] = useState<number>(4500)
   const [clockOffsetMs, setClockOffsetMs] = useState<number>(0)
@@ -93,8 +95,9 @@ export function useSpin({
 
   // --- Handlers ---
 
-  // 減速フェーズ（結果直前）の演出: tick 音 × 3回 + 振動
+  // 減速フェーズ（結果直前）の演出: tick 音 × 3回 + 振動 + ISSUE-207 緊張感オーバーレイ
   const handleSlowingDown = () => {
+    setIsSlowingDown(true)
     const delays = [0, 500, 950]
     delays.forEach((d) => {
       setTimeout(() => {
@@ -175,6 +178,7 @@ export function useSpin({
   }
 
   const handleRespin = async () => {
+    setIsSlowingDown(false) // ISSUE-207: リスピン時にオーバーレイをリセット
     setWinner(null)
     setPhase("waiting")
     setPendingWinnerIndex(undefined)
@@ -209,6 +213,7 @@ export function useSpin({
 
   const handleSpinComplete = (winnerName: string, winnerIndex: number) => {
     setPhase("result")
+    setIsSlowingDown(false) // ISSUE-207: スロービルドアップ解除
     spinScheduledRef.current = false
     setPendingWinnerIndex(undefined)
     stopRecordingAfterReveal()
@@ -427,6 +432,7 @@ export function useSpin({
     showConfetti,
     showPrismBurst,
     confettiBurstKey,
+    isSlowingDown,
     spinStartedAtMs,
     spinRemainingMs,
     clockOffsetMs,
