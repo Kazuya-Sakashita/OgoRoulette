@@ -327,7 +327,7 @@
 |----|--------|------|----------|
 | [ISSUE-103](./issue-103-fix-ios-png-fallback-mime-bug.md) | iPhone PNG fallback MIME/拡張子バグ修正 | shareWithFile/downloadVideo/ShareSheet の PNG 対応 | ✅ 完了（commit: e470755） |
 | [ISSUE-104](./issue-104-ios-share-ux-improvement.md) | iOS 向けシェア UX 明確化 | canRecordVideo 公開・ボタンテキスト変更・REC 非表示 | ✅ 完了（commit: e470755 で REC 非表示・ShareSheet 対応） |
-| [ISSUE-105](./issue-105-gif-video-generation-ios.md) | iOS でも動画/GIF でシェアできるようにする | GIF生成 PoC / PNG静止画強化 / サーバー生成検討 | 🔴 未対応 |
+| [ISSUE-105](./issue-105-gif-video-generation-ios.md) | iOS でも動画/GIF でシェアできるようにする | GIF生成 PoC / PNG静止画強化 / サーバー生成検討 | ⏸️ 保留（実装複雑化リスク大・PNG fallback で最低限動作済み・iOS captureStream 対応待ち） |
 
 | **合計** | **105** |
 
