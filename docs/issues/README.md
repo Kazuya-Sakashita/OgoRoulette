@@ -233,7 +233,7 @@
 
 | ID | タイトル | 概要 | ステータス |
 |----|--------|------|----------|
-| [ISSUE-056](./issue-056-auth-x-supabase-setup-required.md) | X ログインには Supabase ダッシュボード設定が必要 | Twitter Developer Portal でアプリ作成 + Supabase ダッシュボードで OAuth 有効化が必要。設定なしでは X ログインが OAuth エラーになる | 🔴 未着手 |
+| [ISSUE-056](./issue-056-auth-x-supabase-setup-required.md) | X ログインには Supabase ダッシュボード設定が必要 | Twitter Developer Portal でアプリ作成 + Supabase ダッシュボードで OAuth 有効化が必要。設定なしでは X ログインが OAuth エラーになる | ✅ 完了（2026-04-06 設定済み） |
 
 ---
 
