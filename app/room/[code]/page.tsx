@@ -353,6 +353,22 @@ export default function RoomPage({ params }: { params: Promise<{ code: string }>
           )
         })()}
 
+        {/* ISSUE-170: 参加者0人時のガイド — QR を前面に */}
+        {isOwner && room._count.members <= 1 && (
+          <div className="mb-3 flex items-center gap-3 px-4 py-3 rounded-2xl border border-primary/30 animate-pulse-once"
+            style={{ background: "rgba(249,115,22,0.08)" }}>
+            <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0" style={{ background: "rgba(249,115,22,0.2)" }}>
+              <svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
+              </svg>
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-primary">QRコードを見せて招待しよう</p>
+              <p className="text-xs text-muted-foreground mt-0.5">友達がスキャンすると全員の画面が同期します</p>
+            </div>
+          </div>
+        )}
+
         {/* QR Code Section - Main Focus for Owner */}
         <section className="mb-6">
           <div className="glass-card rounded-3xl p-6 border border-white/10 text-center">

@@ -9,7 +9,7 @@ import { useRouter } from "next/navigation"
 import { startSupabaseOAuth, startLineAuth } from "@/lib/auth"
 import { validateReturnTo } from "@/lib/safe-redirect"
 import { RouletteWheel } from "@/components/roulette-wheel"
-import { QrCode, Users } from "lucide-react"
+import { Users } from "lucide-react"
 
 // ISSUE-096: Demo spin names shown on the welcome page
 const DEMO_NAMES = ["さくら", "たろう", "はな"]
@@ -245,31 +245,30 @@ export default function WelcomePage() {
         {/* ===== 右カラム: ルーム機能 + ログインボタン群 ===== */}
         <div className="flex flex-col items-center lg:items-stretch lg:flex-1 w-full lg:pt-4">
 
-        {/* Room feature section — みんなで参加 */}
+        {/* ISSUE-170: Room feature — 3ステップ形式オンボーディング */}
         <div className="w-full mb-6 animate-fade-in-up-delay-3">
           <div className="p-4 rounded-2xl bg-white/5 border border-white/10">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
-                style={{ background: "linear-gradient(135deg, #F97316, #EC4899)" }}>
-                <Users className="w-4 h-4 text-white" />
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-foreground">友達みんなで参加できる</p>
-                <p className="text-xs text-muted-foreground">QRコードを見せるだけ — 全員の画面が同時に動く</p>
-              </div>
+            <div className="flex items-center gap-2 mb-3">
+              <Users className="w-4 h-4 text-primary" />
+              <p className="text-sm font-semibold text-foreground">友達みんなで一緒に回せる</p>
             </div>
             <div className="flex items-center gap-2">
-              <div className="flex-1 flex items-center gap-2 px-3 py-2 rounded-xl bg-white/5 border border-white/10">
-                <QrCode className="w-3.5 h-3.5 text-primary shrink-0" />
-                <span className="text-xs text-muted-foreground">QRコードでワンタップ参加</span>
-              </div>
-              <Link
-                href="/how-to-use"
-                className="text-xs text-primary font-medium hover:underline whitespace-nowrap"
-              >
-                詳しく →
-              </Link>
+              {[
+                { icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 9h.01M9 15h.01M15 9h.01M15 15h.01M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>, label: "ルームを作る" },
+                { icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>, label: "QRを見せる" },
+                { icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>, label: "一緒に回す！" },
+              ].map((step, i) => (
+                <div key={i} className="flex-1 flex flex-col items-center gap-1.5 py-2 px-1 rounded-xl bg-white/5 text-center">
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center text-primary" style={{ background: "rgba(249,115,22,0.15)" }}>
+                    {step.icon}
+                  </div>
+                  <span className="text-[10px] text-muted-foreground leading-tight">{step.label}</span>
+                </div>
+              ))}
             </div>
+            <Link href="/how-to-use" className="mt-2.5 flex items-center justify-center gap-1 text-xs text-primary/70 hover:text-primary transition-colors">
+              使い方を詳しく見る →
+            </Link>
           </div>
         </div>
 

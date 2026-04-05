@@ -576,6 +576,26 @@ export function WinnerCard({
                     <Crown className="w-6 h-6 ml-auto shrink-0" style={{ color: "#FBBF24" }} />
                   </motion.div>
 
+                  {/* ISSUE-169: 金額を Phase B ヘッダー直下に表示 */}
+                  {hasBillInfo && (
+                    <div className="flex items-center justify-between mb-5 px-4 py-3 rounded-2xl" style={{ background: `${color}18`, border: `1px solid ${color}35` }}>
+                      <div className="text-center">
+                        <p className="text-xs text-white/50">奢り</p>
+                        <p className="text-xl font-black" style={{ color }}>{formatCurrency(treat)}</p>
+                      </div>
+                      <div className="w-px h-8 bg-white/10" />
+                      <div className="text-center">
+                        <p className="text-xs text-white/50">割り勘（{participants.length}人）</p>
+                        <p className="text-xl font-black text-white">{formatCurrency(split)}</p>
+                      </div>
+                      <div className="w-px h-8 bg-white/10" />
+                      <div className="text-center">
+                        <p className="text-xs text-white/50">合計</p>
+                        <p className="text-lg font-bold text-white/70">{formatCurrency(bill)}</p>
+                      </div>
+                    </div>
+                  )}
+
                   {/* ── PRIMARY CTA: シェアする (ISSUE-181 + ISSUE-183) ── */}
                   <motion.button
                     onClick={handlePrimaryShare}
