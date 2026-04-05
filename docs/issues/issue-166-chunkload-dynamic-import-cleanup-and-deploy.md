@@ -76,7 +76,7 @@ git push
 
 ## ステータス
 
-**完了（コミット待ち）** — 2026-04-04
+✅ 完了 — 2026-04-06（コミット・デプロイ済み）
 実装済み。`app/home/page.tsx` の `next/dynamic` を全廃し static import に変換。ISSUE-168（PrismBurst）と同時コミット予定。
 
 ## 優先度

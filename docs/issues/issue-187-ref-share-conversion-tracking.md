@@ -72,10 +72,10 @@ const handleJoinComplete = () => {
 
 ## 完了条件
 
-- [ ] `ref=share` パラメータ付きアクセス時に `share_join_click` イベントが送信される
-- [ ] ルーム参加完了時に `share_join_complete` が送信される
+- [x] `ref=share` パラメータ付きアクセス時に `share_join_click` イベントが送信される
+- [x] ルーム参加完了時に `share_join_complete` が送信される
 - [ ] Vercel Analytics ダッシュボードでイベントが確認できる
-- [ ] `npm run build` でエラーなし
+- [x] `npm run build` でエラーなし
 
 ## 影響範囲
 
@@ -107,3 +107,6 @@ const handleJoinComplete = () => {
 - issue-183（ウイルスループURL実装）
 - issue-181（Phase B シェアCTA）
 - issue-190（Analyticsイベント体系）
+
+## ステータス
+✅ 完了 — 2026-04-06（app/join/[code]/page.tsx に useSearchParams + trackEvent 追加）

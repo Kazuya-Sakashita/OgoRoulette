@@ -90,7 +90,7 @@ git push
 
 ## ステータス
 
-**完了（コミット待ち）** — 2026-04-04
+✅ 完了 — 2026-04-06（コミット・デプロイ済み）
 `components/prism-burst.tsx` 実装済み。WebKit Safari バグ（mask-image + filter 同一要素問題）を外側/内側要素分離で解消。
 `app/home/page.tsx` および `app/room/[code]/play/page.tsx` で PrismBurst 統合済み。
 ISSUE-166 と同時コミット予定。

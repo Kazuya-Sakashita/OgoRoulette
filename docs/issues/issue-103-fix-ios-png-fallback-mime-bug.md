@@ -120,3 +120,6 @@ const ext = blob.type.startsWith("image/")
 iPhoneユーザー（スマホユーザーの大多数）がシェアできない状態は、
 OgoRoulette のバズ導線を半分以上失わせている。
 本 Issue はデプロイブロッカー（Critical）として扱う。
+
+## ステータス
+✅ 完了 — 2026-04-06（share-sheet.tsx の isImageBlob 判定 + share-service.ts の MIME/拡張子修正）

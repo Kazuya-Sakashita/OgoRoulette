@@ -5,8 +5,9 @@ import { Button } from "@/components/ui/button"
 import { ArrowLeft, Users, Loader2, Plus } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { getDisplayName } from "@/lib/display-name"
+import { trackEvent, AnalyticsEvent } from "@/lib/analytics"
 
 interface Member {
   id: string
@@ -35,6 +36,7 @@ interface Room {
 export default function JoinRoomPage({ params }: { params: Promise<{ code: string }> }) {
   const { code } = use(params)
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [room, setRoom] = useState<Room | null>(null)
   const [loading, setLoading] = useState(true)
   const [joining, setJoining] = useState(false)
@@ -47,6 +49,13 @@ export default function JoinRoomPage({ params }: { params: Promise<{ code: strin
   useEffect(() => {
     fetchRoom()
   }, [code])
+
+  // ISSUE-187: ref=share 経由でのアクセスを計測
+  useEffect(() => {
+    if (searchParams.get("ref") === "share") {
+      trackEvent(AnalyticsEvent.SHARE_JOIN_CLICK)
+    }
+  }, [searchParams])
 
   const fetchRoom = async () => {
     try {
@@ -102,6 +111,10 @@ export default function JoinRoomPage({ params }: { params: Promise<{ code: strin
         return
       }
 
+      // ISSUE-187: ref=share 経由での参加完了を計測
+      if (searchParams.get("ref") === "share") {
+        trackEvent(AnalyticsEvent.SHARE_JOIN_COMPLETE)
+      }
       router.push(`/room/${code}`)
     } catch {
       setError("参加に失敗しました")

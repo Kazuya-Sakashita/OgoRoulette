@@ -111,7 +111,7 @@ RouletteWheel 側の実装がシンプルになる。
 
 ## ステータス
 
-**完了（デプロイ待ち）** — 2026-04-04
+✅ 完了 — 2026-04-06（デプロイ済み）
 - `spinElapsedMs`（経過時間ベース）→ `spinRemainingMs`（残り時間ベース）に prop 設計を変更
 - spin API に `X-Server-Time` ヘッダーを追加、クライアントで clock offset を計測
 - elapsed >= 5500ms（バウンス含む全体時間）のとき即結果表示にフォールバック
