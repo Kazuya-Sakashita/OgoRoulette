@@ -199,21 +199,22 @@ export function RoomPlayOverlays({
         </div>
       )}
 
-      {showWinnerCard && (
+      {/* ISSUE-218: winner && ガードを追加して winner=null 時の winner!.name TypeError を防ぐ */}
+      {showWinnerCard && winner && (
         <WinnerCard
-          winner={winner!.name}
-          winnerIndex={winner!.index}
+          winner={winner.name}
+          winnerIndex={winner.index}
           onClose={() => { setWinner(null); setPhase("waiting"); resetRecording() }}
-          totalBill={winner!.totalAmount}
-          treatAmount={winner!.treatAmount}
-          splitAmount={winner!.perPersonAmount}
+          totalBill={winner.totalAmount}
+          treatAmount={winner.treatAmount}
+          splitAmount={winner.perPersonAmount}
           participants={participants}
           isOwner={isOwner}
           roomCode={roomCode}
           onRespin={isOwner ? handleRespin : undefined}
-          treatCount={roomRanking?.find((r) => r.name === winner!.name)?.count}
+          treatCount={roomRanking?.find((r) => r.name === winner.name)?.count}
           treatTitle={(() => {
-            const c = roomRanking?.find((r) => r.name === winner!.name)?.count
+            const c = roomRanking?.find((r) => r.name === winner.name)?.count
             return c ? getTreatTitle(c) : undefined
           })()}
           ranking={roomRanking}
