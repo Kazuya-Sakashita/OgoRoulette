@@ -397,40 +397,36 @@
 
 ---
 
-## 🗓 推奨実装順序
+## 📊 6軸スコア改善 — 70点→80点ロードマップ（2026-04-06）
 
-### フェーズ1: リリースブロッカー対応（〜1週間）
+> 現スコア: **70/100**（G-STACK:10 HEART:14 AARRR:11 Kano:7 感情:14 技術:14）
+> **感情 14/20 < 15 → 演出改善優先ルール発動中**
 
-```
-ISSUE-001 → ISSUE-002 → ISSUE-003 → ISSUE-004（4件セット、1日〜2日）
-ISSUE-007 Step1（MediaRecorder コーデック選択、1日）
-ISSUE-008（WinnerCard UX 修正、1日）
-ISSUE-005（spin-complete retry 追加、1日）
-```
+| ID | タイトル | 概要 | ステータス | 期待スコア |
+|----|--------|------|----------|----------|
+| [ISSUE-207](./issue-207-emotional-peak-buildup.md) | 感情ピーク強化 — ルーレット停止前の緊張感ビルドアップ演出 | パルスオーバーレイ・フラッシュ・名前リビール演出 | ✅ 完了（2026-04-06） | 感情+3 |
+| [ISSUE-208](./issue-208-next-font-migration.md) | Google Fonts CDN → next/font/google 移行 | フォント読み込みのパフォーマンス最適化 | 📋 未着手 | 技術+0.5 |
+| [ISSUE-209](./issue-209-test-coverage.md) | コンポーネント・API・E2Eテスト整備 | テストカバレッジ向上 | 📋 未着手 | 技術+0.5 |
+| [ISSUE-210](./issue-210-retention-group-reuse.md) | リテンション強化 — グループ再利用ショートカット | WinnerCard後CTA・ワンタップ再開・PWA shortcuts | 📋 未着手 | AARRR+3 |
+| [ISSUE-211](./issue-211-aarrr-acquisition-seo.md) | AARRR-Acquisition強化 — GSC登録 + OGP確認 + SEO | Google Search Console登録・sitemap・キーワード最適化 | 📋 未着手 | AARRR+2 |
+| [ISSUE-212](./issue-212-member-join-warmup-animation.md) | 感情スコア向上 — 参加者入場アニメーション + ルーム待機ウォームアップ | 入場スプリングアニメ・熱量メーター・スピン促進テキスト | 📋 未着手 | 感情+2 |
+| [ISSUE-213](./issue-213-post-winner-emoji-reaction.md) | 感情スコア向上 — 当選発表後の全員参加型絵文字リアクション | WinnerCard全員表示・絵文字パレット・フローティング演出 | 📋 未着手 | 感情+3 |
+| [ISSUE-214](./issue-214-dynamic-winner-share-card.md) | AARRR-Referral強化 — 当選者名入り動的シェアカード | /result/[id] ページ・動的OGP・名前入り画像生成 | 📋 未着手 | AARRR+2 |
+| [ISSUE-215](./issue-215-monetization-phase1-premium-theme.md) | マネタイズ Phase 1 — プレミアムテーマ + ブランドルームモード | テーマ選択UI・Stripe連携・フリーミアム設計 | 📋 未着手 | Revenue+2 |
 
-### フェーズ2: 品質・体験向上（〜2週間）
+---
 
-```
-ISSUE-006（handleRespin 楽観的更新改善）
-ISSUE-010（ルーム期限表示）
-ISSUE-011（SPIN ボタンヒントテキスト）
-ISSUE-013（分析基盤セットアップ）
-ISSUE-015（プレイページテスト追加）
-```
-
-### フェーズ3: 成長・収益化（〜1ヶ月）
+## 🗓 次着手順（スコアルール準拠）
 
 ```
-ISSUE-012（OG 画像リニューアル）
-ISSUE-014（常設グループ機能）
-ISSUE-009（Realtime 移行）
-ISSUE-007 Step2（ffmpeg.wasm MP4 変換）
-```
+感情 14/20 < 15 → 演出優先:
+  ISSUE-210 → ISSUE-212 → ISSUE-213（感情を15+に引き上げ）
 
-### フェーズ4: エンゲージメント強化（〜3ヶ月）
+感情 15+ 達成後:
+  ISSUE-211（SEO・Acquisition）→ ISSUE-214（Referral）→ ISSUE-215（Revenue）
 
-```
-ISSUE-016（PWA + プッシュ通知）
+技術負債:
+  ISSUE-208（next/font）→ ISSUE-209（テスト）
 ```
 
 ---
