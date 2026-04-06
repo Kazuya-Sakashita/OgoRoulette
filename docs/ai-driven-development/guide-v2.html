@@ -381,7 +381,7 @@ strong { font-weight: 700; color: var(--slate-900); }
 
   <div class="page-footer page-footer-white">
     <span>AI駆動開発 完全教科書 ver.2.0</span>
-    <span>1 / 31</span>
+    <span>1 / 32</span>
   </div>
 </div>
 
@@ -464,7 +464,7 @@ strong { font-weight: 700; color: var(--slate-900); }
 
   <div class="page-footer">
     <span>AI駆動開発 完全教科書 ver.2.0</span>
-    <span>2 / 31</span>
+    <span>2 / 32</span>
   </div>
 </div>
 
@@ -508,7 +508,7 @@ strong { font-weight: 700; color: var(--slate-900); }
 
   <div class="page-footer">
     <span>AI駆動開発 完全教科書 ver.2.0</span>
-    <span>3 / 31</span>
+    <span>3 / 32</span>
   </div>
 </div>
 
@@ -589,7 +589,7 @@ strong { font-weight: 700; color: var(--slate-900); }
 
   <div class="page-footer">
     <span>AI駆動開発 完全教科書 ver.2.0</span>
-    <span>4 / 31</span>
+    <span>4 / 32</span>
   </div>
 </div>
 
@@ -668,7 +668,7 @@ strong { font-weight: 700; color: var(--slate-900); }
 
   <div class="page-footer">
     <span>AI駆動開発 完全教科書 ver.2.0</span>
-    <span>5 / 31</span>
+    <span>5 / 32</span>
   </div>
 </div>
 
@@ -733,7 +733,7 @@ strong { font-weight: 700; color: var(--slate-900); }
 
   <div class="page-footer">
     <span>AI駆動開発 完全教科書 ver.2.0</span>
-    <span>6 / 31</span>
+    <span>6 / 32</span>
   </div>
 </div>
 
@@ -808,7 +808,7 @@ strong { font-weight: 700; color: var(--slate-900); }
 
   <div class="page-footer">
     <span>AI駆動開発 完全教科書 ver.2.0</span>
-    <span>7 / 31</span>
+    <span>7 / 32</span>
   </div>
 </div>
 
@@ -877,7 +877,7 @@ ISSUE-54: 縦向き・横向き切替時のレイアウト崩れ修正</div>
 
   <div class="page-footer">
     <span>AI駆動開発 完全教科書 ver.2.0</span>
-    <span>8 / 31</span>
+    <span>8 / 32</span>
   </div>
 </div>
 
@@ -934,7 +934,7 @@ ISSUE-54: 縦向き・横向き切替時のレイアウト崩れ修正</div>
 
   <div class="page-footer">
     <span>AI駆動開発 完全教科書 ver.2.0</span>
-    <span>9 / 31</span>
+    <span>9 / 32</span>
   </div>
 </div>
 
@@ -980,7 +980,7 @@ ISSUE-54: 縦向き・横向き切替時のレイアウト崩れ修正</div>
 
   <div class="page-footer">
     <span>AI駆動開発 完全教科書 ver.2.0</span>
-    <span>10 / 31</span>
+    <span>10 / 32</span>
   </div>
 </div>
 
@@ -1056,7 +1056,7 @@ ISSUE-54: 縦向き・横向き切替時のレイアウト崩れ修正</div>
 
   <div class="page-footer">
     <span>AI駆動開発 完全教科書 ver.2.0</span>
-    <span>11 / 31</span>
+    <span>11 / 32</span>
   </div>
 </div>
 
@@ -1142,7 +1142,7 @@ ISSUE-54: 縦向き・横向き切替時のレイアウト崩れ修正</div>
 
   <div class="page-footer">
     <span>AI駆動開発 完全教科書 ver.2.0</span>
-    <span>12 / 31</span>
+    <span>12 / 32</span>
   </div>
 </div>
 
@@ -1205,7 +1205,7 @@ ISSUE-54: 縦向き・横向き切替時のレイアウト崩れ修正</div>
 
   <div class="page-footer">
     <span>AI駆動開発 完全教科書 ver.2.0</span>
-    <span>13 / 31</span>
+    <span>13 / 32</span>
   </div>
 </div>
 
@@ -1258,7 +1258,7 @@ ISSUE-54: 縦向き・横向き切替時のレイアウト崩れ修正</div>
 
   <div class="page-footer">
     <span>AI駆動開発 完全教科書 ver.2.0</span>
-    <span>14 / 31</span>
+    <span>14 / 32</span>
   </div>
 </div>
 
@@ -1329,56 +1329,79 @@ ISSUE-54: 縦向き・横向き切替時のレイアウト崩れ修正</div>
                                │
                                └─ <span class="flow-yes">YES</span> → <span class="flow-fw">全FWで継続改善</span></div>
 
-  <h3 style="margin-top: 2mm;">G-STACKによるISSUE実装判断フロー</h3>
-  <div class="flow-chart-box" style="font-size: 8pt; line-height: 1.8;">
-ISSUEをG-STACKで評価する
-    │
-    ├─ Goal と合致するか？
-    │   └─ NO → 却下（スコアの根拠なし）
-    │
-    ├─ Strategy に沿っているか？
-    │   └─ NO → 優先度を下げる
-    │
-    ├─ 実装リスク（Risk）は許容範囲か？
-    │   ├─ HIGH → <span style="color:#fcd34d;">⏸️ 保留（保留理由を記録）</span>
-    │   └─ LOW → 実装へ進む
-    │
-    └─ 感情スコアは 15/20 以上か？
-        ├─ NO → <span style="color:#c4b5fd;">演出改善ISSUEを機能追加より優先</span>
-        └─ YES → 機能追加・技術改善も並行可</div>
-
-  <div class="cards col2" style="gap: 2mm; margin-top: 2mm;">
-    <div class="card" style="background: #fef3c7; border: 1px solid #fde68a; padding: 2mm 3mm;">
-      <h3 style="color: #92400e; font-size: 9pt; margin: 0 0 1mm;">⏸️ ISSUE保留の判断基準</h3>
-      <ul style="font-size: 7.5pt; margin: 0; line-height: 1.6;">
-        <li><strong>実装複雑化リスクが高い</strong>（既存パイプラインを壊す可能性）</li>
-        <li><strong>外部依存がある</strong>（ブラウザAPI・サードパーティ待ち）</li>
-        <li><strong>スコア貢献が低い</strong>（他ISSUEの方が費用対効果が高い）</li>
-        <li>過去に失敗経験がある</li>
-      </ul>
-      <p style="font-size: 7.5pt; margin: 1mm 0 0; color: #92400e;">→ 保留ISSUEには<strong>保留理由・再検討タイミング</strong>を必ず記録する</p>
-    </div>
-    <div class="card" style="background: #f0fdf4; border: 1px solid #bbf7d0; padding: 2mm 3mm;">
-      <h3 style="color: #065f46; font-size: 9pt; margin: 0 0 1mm;">🔄 定期評価サイクル（推奨）</h3>
-      <ul style="font-size: 7.5pt; margin: 0; line-height: 1.6;">
-        <li><strong>毎週</strong>: 実装済みISSUEのステータス更新</li>
-        <li><strong>隔週</strong>: G-STACKで未着手ISSUEを再評価</li>
-        <li><strong>月次</strong>: 6軸スコアを再計算・ロードマップ更新</li>
-        <li><strong>保留ISSUEのレビュー</strong>: 外部依存が解消されていないか確認</li>
-      </ul>
-      <p style="font-size: 7.5pt; margin: 1mm 0 0; color: #065f46;">AIに「第N回評価を実施して」と渡すだけで6軸評価が返ってくる</p>
-    </div>
-  </div>
-
-  <div class="callout purple" style="margin-top: 2mm; padding: 2mm 3mm;">
+  <div class="callout purple" style="margin-top: 3mm; padding: 2mm 3mm;">
     <span class="callout-icon">🤖</span>
-    <div class="callout-body" style="font-size: 8pt;"><strong>AIはフレームワーク切り替え・ISSUE評価のパートナー</strong>
-    「このISSUEをG-STACKで評価して、実装すべきか保留すべか判断して」→ AIがリスク・スコア貢献・代替案を提示する。感情スコアが低い場合は「演出改善ISSUEを優先して」とルール化する。評価の言語化がAI活用の精度を劇的に上げる。</div>
+    <div class="callout-body" style="font-size: 8pt;"><strong>AIはフレームワーク切り替えのパートナー</strong>
+    「今どのFWを使うべきか」をAIに問えば的確な答えが返る。「このアプリの現状を評価して」→ AIが「フェーズ3に移行すべき。HEARTのHappiness軸から着手を」と提案してくれる。次ページのG-STACK判断フローと組み合わせてISSUEの実装/保留を決める。</div>
   </div>
 
   <div class="page-footer">
     <span>AI駆動開発 完全教科書 ver.2.0</span>
-    <span>15 / 31</span>
+    <span>15 / 32</span>
+  </div>
+</div>
+
+<!-- ========== PAGE 16 (NEW E-2): G-STACK ISSUE判断 + 保留 + 定期評価 ========== -->
+<div class="page">
+  <div class="page-stripe stripe-purple"></div>
+  <div style="padding-top: 4mm;">
+    <div class="chapter-header" style="border-left-color: var(--purple); margin-bottom: 3mm;">
+      <div class="ch-num" style="color: var(--purple);">Chapter 04.5-E continued &nbsp;<span class="v2-badge">NEW</span></div>
+      <div class="ch-title">G-STACK × ISSUE管理の実践</div>
+      <div class="ch-sub">実装/保留の判断フロー・ISSUE保留基準・定期評価サイクル</div>
+    </div>
+  </div>
+
+  <h3 style="margin-top: 0;">G-STACKによるISSUE実装判断フロー</h3>
+  <div class="flow-chart-box" style="font-size: 8.5pt; line-height: 1.9;">
+ISSUEをG-STACKで評価する
+    │
+    ├─ Goal と合致するか？
+    │   └─ <span class="flow-no">NO</span>  → 却下（スコアの根拠なし）
+    │
+    ├─ Strategy に沿っているか？
+    │   └─ <span class="flow-no">NO</span>  → 優先度を下げる
+    │
+    ├─ 実装リスク（Risk）は許容範囲か？
+    │   ├─ <span class="flow-no">HIGH</span> → <span class="flow-fw">⏸️ 保留</span>（保留理由・再検討タイミングを記録）
+    │   └─ <span class="flow-yes">LOW</span>  → 実装へ進む
+    │
+    └─ 感情スコアは 15/20 以上か？
+        ├─ <span class="flow-no">NO</span>  → <span class="flow-fw">演出改善ISSUEを機能追加より優先</span>
+        └─ <span class="flow-yes">YES</span> → 機能追加・技術改善も並行可</div>
+
+  <div class="cards col2" style="gap: 2.5mm; margin-top: 3mm;">
+    <div class="card" style="background: #fef3c7; border: 1px solid #fde68a; padding: 3mm 3.5mm;">
+      <h3 style="color: #92400e; font-size: 9.5pt; margin: 0 0 1.5mm;">⏸️ ISSUE保留の判断基準</h3>
+      <ul style="font-size: 8pt; margin: 0; line-height: 1.7;">
+        <li><strong>実装複雑化リスクが高い</strong><br>（既存パイプラインを壊す可能性）</li>
+        <li><strong>外部依存がある</strong><br>（ブラウザAPI・サードパーティ待ち）</li>
+        <li><strong>スコア貢献が低い</strong><br>（他ISSUEの方が費用対効果が高い）</li>
+        <li>過去に失敗経験がある</li>
+      </ul>
+      <p style="font-size: 8pt; margin: 2mm 0 0; color: #92400e; font-weight: 600;">→ 保留ISSUEには保留理由・再検討タイミングを必ず記録する</p>
+    </div>
+    <div class="card" style="background: #f0fdf4; border: 1px solid #bbf7d0; padding: 3mm 3.5mm;">
+      <h3 style="color: #065f46; font-size: 9.5pt; margin: 0 0 1.5mm;">🔄 定期評価サイクル（推奨）</h3>
+      <ul style="font-size: 8pt; margin: 0; line-height: 1.7;">
+        <li><strong>毎週</strong>: 実装済みISSUEのステータス更新</li>
+        <li><strong>隔週</strong>: G-STACKで未着手ISSUEを再評価</li>
+        <li><strong>月次</strong>: 6軸スコアを再計算 + ロードマップ更新</li>
+        <li><strong>保留ISSUEのレビュー</strong>: 外部依存が解消されたか確認</li>
+      </ul>
+      <p style="font-size: 8pt; margin: 2mm 0 0; color: #065f46; font-weight: 600;">AIに「第N回評価を実施して」と渡すだけで6軸評価が返る</p>
+    </div>
+  </div>
+
+  <div class="callout purple" style="margin-top: 3mm;">
+    <span class="callout-icon">🤖</span>
+    <div class="callout-body"><strong>AIはフレームワーク切り替え・ISSUE評価のパートナー</strong>
+    「このISSUEをG-STACKで評価して、実装すべきか保留すべきか判断して」→ AIがリスク・スコア貢献・代替案を提示する。感情スコアが低い場合は「演出改善ISSUEを優先して」とルール化する。評価の言語化がAI活用の精度を劇的に上げる。</div>
+  </div>
+
+  <div class="page-footer">
+    <span>AI駆動開発 完全教科書 ver.2.0</span>
+    <span>16 / 32</span>
   </div>
 </div>
 
@@ -1425,7 +1448,7 @@ const handleSpinStop = (event: BroadcastEvent) => {
 
   <div class="page-footer">
     <span>AI駆動開発 完全教科書 ver.2.0</span>
-    <span>16 / 31</span>
+    <span>17 / 32</span>
   </div>
 </div>
 
@@ -1480,7 +1503,7 @@ G-STACK評価: Goal適合◯ Risk低い → 実装推奨
 
   <div class="page-footer">
     <span>AI駆動開発 完全教科書 ver.2.0</span>
-    <span>17 / 31</span>
+    <span>18 / 32</span>
   </div>
 </div>
 
@@ -1547,7 +1570,7 @@ G-STACK評価: Goal適合◯ Risk低い → 実装推奨
 
   <div class="page-footer">
     <span>AI駆動開発 完全教科書 ver.2.0</span>
-    <span>18 / 31</span>
+    <span>19 / 32</span>
   </div>
 </div>
 
@@ -1617,7 +1640,7 @@ G-STACK評価: Goal適合◯ Risk低い → 実装推奨
 
   <div class="page-footer">
     <span>AI駆動開発 完全教科書 ver.2.0</span>
-    <span>19 / 31</span>
+    <span>20 / 32</span>
   </div>
 </div>
 
@@ -1683,7 +1706,7 @@ G-STACK評価: Goal適合◯ Risk低い → 実装推奨
 
   <div class="page-footer">
     <span>AI駆動開発 完全教科書 ver.2.0</span>
-    <span>20 / 31</span>
+    <span>21 / 32</span>
   </div>
 </div>
 
@@ -1724,7 +1747,7 @@ G-STACK評価: Goal適合◯ Risk低い → 実装推奨
 
   <div class="page-footer">
     <span>AI駆動開発 完全教科書 ver.2.0</span>
-    <span>21 / 31</span>
+    <span>22 / 32</span>
   </div>
 </div>
 
@@ -1781,7 +1804,7 @@ G-STACK評価: Goal適合◯ Risk低い → 実装推奨
 
   <div class="page-footer">
     <span>AI駆動開発 完全教科書 ver.2.0</span>
-    <span>22 / 31</span>
+    <span>23 / 32</span>
   </div>
 </div>
 
@@ -1836,7 +1859,7 @@ G-STACK評価: Goal適合◯ Risk低い → 実装推奨
 
   <div class="page-footer">
     <span>AI駆動開発 完全教科書 ver.2.0</span>
-    <span>23 / 31</span>
+    <span>24 / 32</span>
   </div>
 </div>
 
@@ -1891,7 +1914,7 @@ G-STACK評価: Goal適合◯ Risk低い → 実装推奨
 
   <div class="page-footer">
     <span>AI駆動開発 完全教科書 ver.2.0</span>
-    <span>24 / 31</span>
+    <span>25 / 32</span>
   </div>
 </div>
 
@@ -1936,7 +1959,7 @@ G-STACK評価: Goal適合◯ Risk低い → 実装推奨
 
   <div class="page-footer">
     <span>AI駆動開発 完全教科書 ver.2.0</span>
-    <span>25 / 31</span>
+    <span>26 / 32</span>
   </div>
 </div>
 
@@ -1999,7 +2022,7 @@ G-STACK評価: Goal適合◯ Risk低い → 実装推奨
 
   <div class="page-footer">
     <span>AI駆動開発 完全教科書 ver.2.0</span>
-    <span>26 / 31</span>
+    <span>27 / 32</span>
   </div>
 </div>
 
@@ -2063,7 +2086,7 @@ G-STACK評価: Goal適合◯ Risk低い → 実装推奨
 
   <div class="page-footer">
     <span>AI駆動開発 完全教科書 ver.2.0</span>
-    <span>27 / 31</span>
+    <span>28 / 32</span>
   </div>
 </div>
 
@@ -2135,7 +2158,7 @@ G-STACK評価: Goal適合◯ Risk低い → 実装推奨
 
   <div class="page-footer">
     <span>AI駆動開発 完全教科書 ver.2.0</span>
-    <span>28 / 31</span>
+    <span>29 / 32</span>
   </div>
 </div>
 
@@ -2215,7 +2238,7 @@ G-STACK評価: Goal適合◯ Risk低い → 実装推奨
 
   <div class="page-footer">
     <span>AI駆動開発 完全教科書 ver.2.0</span>
-    <span>29 / 31</span>
+    <span>30 / 32</span>
   </div>
 </div>
 
@@ -2273,7 +2296,7 @@ G-STACK評価: Goal適合◯ Risk低い → 実装推奨
 
   <div class="page-footer">
     <span>AI駆動開発 完全教科書 ver.2.0</span>
-    <span>30 / 31</span>
+    <span>31 / 32</span>
   </div>
 </div>
 
@@ -2365,7 +2388,7 @@ G-STACK評価: Goal適合◯ Risk低い → 実装推奨
 
   <div class="page-footer">
     <span>AI駆動開発 完全教科書 ver.2.0</span>
-    <span>31 / 31</span>
+    <span>32 / 32</span>
   </div>
 </div>
 
