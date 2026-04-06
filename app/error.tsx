@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button"
 import { AlertCircle } from "lucide-react"
 import Link from "next/link"
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 
 function isChunkLoadError(error: Error): boolean {
   return (
@@ -21,6 +21,8 @@ export default function GlobalError({
   error: Error & { digest?: string }
   reset: () => void
 }) {
+  const [isAutoReloading, setIsAutoReloading] = useState(false)
+
   useEffect(() => {
     console.error("[GlobalError] digest:", error.digest, "\n", error)
   }, [error])
@@ -40,6 +42,7 @@ export default function GlobalError({
       const nextCount = isExpired ? 1 : data.count + 1
       if (isExpired || data.count < MAX_RELOADS) {
         sessionStorage.setItem(RELOAD_KEY, JSON.stringify({ count: nextCount, since: isExpired ? Date.now() : data.since }))
+        setIsAutoReloading(true)
         // クエリパラメータでブラウザ/CDN キャッシュをバイパスして最新 HTML を取得
         window.location.href =
           window.location.pathname +
@@ -53,7 +56,7 @@ export default function GlobalError({
   }, [error])
 
   // リロード実行中はブランク表示
-  if (isChunkLoadError(error)) {
+  if (isAutoReloading) {
     return <main className="min-h-screen bg-background" />
   }
 
@@ -70,9 +73,16 @@ export default function GlobalError({
         </div>
 
         <h1 className="text-xl font-bold text-foreground mb-3">予期しないエラーが発生しました</h1>
-        <p className="text-sm text-muted-foreground mb-8">
-          しばらく時間をおいて、もう一度お試しください。
-        </p>
+        {isChunkLoadError(error) ? (
+          <p className="text-sm text-muted-foreground mb-8">
+            ページの読み込みに失敗しました。ブラウザを完全に閉じて再度開くか、
+            PCの場合は Ctrl+Shift+R（Mac: ⌘+Shift+R）でキャッシュをクリアしてください。
+          </p>
+        ) : (
+          <p className="text-sm text-muted-foreground mb-8">
+            しばらく時間をおいて、もう一度お試しください。
+          </p>
+        )}
 
         <div className="flex flex-col gap-3">
           <Button

@@ -72,6 +72,8 @@ interface RoomPlayBodyProps {
   spinError: string | null
   handleSpin: () => void
   showResult: (room: Room | null) => void
+  // ISSUE-225: メンバー退室ボタン
+  handleLeaveRoom?: () => void
 }
 
 export function RoomPlayBody({
@@ -91,12 +93,22 @@ export function RoomPlayBody({
   wheelSize, wheelRotationRef,
   pendingWinnerIndex, spinStartedAtMs, spinRemainingMs,
   handleSpinComplete, handleSpinStart, handleSlowingDown, handleNearMiss,
-  countdownValue, spinError, handleSpin, showResult,
+  countdownValue, spinError, handleSpin, showResult, handleLeaveRoom,
 }: RoomPlayBodyProps) {
   // ISSUE-212: 新規参加者を検出して ✨ スパーク演出
   const isFirstRenderRef = useRef(true)
   const prevMemberIdsRef = useRef<Set<string>>(new Set())
   const [newMemberIds, setNewMemberIds] = useState<Set<string>>(new Set())
+
+  // ISSUE-226: 参加者が2人以上になったとき、金額入力を1度だけ自動展開する
+  const hasAutoOpenedBillRef = useRef(false)
+
+  useEffect(() => {
+    if (isOwner && participants.length >= 2 && !hasAutoOpenedBillRef.current) {
+      hasAutoOpenedBillRef.current = true
+      setShowBillInput(true)
+    }
+  }, [participants.length]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const currentIds = new Set(room.members.map((m) => m.id))
@@ -118,7 +130,7 @@ export function RoomPlayBody({
   }, [room.members])
 
   return (
-    <div className="mx-auto max-w-[390px] md:max-w-lg min-h-dvh flex flex-col px-5 py-6">
+    <div className="mx-auto max-w-[390px] md:max-w-[680px] min-h-dvh flex flex-col px-5 py-6 md:px-8">
 
       {/* Header */}
       <header className="flex items-center gap-3 mb-4">
@@ -268,6 +280,7 @@ export function RoomPlayBody({
           spinError={spinError}
           handleSpin={handleSpin}
           showResult={showResult}
+          handleLeaveRoom={handleLeaveRoom}
         />
 
         {isOwner && (phase === "result" || (phase === "waiting" && participants.length < 2)) && (

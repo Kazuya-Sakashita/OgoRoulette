@@ -70,7 +70,7 @@ export default function RoomError({
           ルームの読み込みに失敗しました
         </h1>
         <p className="text-sm text-muted-foreground mb-8">
-          ルーレットの結果は保存されています。再試行してください。
+          通信環境を確認して、もう一度お試しください。
         </p>
 
         <div className="flex flex-col gap-3">

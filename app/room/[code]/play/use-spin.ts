@@ -64,6 +64,8 @@ export function useSpin({
   const [countdownValue, setCountdownValue] = useState<number | null>(null)
 
   const spinScheduledRef = useRef(false)
+  // ISSUE-223: 連打防止 — React の非同期 state 更新より先に同期フラグでロックする
+  const isSpinningRef = useRef(false)
   const pendingMemberWinnerRef = useRef<WinnerData | null>(null)
   const prevSessionIdRef = useRef<string | null | undefined>(undefined)
   const confettiTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -131,6 +133,10 @@ export function useSpin({
 
   const handleSpin = async () => {
     if (phase !== "waiting" || participants.length < 2) return
+    // ISSUE-223: 連打防止 — setPhase("preparing") より前に同期フラグでロックする
+    if (isSpinningRef.current) return
+    isSpinningRef.current = true
+
     unlockAudioContext()
     playPressSound()
     vibrate(HapticPattern.press)
@@ -153,7 +159,13 @@ export function useSpin({
       if (!res.ok) {
         const data = await res.json()
         trackEvent(AnalyticsEvent.SPIN_API_ERROR, { error: data.error ?? "unknown", status: res.status })
-        setSpinError(data.error || "スピンに失敗しました")
+        // ISSUE-224: ステータスコード別の具体的メッセージ
+        const status = res.status
+        const msg =
+          status === 409 ? "既にスピンが進行中です。少しお待ちください。" :
+          status >= 500 ? "サーバーエラーが発生しました。もう一度お試しください。" :
+          data.error || "スピンに失敗しました。もう一度お試しください。"
+        setSpinError(msg)
         setPhase("waiting")
         return
       }
@@ -185,8 +197,15 @@ export function useSpin({
         }
       }, delay)
     } catch {
-      setSpinError("ネットワークエラーが発生しました")
+      // ISSUE-224: ネットワーク断かどうかを判定して具体的に案内する
+      const msg = !navigator.onLine
+        ? "インターネット接続を確認してください。"
+        : "ネットワークエラーが発生しました。もう一度お試しください。"
+      setSpinError(msg)
       setPhase("waiting")
+    } finally {
+      // ISSUE-223: 非同期処理完了後にロック解除（エラー時も成功時も）
+      isSpinningRef.current = false
     }
   }
 

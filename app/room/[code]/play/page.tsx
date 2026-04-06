@@ -1,6 +1,7 @@
 "use client"
 
-import { useEffect, useRef, useState, useMemo, use } from "react"
+import { useEffect, useRef, useState, useMemo, use, useCallback } from "react"
+import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -18,6 +19,7 @@ import { RoomPlayBody } from "./_components/room-play-body"
 
 export default function RoomPlayPage({ params }: { params: Promise<{ code: string }> }) {
   const { code } = use(params)
+  const router = useRouter()
 
   const [currentUser, setCurrentUser] = useState<User | null>(null)
   const [authLoaded, setAuthLoaded] = useState(false)
@@ -129,6 +131,17 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
       await fetchRoom()
     }
   }
+
+  // ISSUE-225: 非オーナーメンバーの退室処理
+  const handleLeaveRoom = useCallback(async () => {
+    if (!window.confirm("ルームを離脱しますか？参加者リストから削除されます。")) return
+    try {
+      await fetch(`/api/rooms/${code}/members/me`, { method: "DELETE" })
+    } catch {
+      // エラーでも離脱処理を継続
+    }
+    router.push("/home")
+  }, [code, router])
 
   // --- Effects ---
 
@@ -295,6 +308,7 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
         spinError={spinError}
         handleSpin={handleSpin}
         showResult={showResult}
+        handleLeaveRoom={!isOwner ? handleLeaveRoom : undefined}
       />
     </main>
   )

@@ -16,6 +16,8 @@ interface SpinControlsProps {
   spinError: string | null
   handleSpin: () => void
   showResult: (room: Room) => void
+  // ISSUE-225: メンバー退室ボタン用
+  handleLeaveRoom?: () => void
 }
 
 export function SpinControls({
@@ -28,6 +30,7 @@ export function SpinControls({
   spinError,
   handleSpin,
   showResult,
+  handleLeaveRoom,
 }: SpinControlsProps) {
   return (
     <>
@@ -121,6 +124,15 @@ export function SpinControls({
                   <motion.span animate={{ opacity: [1, 0.3, 1] }} transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}>…？</motion.span>
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">オーナーの回転を待っています</p>
+                {/* ISSUE-225: 退室ボタン */}
+                {handleLeaveRoom && (
+                  <button
+                    onClick={handleLeaveRoom}
+                    className="text-xs text-muted-foreground/50 hover:text-muted-foreground underline mt-3 transition-colors"
+                  >
+                    ルームを離脱する
+                  </button>
+                )}
               </>
             )}
           </motion.div>

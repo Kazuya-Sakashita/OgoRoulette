@@ -42,10 +42,17 @@ export function BillInputSection({
           </div>
           <div className="text-left">
             <span className="text-sm font-medium text-foreground">金額を設定</span>
-            {hasBillInput && (
+            {hasBillInput ? (
               <p className="text-xs text-muted-foreground">
                 奢り {formatCurrency(treatAmount)} / 割り勘 {formatCurrency(splitAmount)}
               </p>
+            ) : (
+              // ISSUE-226: 金額入力の価値を折りたたみボタンに明示する
+              !showBillInput && (
+                <p className="text-xs text-muted-foreground">
+                  → WinnerCardに金額が表示されます
+                </p>
+              )
             )}
           </div>
         </div>
@@ -64,7 +71,7 @@ export function BillInputSection({
                 min="0"
                 onChange={(e) => handleTotalBillChange(Number(e.target.value))}
                 className="w-full h-12 pl-9 pr-4 text-xl font-bold text-foreground bg-secondary rounded-xl border border-white/10 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
-                placeholder="30000"
+                placeholder="4500"
               />
             </div>
           </div>
