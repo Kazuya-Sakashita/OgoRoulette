@@ -14,6 +14,9 @@ export function useRoomSync(code: string) {
   // useState の room は closure でキャプチャすると stale になるため ref で管理する
   const roomStatusRef = useRef<string | undefined>(undefined)
 
+  // ISSUE-221: Broadcast 送信用チャンネル ref（オーナーが spin_start を送信する）
+  const channelRef = useRef<ReturnType<ReturnType<typeof createClient>["channel"]> | null>(null)
+
   const fetchRoom = async () => {
     try {
       const res = await fetch(`/api/rooms/${code}`)
@@ -78,9 +81,21 @@ export function useRoomSync(code: string) {
         },
         () => { fetchRoom() }
       )
+      // ISSUE-221: Broadcast 優先パス — postgres_changes より ~600ms 速く spin_start を検知
+      // オーナーが API 成功後に送信する spin_start を受け取り即 fetchRoom() する
+      .on("broadcast", { event: "spin_start" }, () => { fetchRoom() })
       .subscribe((status) => {
         if (status === "SUBSCRIBED") fetchRoom()
       })
+    channelRef.current = channel
+
+    // ISSUE-221: スマホタブがバックグラウンドから復帰したとき即再取得
+    // iOS/Android は非アクティブタブの setTimeout を throttle するため
+    // visibilitychange で補完することで演出を取りこぼさない
+    const handleVisibilityChange = () => {
+      if (!document.hidden) fetchRoom()
+    }
+    document.addEventListener("visibilitychange", handleVisibilityChange)
 
     // ISSUE-146: フォールバックポーリング — Realtime が機能しない場合の安全網
     // IN_SESSION 中は 2 秒間隔に短縮してスピン通知をアニメーション窓内に届ける
@@ -97,8 +112,9 @@ export function useRoomSync(code: string) {
       cancelled = true
       if (timeoutId !== null) clearTimeout(timeoutId)
       supabase.removeChannel(channel)
+      document.removeEventListener("visibilitychange", handleVisibilityChange)
     }
   }, [code]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  return { room, setRoom, loading, error, fetchRoom, fetchRanking, roomRanking, roomStatusRef }
+  return { room, setRoom, loading, error, fetchRoom, fetchRanking, roomRanking, roomStatusRef, channelRef }
 }

@@ -5,6 +5,7 @@ import { vibrate, HapticPattern } from "@/lib/haptic"
 import { playPressSound, playSpinStartSound, playTickSound, playResultSound, playNearMissSound, unlockAudioContext } from "@/lib/spin-sound"
 import { SPIN_COUNTDOWN_MS } from "@/lib/constants"
 import { trackEvent, AnalyticsEvent } from "@/lib/analytics"
+import { createClient } from "@/lib/supabase/client"
 import type { User } from "@supabase/supabase-js"
 import type { Phase, Room, Session, WinnerData } from "./types"
 
@@ -25,6 +26,8 @@ interface UseSpinParams {
   resetRecording: () => void
   setRecordingPhase: (p: "idle" | "countdown" | "spinning" | "done") => void
   startRecording: () => void
+  // ISSUE-221: Broadcast 送信用チャンネル ref（use-room-sync.ts から渡される）
+  spinSyncChannelRef: React.RefObject<ReturnType<ReturnType<typeof createClient>["channel"]> | null>
 }
 
 export function useSpin({
@@ -44,6 +47,7 @@ export function useSpin({
   resetRecording,
   setRecordingPhase,
   startRecording,
+  spinSyncChannelRef,
 }: UseSpinParams) {
   const [phase, setPhase] = useState<Phase>("waiting")
   const [spinError, setSpinError] = useState<string | null>(null)
@@ -160,6 +164,15 @@ export function useSpin({
       clockOffsetMsRef.current = offset
       setClockOffsetMs(offset)
       const data = await res.json()
+
+      // ISSUE-221: メンバーに spin_start を Broadcast 送信（postgres_changes より ~600ms 速い）
+      // メンバーは受信後に即 fetchRoom() してスケジュールを組むため同期精度が大幅に向上する
+      spinSyncChannelRef.current?.send({
+        type: "broadcast",
+        event: "spin_start",
+        payload: { startedAt: data.spinStartedAt },
+      })
+
       const MAX_SPIN_DELAY_MS = SPIN_COUNTDOWN_MS + 2000
       const delay = Math.max(0, Math.min(data.spinStartedAt - Date.now(), MAX_SPIN_DELAY_MS))
       setSpinStartedAtMs(data.spinStartedAt)

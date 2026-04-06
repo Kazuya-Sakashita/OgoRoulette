@@ -29,7 +29,7 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
   const [wheelSize, setWheelSize] = useState(280)
 
   // --- Room sync ---
-  const { room, setRoom, loading, error, fetchRoom, fetchRanking, roomRanking } = useRoomSync(code)
+  const { room, setRoom, loading, error, fetchRoom, fetchRanking, roomRanking, channelRef } = useRoomSync(code)
 
   // --- Auth ---
   useEffect(() => {
@@ -109,6 +109,7 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
     fetchRoom, fetchRanking,
     stopRecordingAfterReveal, resetRecording,
     setRecordingPhase, startRecording,
+    spinSyncChannelRef: channelRef,
   })
 
   // handleRespin に楽観的更新（setRoom）を組み合わせる
