@@ -380,6 +380,22 @@ export function useSpin({
 
         if (elapsed >= SKIP_THRESHOLD_MS) {
           spinScheduledRef.current = false
+          setPendingWinnerIndex(undefined)
+          // ISSUE-216: スキップ時も winner state を設定しないと WinnerCard が表示されない
+          const skippedWinner = pendingMemberWinnerRef.current
+          if (skippedWinner) {
+            setWinner(skippedWinner)
+            pendingMemberWinnerRef.current = null
+            playResultSound()
+            vibrate(HapticPattern.result)
+            setShowConfetti(true)
+            setShowPrismBurst(true)
+            setTimeout(() => setShowPrismBurst(false), 1800)
+            clearTimeout(confettiTimerRef.current ?? undefined)
+            confettiTimerRef.current = setTimeout(() => setShowConfetti(false), 6000)
+          } else {
+            showResult(room)
+          }
           setPhase("result")
           return
         }

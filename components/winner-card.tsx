@@ -153,13 +153,13 @@ export function WinnerCard({
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ISSUE-193: 30s fallback — advance to Phase B if user never taps Phase A
+  // ISSUE-217: 8秒後に自動で Phase B へ（タップで即スキップも維持）
   useEffect(() => {
-    const fallback = setTimeout(() => {
+    const autoAdvance = setTimeout(() => {
       setPhase((prev) => (prev === "reveal" ? "details" : prev))
       onAdvanceToDetails?.()
-    }, 30_000)
-    return () => clearTimeout(fallback)
+    }, 8_000)
+    return () => clearTimeout(autoAdvance)
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const advanceToDetails = () => {
