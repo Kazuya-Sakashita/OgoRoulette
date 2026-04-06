@@ -320,7 +320,7 @@ strong { font-weight: 700; color: var(--slate-900); }
       </div>
       <div style="font-size: 12pt; color: rgba(255,255,255,0.75); font-weight: 400; line-height: 1.5; margin-bottom: 3mm;">
         OgoRoulette実践から学ぶ、再現可能な開発手法<br>
-        <span style="font-size: 9.5pt; color: rgba(255,255,255,0.55);">+ G-STACK / HEART / AARRR / Kano — 4評価フレームワーク 増補版</span>
+        <span style="font-size: 9.5pt; color: rgba(255,255,255,0.55);">+ G-STACK / HEART / AARRR / Kano / 感情 / 技術 — 6軸100点評価システム 増補版</span>
       </div>
       <div style="width: 40mm; height: 1px; background: rgba(255,255,255,0.3); margin-bottom: 4mm;"></div>
     </div>
@@ -410,9 +410,9 @@ strong { font-weight: 700; color: var(--slate-900); }
 
       <div class="toc-item" style="color: var(--amber);">
         <span class="toc-num" style="color: var(--amber);">第4.5章</span>
-        <span class="toc-title" style="color: var(--amber);">評価フレームワーク四重奏 <span class="v2-badge">NEW</span></span>
+        <span class="toc-title" style="color: var(--amber);">6軸評価システム <span class="v2-badge">NEW</span></span>
       </div>
-      <p class="toc-desc">G-STACK・HEART・AARRR・Kanoの4フレームワーク概要と複合スコア設計</p>
+      <p class="toc-desc">G-STACK・HEART・AARRR・Kano・感情・技術の6軸100点スコア設計 + ISSUE保留判断・定期評価サイクル</p>
 
       <div class="toc-item"><span class="toc-num">第5章</span><span class="toc-title">ケーススタディ</span></div>
       <p class="toc-desc">Race Condition解決・感情設計・パフォーマンス62→95・LP作成の4事例</p>
@@ -872,7 +872,7 @@ ISSUE-54: 縦向き・横向き切替時のレイアウト崩れ修正</div>
   <div class="callout purple" style="padding: 2mm 3mm; margin: 2mm 0; font-size: 8.5pt; line-height: 1.6;">
     <span class="callout-icon" style="font-size: 11pt;">💡</span>
     <div class="callout-body"><strong>OgoRoutletteのISSUE管理実績</strong>
-    195個を<code>docs/issues/</code>で管理。「ルーレット同期バグ」を1つにせず、ISSUE-143・002・001と原因単位で分割。ISSUE-001の解決でISSUE-002も解消されることが判明し、無駄な実装を防げた。</div>
+    200個以上を<code>docs/issues/</code>で管理。「ルーレット同期バグ」を1つにせず、ISSUE-143・002・001と原因単位で分割。ISSUE-001の解決でISSUE-002も解消されることが判明し、無駄な実装を防げた。<strong>保留ISSUEも明示的に管理</strong>：実装リスクが高い・優先度が低い・外部依存のISSUEはステータスを「⏸️ 保留」とし保留理由を記録して積み残しを可視化している。</div>
   </div>
 
   <div class="page-footer">
@@ -966,8 +966,8 @@ ISSUE-54: 縦向き・横向き切替時のレイアウト崩れ修正</div>
     <div class="timeline-item">
       <div class="timeline-dot green">NOW</div>
       <div class="timeline-content">
-        <h4>現在 — 150+ ISSUEの軌跡</h4>
-        <p>約3週間でリリースし、継続的に150以上のISSUEを消化した。ISSUEは「バグ」だけじゃない。機能追加・UX改善・パフォーマンス最適化・ドキュメント・バズ設計、すべてがISSUEだ。<strong>150 ISSUEは「150回の改善」の証拠だ。</strong>「ISSUEを書く→テンプレートにはめる→AIに渡す→評価する→実装する→検証する」が1セットの呼吸になった。</p>
+        <h4>現在 — 200+ ISSUEの軌跡</h4>
+        <p>約3週間でリリースし、継続的に200以上のISSUEを消化・管理している。ISSUEは「バグ」だけじゃない。機能追加・UX改善・パフォーマンス最適化・ドキュメント・バズ設計、すべてがISSUEだ。<strong>200 ISSUEは「200回の意思決定」の証拠だ。</strong>「ISSUEを書く→G-STACKで評価する→実装するか保留するか決める→AIに渡す→実装する→スコアで検証する」が1セットの呼吸になった。</p>
       </div>
     </div>
   </div>
@@ -975,7 +975,7 @@ ISSUE-54: 縦向き・横向き切替時のレイアウト崩れ修正</div>
   <div class="callout green">
     <span class="callout-icon">📊</span>
     <div class="callout-body"><strong>約3週間のリリースまでの成長曲線まとめ</strong>
-    Week 1: MVP（3機能）→ Week 2: ルーム機能（リアルタイム同期）→ Week 3: バグ格闘・UX強化・リリース → リリース後: Lighthouse最適化・バズ設計・LP作成 → 現在: 150+ ISSUEの継続的な積み重ね</div>
+    Week 1: MVP（3機能）→ Week 2: ルーム機能（リアルタイム同期）→ Week 3: バグ格闘・UX強化・リリース → リリース後: Lighthouse最適化・バズ設計・LP作成 → 現在: <strong>200+ ISSUEの継続的な積み重ね / 6軸スコア 70/100 → 100点ロードマップ実行中</strong></div>
   </div>
 
   <div class="page-footer">
@@ -984,67 +984,74 @@ ISSUE-54: 縦向き・横向き切替時のレイアウト崩れ修正</div>
   </div>
 </div>
 
-<!-- ========== PAGE 11 (NEW A): 評価フレームワーク四重奏 ========== -->
+<!-- ========== PAGE 11 (NEW A): 6軸評価システム ========== -->
 <div class="page">
   <div class="page-stripe stripe-amber"></div>
   <div style="padding-top: 4mm;">
     <div class="chapter-header" style="border-left-color: var(--amber);">
       <div class="ch-num" style="color: var(--amber);">Chapter 04.5-A &nbsp;<span class="v2-badge">NEW</span></div>
-      <div class="ch-title">評価フレームワーク四重奏</div>
-      <div class="ch-sub">G-STACK / HEART / AARRR / Kano — 4つのレンズでプロダクトを見る</div>
+      <div class="ch-title">6軸評価システム</div>
+      <div class="ch-sub">G-STACK / HEART / AARRR / Kano / 感情 / 技術 — 100点満点で継続的に測る</div>
     </div>
   </div>
 
-  <p style="margin-bottom: 2mm;">G-STACKだけでは見えないものがある。スコアは上がっても「楽しいか」が測れない。OgoRoulette開発で学んだ核心は「<strong>フレームワークは開発フェーズに合わせて変えなければならない</strong>」ということだ。</p>
+  <p style="margin-bottom: 2mm;">4軸では見えなかった死角があった。「動いている」「広がっている」だけでは「盛り上がるか」「技術的に健全か」が測れない。200回の改善を経て、<strong>6軸・100点満点の評価システム</strong>に進化した。</p>
 
-  <div class="fw-quartet">
-    <div class="fw-card fw-card-gstack">
-      <div class="fw-card-label">Phase 1-2 / 構造・設計</div>
-      <h4>G-STACK</h4>
-      <p>Goal / Strategy / Tactics / Architecture / (ri)SK。「このアプリは成立しているか？」を問う。設計の正しさ・技術的整合性・リスク管理を評価する基盤フレームワーク。</p>
+  <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 2mm; margin-bottom: 3mm;">
+    <div class="fw-card fw-card-gstack" style="padding: 2.5mm;">
+      <div class="fw-card-label">構造・設計 / 15pt</div>
+      <h4 style="font-size: 10pt;">G-STACK</h4>
+      <p style="font-size: 7.5pt;">Goal / Strategy / Tactics / Architecture / Risk。「成立しているか？」を問う。</p>
     </div>
-    <div class="fw-card fw-card-heart">
-      <div class="fw-card-label">Phase 3 / 感情・UX</div>
-      <h4>HEART</h4>
-      <p>Happiness / Engagement / Adoption / Retention / Task Success。「使って気持ちいいか？」を問う。Google提唱のUX評価。機能が動いていても感情が動かなければバズらない。</p>
+    <div class="fw-card fw-card-heart" style="padding: 2.5mm;">
+      <div class="fw-card-label">UX体験 / 20pt</div>
+      <h4 style="font-size: 10pt;">HEART</h4>
+      <p style="font-size: 7.5pt;">Happiness / Engagement / Adoption / Retention / Task Success。「気持ちいいか？」</p>
     </div>
-    <div class="fw-card fw-card-aarrr">
-      <div class="fw-card-label">Phase 4 / 成長・拡散</div>
-      <h4>AARRR</h4>
-      <p>Acquisition / Activation / Retention / Revenue / Referral。「広がっているか？」を問う。海賊指標とも呼ばれる成長ファネル。どのステップがボトルネックかをデータで特定する。</p>
+    <div class="fw-card fw-card-aarrr" style="padding: 2.5mm;">
+      <div class="fw-card-label">成長・拡散 / 20pt</div>
+      <h4 style="font-size: 10pt;">AARRR</h4>
+      <p style="font-size: 7.5pt;">Acquisition / Activation / Retention / Revenue / Referral。「広がるか？」</p>
     </div>
-    <div class="fw-card fw-card-kano">
-      <div class="fw-card-label">Phase 4 / 機能価値</div>
-      <h4>Kanoモデル</h4>
-      <p>当たり前品質 / 一元的品質 / 魅力品質。「どの機能が感動を生むか？」を問う。リソース配分の優先度決定に使う。魅力品質への集中が差別化・バズりにつながる。</p>
+    <div class="fw-card fw-card-kano" style="padding: 2.5mm;">
+      <div class="fw-card-label">機能価値 / 10pt</div>
+      <h4 style="font-size: 10pt;">Kano</h4>
+      <p style="font-size: 7.5pt;">当たり前 / 一元的 / 魅力品質。「感動する機能か？」を問う。</p>
+    </div>
+    <div style="background: linear-gradient(135deg, #4c1d95, #7c3aed); border-radius: 6px; padding: 2.5mm; color: white;">
+      <div style="font-size: 7pt; font-weight: 700; color: rgba(255,255,255,0.6); margin-bottom: 1mm;">感情設計 / 20pt ★重要</div>
+      <h4 style="font-size: 10pt; margin: 0 0 1mm; color: white;">感情</h4>
+      <p style="font-size: 7.5pt; color: rgba(255,255,255,0.85);">「笑いが起きるか？」演出・ニアミス・ビルドアップ・リビール。感情スコア15未満なら機能追加より演出改善を優先する。</p>
+    </div>
+    <div style="background: linear-gradient(135deg, #1e3a5f, #1d4ed8); border-radius: 6px; padding: 2.5mm; color: white;">
+      <div style="font-size: 7pt; font-weight: 700; color: rgba(255,255,255,0.6); margin-bottom: 1mm;">技術品質 / 15pt</div>
+      <h4 style="font-size: 10pt; margin: 0 0 1mm; color: white;">技術</h4>
+      <p style="font-size: 7.5pt; color: rgba(255,255,255,0.85);">型安全・テスト・セキュリティ・エラー回復・パフォーマンス。土台が腐るとUXも崩れる。</p>
     </div>
   </div>
 
   <div class="score-formula">
-    <div style="font-size: 8.5pt; color: rgba(255,255,255,0.6); margin-bottom: 1.5mm;">OgoRoulette 複合評価スコア式</div>
-    <div class="formula">総合スコア = G-STACK × 0.5 + HEART × 0.3 + AARRR × 0.2</div>
-    <div class="weights">
-      <div class="weight-item">
-        <div class="weight-num" style="color: #60a5fa;">50%</div>
-        <div class="weight-lbl">G-STACK<br>（構造・基盤）</div>
-      </div>
-      <div style="color: rgba(255,255,255,0.2); font-size: 16pt;">+</div>
-      <div class="weight-item">
-        <div class="weight-num" style="color: #f9a8d4;">30%</div>
-        <div class="weight-lbl">HEART<br>（UX・感情）</div>
-      </div>
-      <div style="color: rgba(255,255,255,0.2); font-size: 16pt;">+</div>
-      <div class="weight-item">
-        <div class="weight-num" style="color: #86efac;">20%</div>
-        <div class="weight-lbl">AARRR<br>（成長・拡散）</div>
-      </div>
+    <div style="font-size: 8.5pt; color: rgba(255,255,255,0.6); margin-bottom: 1.5mm;">OgoRoulette 6軸複合スコア式（合計100点）</div>
+    <div class="formula" style="font-size: 8pt;">総合 = G-STACK(15) + HEART(20) + AARRR(20) + Kano(10) + 感情(20) + 技術(15)</div>
+    <div class="weights" style="flex-wrap: wrap; gap: 2mm;">
+      <div class="weight-item"><div class="weight-num" style="color: #60a5fa; font-size: 13pt;">15</div><div class="weight-lbl">G-STACK</div></div>
+      <div style="color: rgba(255,255,255,0.2); font-size: 14pt; line-height: 2.5;">+</div>
+      <div class="weight-item"><div class="weight-num" style="color: #f9a8d4; font-size: 13pt;">20</div><div class="weight-lbl">HEART</div></div>
+      <div style="color: rgba(255,255,255,0.2); font-size: 14pt; line-height: 2.5;">+</div>
+      <div class="weight-item"><div class="weight-num" style="color: #86efac; font-size: 13pt;">20</div><div class="weight-lbl">AARRR</div></div>
+      <div style="color: rgba(255,255,255,0.2); font-size: 14pt; line-height: 2.5;">+</div>
+      <div class="weight-item"><div class="weight-num" style="color: #fcd34d; font-size: 13pt;">10</div><div class="weight-lbl">Kano</div></div>
+      <div style="color: rgba(255,255,255,0.2); font-size: 14pt; line-height: 2.5;">+</div>
+      <div class="weight-item"><div class="weight-num" style="color: #c4b5fd; font-size: 13pt;">20</div><div class="weight-lbl">感情</div></div>
+      <div style="color: rgba(255,255,255,0.2); font-size: 14pt; line-height: 2.5;">+</div>
+      <div class="weight-item"><div class="weight-num" style="color: #93c5fd; font-size: 13pt;">15</div><div class="weight-lbl">技術</div></div>
     </div>
   </div>
 
-  <div class="callout amber" style="margin-top: 2mm;">
+  <div class="callout amber" style="margin-top: 2mm; padding: 2mm 3mm;">
     <span class="callout-icon">💡</span>
-    <div class="callout-body"><strong>なぜ複数のフレームワークが必要か</strong>
-    G-STACKは「構造の正しさ」を測るが「感情の豊かさ」は測らない。4つのレンズで同じプロダクトを見ることで死角がなくなる。AIに「Kanoモデルで機能を分類して」と頼めば数分で整理できる。フレームワークの言語化がAI活用の精度を上げる。</div>
+    <div class="callout-body" style="font-size: 8pt;"><strong>OgoRoulette実績: 200+ ISSUEを経て 70/100 → 100点ロードマップ実行中</strong><br>
+    感情軸は後から追加した。最初の4軸評価では「G-STACKが高くても誰も笑わない」問題が見えなかった。感情スコアが 11/20 まで落ちた夜、演出改善を機能追加より優先するルールを設けた。AIに「6軸で評価して」と渡すだけで全軸のスコアと改善提案が返ってくる。</div>
   </div>
 
   <div class="page-footer">
@@ -1322,10 +1329,51 @@ ISSUE-54: 縦向き・横向き切替時のレイアウト崩れ修正</div>
                                │
                                └─ <span class="flow-yes">YES</span> → <span class="flow-fw">全FWで継続改善</span></div>
 
-  <div class="callout purple" style="margin-top: 2mm;">
+  <h3 style="margin-top: 2mm;">G-STACKによるISSUE実装判断フロー</h3>
+  <div class="flow-chart-box" style="font-size: 8pt; line-height: 1.8;">
+ISSUEをG-STACKで評価する
+    │
+    ├─ Goal と合致するか？
+    │   └─ NO → 却下（スコアの根拠なし）
+    │
+    ├─ Strategy に沿っているか？
+    │   └─ NO → 優先度を下げる
+    │
+    ├─ 実装リスク（Risk）は許容範囲か？
+    │   ├─ HIGH → <span style="color:#fcd34d;">⏸️ 保留（保留理由を記録）</span>
+    │   └─ LOW → 実装へ進む
+    │
+    └─ 感情スコアは 15/20 以上か？
+        ├─ NO → <span style="color:#c4b5fd;">演出改善ISSUEを機能追加より優先</span>
+        └─ YES → 機能追加・技術改善も並行可</div>
+
+  <div class="cards col2" style="gap: 2mm; margin-top: 2mm;">
+    <div class="card" style="background: #fef3c7; border: 1px solid #fde68a; padding: 2mm 3mm;">
+      <h3 style="color: #92400e; font-size: 9pt; margin: 0 0 1mm;">⏸️ ISSUE保留の判断基準</h3>
+      <ul style="font-size: 7.5pt; margin: 0; line-height: 1.6;">
+        <li><strong>実装複雑化リスクが高い</strong>（既存パイプラインを壊す可能性）</li>
+        <li><strong>外部依存がある</strong>（ブラウザAPI・サードパーティ待ち）</li>
+        <li><strong>スコア貢献が低い</strong>（他ISSUEの方が費用対効果が高い）</li>
+        <li>過去に失敗経験がある</li>
+      </ul>
+      <p style="font-size: 7.5pt; margin: 1mm 0 0; color: #92400e;">→ 保留ISSUEには<strong>保留理由・再検討タイミング</strong>を必ず記録する</p>
+    </div>
+    <div class="card" style="background: #f0fdf4; border: 1px solid #bbf7d0; padding: 2mm 3mm;">
+      <h3 style="color: #065f46; font-size: 9pt; margin: 0 0 1mm;">🔄 定期評価サイクル（推奨）</h3>
+      <ul style="font-size: 7.5pt; margin: 0; line-height: 1.6;">
+        <li><strong>毎週</strong>: 実装済みISSUEのステータス更新</li>
+        <li><strong>隔週</strong>: G-STACKで未着手ISSUEを再評価</li>
+        <li><strong>月次</strong>: 6軸スコアを再計算・ロードマップ更新</li>
+        <li><strong>保留ISSUEのレビュー</strong>: 外部依存が解消されていないか確認</li>
+      </ul>
+      <p style="font-size: 7.5pt; margin: 1mm 0 0; color: #065f46;">AIに「第N回評価を実施して」と渡すだけで6軸評価が返ってくる</p>
+    </div>
+  </div>
+
+  <div class="callout purple" style="margin-top: 2mm; padding: 2mm 3mm;">
     <span class="callout-icon">🤖</span>
-    <div class="callout-body"><strong>AIはフレームワーク切り替えのパートナー</strong>
-    「今どのFWを使うべきか」をAIに問えば的確な答えが返る。「このアプリの現状を評価してください」→ AIが「フェーズ3に移行すべき。HEARTのHappiness軸から着手を」と提案してくれる。評価設計のパートナーとしてAIを活用する。</div>
+    <div class="callout-body" style="font-size: 8pt;"><strong>AIはフレームワーク切り替え・ISSUE評価のパートナー</strong>
+    「このISSUEをG-STACKで評価して、実装すべきか保留すべか判断して」→ AIがリスク・スコア貢献・代替案を提示する。感情スコアが低い場合は「演出改善ISSUEを優先して」とルール化する。評価の言語化がAI活用の精度を劇的に上げる。</div>
   </div>
 
   <div class="page-footer">
@@ -1390,19 +1438,22 @@ const handleSpinStop = (event: BroadcastEvent) => {
   </div>
 
   <div class="case-header" style="background: linear-gradient(135deg, #064e3b, #059669);">
-    <h2>Case 2: ISSUE-060 — 感情設計 × 祝祭感</h2>
-    <p>happiness score 45→87への改善。「ルーレットが止まる瞬間」を体験に変えた事例</p>
+    <h2>Case 2: ISSUE-207 — 感情設計 × ピーク演出強化</h2>
+    <p>感情スコア 11/20 → 14/20。「誰も笑わなかった夜」を経て演出最優先ルールを確立した事例</p>
   </div>
 
-  <p><strong>問題の本質：</strong>gstack評価で「happiness score: 45/100」。「ルーレットが止まって名前が表示される」だけでは、飲み会でみんながスマホを覗き込む体験にならない。「わー！」という声が自然に出る演出が必要だった。</p>
+  <p><strong>問題の本質：</strong>6軸評価で感情スコアが<strong>11/20</strong>。ルーレットは正しく動いていた。エラーもなかった。でも「止まった瞬間、誰も笑わなかった」。G-STACKスコアが69/100あっても、感情が動かなければバズらない。翌日、感情スコア15未満なら演出改善を機能追加より優先するルールを設けた。</p>
 
-  <p><strong>AIへの依頼文（文脈付き）：</strong></p>
-  <div class="code">目標: スピン停止後の「当選者発表」の祝祭感を最大化する
-現状: 名前がフェードインするだけ（happiness: 45/100）
-参考感情: プライズ開封・抽選会の当選発表瞬間
-制約: Framer Motion使用、スマホ縦置き対応必須</div>
+  <p><strong>AIへの依頼文（G-STACK評価付き）：</strong></p>
+  <div class="code">ISSUE-207: 感情スコア 11/20 → 改善が必要
+G-STACK評価: Goal適合◯ Risk低い → 実装推奨
+実装内容:
+1. スロービルドアップ: handleSlowingDown時にパルスオーバーレイ
+2. 停止フラッシュ: winner確定時に0.2秒の白フラッシュ
+3. 名前リビール: winner確定から0.8秒後にWinnerCard表示
+制約: 既存のuseSpin・RoomPlayOverlaysの構造を変えない</div>
 
-  <p><strong>AIが提案した5要素と採用結果：</strong>① スピンスロー（徐々に減速）→ ドキドキ感 ② 停止時「ドン！」バウンス → 緊張の解放 ③ 紙吹雪（canvas confetti） → 驚きと喜び ④ 当選者名の大きな表示（画面60%） → インパクト ⑤ シェアボタンの自然な配置 → 体験の共有。<strong>happiness scoreは45→87に向上。</strong></p>
+  <p><strong>実装結果：</strong>① パルスオーバーレイ（amber radial, animate-pulse）→ 緊張感 ② 0.2秒フラッシュ（bg-white/25）→ 停止の衝撃 ③ 「🎯 当選者発表！」0.8秒リビール → 名前の重みが増す ④ ニアミス演出280ms（ISSUE-098）→「惜しかった！」感。<strong>感情スコアは 11/20 → 14/20 に改善。</strong></p>
 
   <hr class="divider">
 
@@ -1472,8 +1523,8 @@ const handleSpinStop = (event: BroadcastEvent) => {
     <div class="card">
       <span class="badge badge-red">CRITICAL ★★★★★</span>
       <div class="card-icon" style="margin-top: 1mm;">📊</div>
-      <h3>T-05 gstackレビューテンプレート</h3>
-      <p>機能追加・デザイン変更のあと、品質を数値で確認したいとき。gstackはQAを数値化するツールだ。定期的に評価することで、品質が目に見える形で積み上がる。OgoRouletteでは62点から95点まで改善した。</p>
+      <h3>T-05 6軸評価テンプレート</h3>
+      <p>機能追加・デザイン変更のあと、品質を数値で確認したいとき。6軸（G-STACK/HEART/AARRR/Kano/感情/技術）で100点満点評価する。定期的に実施することで改善の積み重ねが可視化される。感情スコアが15未満になったら即座に演出改善を優先する。</p>
     </div>
     <div class="card">
       <span class="badge badge-blue">重要 ★★★★☆</span>
@@ -1761,10 +1812,10 @@ const handleSpinStop = (event: BroadcastEvent) => {
 
   <div class="principle">
     <div class="principle-num">Principle 08</div>
-    <div class="principle-title">感情設計を入れろ</div>
-    <div class="principle-body">アプリはデータを処理するツールではなく、人間に感情を与える体験だ。ドキドキ・驚き・笑い・解放感を意図的に設計する。機能的に同じアプリでも、感情設計があるとSNSでシェアされ、記憶に残り、リピートされる。</div>
-    <div class="principle-ng">NG: 「ルーレットが止まりました。当選者: 山田太郎」（テキスト表示のみ）</div>
-    <div class="principle-example">OK: 減速アニメーション（ドキドキ）→ ピタッと停止（緊張の解放）→ 紙吹雪+効果音（驚きと喜び）→ シェアボタン（体験の共有）</div>
+    <div class="principle-title">感情設計を入れろ — スコア15未満は演出を優先せよ</div>
+    <div class="principle-body">アプリはデータを処理するツールではなく、人間に感情を与える体験だ。ドキドキ・驚き・笑い・解放感を意図的に設計する。機能的に同じアプリでも、感情設計があるとSNSでシェアされ、記憶に残り、リピートされる。<strong>6軸評価で感情スコアが15/20未満になったとき、機能追加・技術改善より演出改善を必ず優先すること。</strong> OgoRouletteでは「誰も笑わなかった夜」の翌日からこのルールを設けた。</div>
+    <div class="principle-ng">NG: 感情スコアが11/20なのに新機能を追加し続ける → 「動くが盛り上がらない」アプリのまま</div>
+    <div class="principle-example">OK: 感情スコア11/20 → 演出改善ISSUEを最優先（スロービルドアップ・ニアミス・WinnerCard reveal）→ 14/20に回復してから機能追加へ</div>
   </div>
 
   <div class="principle">
