@@ -376,30 +376,11 @@ export function useSpin({
         const now = Date.now()
         const adjustedNow = now + clockOffsetMsRef.current
         const elapsed = Math.max(0, adjustedNow - startMs)
-        const SKIP_THRESHOLD_MS = 5500
 
-        if (elapsed >= SKIP_THRESHOLD_MS) {
-          spinScheduledRef.current = false
-          setPendingWinnerIndex(undefined)
-          // ISSUE-216: スキップ時も winner state を設定しないと WinnerCard が表示されない
-          const skippedWinner = pendingMemberWinnerRef.current
-          if (skippedWinner) {
-            setWinner(skippedWinner)
-            pendingMemberWinnerRef.current = null
-            playResultSound()
-            vibrate(HapticPattern.result)
-            setShowConfetti(true)
-            setShowPrismBurst(true)
-            setTimeout(() => setShowPrismBurst(false), 1800)
-            clearTimeout(confettiTimerRef.current ?? undefined)
-            confettiTimerRef.current = setTimeout(() => setShowConfetti(false), 6000)
-          } else {
-            showResult(room)
-          }
-          setPhase("result")
-          return
-        }
-
+        // ISSUE-220: スキップ判定を削除。elapsed がどれだけ大きくても必ずアニメーションを再生する。
+        // 旧実装は elapsed をサーバー起点で測定していたため、メンバーのポーリング遅延(>5.5s)で
+        // 「今初めてスピンを知った」状態でもスキップ判定が発動し演出が表示されなかった。
+        // 修正: 常に spinning フェーズを経由し、最低 0.5 秒の短縮アニメーションを保証する。
         const cappedElapsed = Math.min(elapsed, 3000)
         const remaining = Math.max(500, 4500 - cappedElapsed)
         setSpinRemainingMs(remaining)
