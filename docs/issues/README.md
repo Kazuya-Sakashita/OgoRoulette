@@ -407,10 +407,10 @@
 | [ISSUE-207](./issue-207-emotional-peak-buildup.md) | 感情ピーク強化 — ルーレット停止前の緊張感ビルドアップ演出 | パルスオーバーレイ・フラッシュ・名前リビール演出 | ✅ 完了（2026-04-06） | 感情+3 |
 | [ISSUE-208](./issue-208-next-font-migration.md) | Google Fonts CDN → next/font/google 移行 | フォント読み込みのパフォーマンス最適化 | 📋 未着手 | 技術+0.5 |
 | [ISSUE-209](./issue-209-test-coverage.md) | コンポーネント・API・E2Eテスト整備 | テストカバレッジ向上 | 📋 未着手 | 技術+0.5 |
-| [ISSUE-210](./issue-210-retention-group-reuse.md) | リテンション強化 — グループ再利用ショートカット | WinnerCard後CTA・ワンタップ再開・PWA shortcuts | 📋 未着手 | AARRR+3 |
+| [ISSUE-210](./issue-210-retention-group-reuse.md) | リテンション強化 — グループ再利用ショートカット | WinnerCard後CTA・ワンタップ再開・PWA shortcuts | ✅ 完了（2026-04-06） | AARRR+3 |
 | [ISSUE-211](./issue-211-aarrr-acquisition-seo.md) | AARRR-Acquisition強化 — GSC登録 + OGP確認 + SEO | Google Search Console登録・sitemap・キーワード最適化 | 📋 未着手 | AARRR+2 |
-| [ISSUE-212](./issue-212-member-join-warmup-animation.md) | 感情スコア向上 — 参加者入場アニメーション + ルーム待機ウォームアップ | 入場スプリングアニメ・熱量メーター・スピン促進テキスト | 📋 未着手 | 感情+2 |
-| [ISSUE-213](./issue-213-post-winner-emoji-reaction.md) | 感情スコア向上 — 当選発表後の全員参加型絵文字リアクション | WinnerCard全員表示・絵文字パレット・フローティング演出 | 📋 未着手 | 感情+3 |
+| [ISSUE-212](./issue-212-member-join-warmup-animation.md) | 感情スコア向上 — 参加者入場アニメーション + ルーム待機ウォームアップ | 入場スプリングアニメ・熱量メーター・スピン促進テキスト | ✅ 完了（2026-04-06） | 感情+2 |
+| [ISSUE-213](./issue-213-post-winner-emoji-reaction.md) | 感情スコア向上 — 当選発表後の全員参加型絵文字リアクション | WinnerCard全員表示・絵文字パレット・フローティング演出 | ✅ 完了（2026-04-06） | 感情+3 |
 | [ISSUE-214](./issue-214-dynamic-winner-share-card.md) | AARRR-Referral強化 — 当選者名入り動的シェアカード | /result/[id] ページ・動的OGP・名前入り画像生成 | 📋 未着手 | AARRR+2 |
 | [ISSUE-215](./issue-215-monetization-phase1-premium-theme.md) | マネタイズ Phase 1 — プレミアムテーマ + ブランドルームモード | テーマ選択UI・Stripe連携・フリーミアム設計 | 📋 未着手 | Revenue+2 |
 
@@ -419,10 +419,10 @@
 ## 🗓 次着手順（スコアルール準拠）
 
 ```
-感情 14/20 < 15 → 演出優先:
-  ISSUE-210 → ISSUE-212 → ISSUE-213（感情を15+に引き上げ）
+✅ 完了（感情15+達成）:
+  ISSUE-210 → ISSUE-212 → ISSUE-213
 
-感情 15+ 達成後:
+次着手（感情17+へ）:
   ISSUE-211（SEO・Acquisition）→ ISSUE-214（Referral）→ ISSUE-215（Revenue）
 
 技術負債:

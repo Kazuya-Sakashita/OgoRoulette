@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect, useRef, useState } from "react"
 import { motion } from "framer-motion"
 import Link from "next/link"
 import { ArrowLeft, Crown, Users } from "lucide-react"
@@ -10,6 +11,31 @@ import { BillInputSection } from "./bill-input-section"
 import { SpinControls } from "./spin-controls"
 import type { Phase, Room } from "../types"
 import type React from "react"
+
+// ISSUE-212: 参加人数に応じた熱量メーター
+function HypeBar({ count }: { count: number }) {
+  const hype = Math.min(count / 8, 1)
+  const label =
+    count <= 1 ? "参加者を待っています..." :
+    count <= 3 ? "少しずつ集まってきた！" :
+    count <= 6 ? "盛り上がってきた！" :
+    "いつでもいける！🔥"
+  return (
+    <div className="w-full mt-2.5">
+      <div className="flex justify-between text-xs text-muted-foreground mb-1">
+        <span>{label}</span>
+        <span>{count}人参加中</span>
+      </div>
+      <div className="h-1 bg-white/10 rounded-full overflow-hidden">
+        <motion.div
+          className="h-full bg-gradient-to-r from-blue-500 to-orange-500 rounded-full"
+          animate={{ width: `${Math.max(hype * 100, count > 0 ? 6 : 0)}%` }}
+          transition={{ type: "spring", stiffness: 280, damping: 30 }}
+        />
+      </div>
+    </div>
+  )
+}
 
 interface RoomPlayBodyProps {
   room: Room
@@ -67,6 +93,30 @@ export function RoomPlayBody({
   handleSpinComplete, handleSpinStart, handleSlowingDown, handleNearMiss,
   countdownValue, spinError, handleSpin, showResult,
 }: RoomPlayBodyProps) {
+  // ISSUE-212: 新規参加者を検出して ✨ スパーク演出
+  const isFirstRenderRef = useRef(true)
+  const prevMemberIdsRef = useRef<Set<string>>(new Set())
+  const [newMemberIds, setNewMemberIds] = useState<Set<string>>(new Set())
+
+  useEffect(() => {
+    const currentIds = new Set(room.members.map((m) => m.id))
+    if (isFirstRenderRef.current) {
+      isFirstRenderRef.current = false
+      prevMemberIdsRef.current = currentIds
+      return
+    }
+    const added = new Set<string>()
+    currentIds.forEach((id) => {
+      if (!prevMemberIdsRef.current.has(id)) added.add(id)
+    })
+    prevMemberIdsRef.current = currentIds
+    if (added.size > 0) {
+      setNewMemberIds(added)
+      const timer = setTimeout(() => setNewMemberIds(new Set()), 900)
+      return () => clearTimeout(timer)
+    }
+  }, [room.members])
+
   return (
     <div className="mx-auto max-w-[390px] md:max-w-lg min-h-dvh flex flex-col px-5 py-6">
 
@@ -117,20 +167,51 @@ export function RoomPlayBody({
           <Users className="w-4 h-4 text-muted-foreground" />
           <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">参加者</span>
         </div>
+        {/* ISSUE-212: 参加者チップに入場スプリングアニメーション */}
         <div className="flex flex-wrap gap-2">
           {room.members.map((member, index) => (
-            <div key={member.id} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full glass-card border border-white/10">
-              <div
-                className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold text-white"
-                style={{ backgroundColor: SEGMENT_COLORS[index % SEGMENT_COLORS.length] }}
-              >
-                {(participants[index] ?? "?").charAt(0)}
+            <motion.div
+              key={member.id}
+              className="relative"
+              initial={{ scale: 0, rotate: -8, opacity: 0 }}
+              animate={{ scale: 1, rotate: 0, opacity: 1 }}
+              transition={{ type: "spring", stiffness: 380, damping: 18 }}
+            >
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full glass-card border border-white/10">
+                <div
+                  className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold text-white"
+                  style={{ backgroundColor: SEGMENT_COLORS[index % SEGMENT_COLORS.length] }}
+                >
+                  {(participants[index] ?? "?").charAt(0)}
+                </div>
+                <span className="text-sm font-medium text-foreground">{participants[index]}</span>
+                {member.isHost && <Crown className="w-3 h-3 text-primary" />}
               </div>
-              <span className="text-sm font-medium text-foreground">{participants[index]}</span>
-              {member.isHost && <Crown className="w-3 h-3 text-primary" />}
-            </div>
+              {/* 新規入場時 ✨ スパーク */}
+              {newMemberIds.has(member.id) && (
+                <motion.span
+                  className="absolute -top-1.5 -right-1 text-xs pointer-events-none"
+                  initial={{ opacity: 1, y: 0, scale: 1 }}
+                  animate={{ opacity: 0, y: -14, scale: 1.4 }}
+                  transition={{ delay: 0.15, duration: 0.7 }}
+                >
+                  ✨
+                </motion.span>
+              )}
+            </motion.div>
           ))}
         </div>
+        {/* ISSUE-212: 熱量メーター + スピン促進テキスト */}
+        <HypeBar count={room.members.length} />
+        {isOwner && phase === "waiting" && participants.length >= 3 && (
+          <motion.p
+            className="text-xs text-primary font-semibold text-center mt-2"
+            animate={{ opacity: [0.55, 1, 0.55] }}
+            transition={{ repeat: Infinity, duration: 1.8 }}
+          >
+            🎯 全員揃ったらスピン！
+          </motion.p>
+        )}
       </section>
 
       {/* Bill input */}

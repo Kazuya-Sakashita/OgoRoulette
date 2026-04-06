@@ -11,7 +11,11 @@
   "background_color": "#0B1B2B",
   "theme_color": "#F97316",
   "orientation": "portrait-primary",
-  "categories": ["games", "utilities", "entertainment"],
+  "categories": [
+    "games",
+    "utilities",
+    "entertainment"
+  ],
   "icons": [
     {
       "src": "/images/icon-192.png",
@@ -47,5 +51,31 @@
       "label": "OgoRoulette — おごりをルーレットで決めよう"
     }
   ],
-  "prefer_related_applications": false
+  "prefer_related_applications": false,
+  "shortcuts": [
+    {
+      "name": "最近のグループ",
+      "short_name": "グループ",
+      "url": "/home?tab=groups",
+      "description": "最近使ったグループから始める",
+      "icons": [
+        {
+          "src": "/images/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "新しいルームを作る",
+      "short_name": "新規ルーム",
+      "url": "/room/create",
+      "description": "すぐにルーレットを始める",
+      "icons": [
+        {
+          "src": "/images/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
+  ]
 }

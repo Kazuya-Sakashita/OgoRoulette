@@ -48,6 +48,8 @@ interface WinnerCardProps {
   onAdvanceToDetails?: () => void
   // ISSUE-197: セッション内スピン回数（エスカレーション演出）
   sessionSpinCount?: number
+  // ISSUE-213: 絵文字リアクション（マルチプレイヤー共有）
+  onReact?: (emoji: string) => void
 }
 
 const REACTIONS = [
@@ -89,6 +91,7 @@ export function WinnerCard({
   isGuest = false,
   onAdvanceToDetails,
   sessionSpinCount,
+  onReact,
 }: WinnerCardProps) {
   const color = SEGMENT_COLORS[winnerIndex % SEGMENT_COLORS.length]
   const [reaction] = useState(() => getPersonalizedReaction(treatCount))
@@ -650,6 +653,30 @@ export function WinnerCard({
                     </Button>
                   </motion.div>
 
+                  {/* ── ISSUE-213: 絵文字リアクションパネル ── */}
+                  {onReact && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.22 }}
+                      className="mb-4"
+                    >
+                      <p className="text-xs text-muted-foreground text-center mb-2">みんなの反応は？</p>
+                      <div className="flex gap-2 justify-center flex-wrap">
+                        {["😂", "🎉", "😭", "👏", "🔥", "💸", "😤", "🫡"].map((emoji) => (
+                          <motion.button
+                            key={emoji}
+                            whileTap={{ scale: 1.6 }}
+                            className="text-2xl p-2 rounded-full hover:bg-white/10 transition-colors active:scale-95"
+                            onClick={() => onReact(emoji)}
+                          >
+                            {emoji}
+                          </motion.button>
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
+
                   {/* ── SECONDARY CTA: グループ保存 (ISSUE-181 格上げ) ── */}
                   <motion.div
                     initial={{ opacity: 0, y: 6 }}
@@ -718,6 +745,18 @@ export function WinnerCard({
                       <div className="flex items-center justify-center gap-2 h-10 rounded-2xl bg-primary/15 border border-primary/30 text-sm text-primary">
                         <Check className="w-4 h-4" />
                         いつものメンバーに登録しました
+                      </div>
+                    )}
+                    {/* ISSUE-210: グループ保存済みの場合 → ホームで再スタート誘導 */}
+                    {!onSaveGroup && !savedThisSession && participants.length > 1 && (
+                      <div className="flex items-center justify-between h-10 px-3 rounded-2xl bg-white/5 border border-white/10 text-sm text-muted-foreground">
+                        <div className="flex items-center gap-1.5">
+                          <Bookmark className="w-3.5 h-3.5 text-primary/70" />
+                          <span>このメンバーは保存済み</span>
+                        </div>
+                        <Link href="/home" onClick={onClose} className="text-xs text-primary hover:underline">
+                          ホームで再スタート →
+                        </Link>
                       </div>
                     )}
                   </motion.div>

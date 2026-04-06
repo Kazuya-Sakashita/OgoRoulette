@@ -1,6 +1,8 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
+import { motion, AnimatePresence } from "framer-motion"
+import { createClient } from "@/lib/supabase/client"
 import { RecordingCanvas } from "@/components/recording-canvas"
 import { ShareSheet } from "@/components/share-sheet"
 import { PrismBurst } from "@/components/prism-burst"
@@ -82,6 +84,34 @@ export function RoomPlayOverlays({
 
   // ISSUE-207: 停止フラッシュ — winner が確定した瞬間に 0.2秒フラッシュ
   const [showFlash, setShowFlash] = useState(false)
+
+  // ISSUE-213: 絵文字フローティング状態 + Supabase リアクションチャンネル
+  type FloatingEmoji = { id: string; emoji: string; x: number }
+  const [floatingEmojis, setFloatingEmojis] = useState<FloatingEmoji[]>([])
+  const reactChannelRef = useRef<ReturnType<ReturnType<typeof createClient>["channel"]> | null>(null)
+
+  useEffect(() => {
+    const supabase = createClient()
+    const channel = supabase
+      .channel(`reactions:${roomCode}`)
+      .on("broadcast", { event: "emoji_reaction" }, ({ payload }: { payload: { emoji: string } }) => {
+        const id = Math.random().toString(36).slice(2)
+        setFloatingEmojis((prev) => [...prev, { id, emoji: payload.emoji, x: Math.random() * 70 + 15 }])
+        setTimeout(() => setFloatingEmojis((prev) => prev.filter((e) => e.id !== id)), 2300)
+      })
+      .subscribe()
+    reactChannelRef.current = channel
+    return () => { supabase.removeChannel(channel) }
+  }, [roomCode]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleReact = (emoji: string) => {
+    // ローカル即時表示
+    const id = Math.random().toString(36).slice(2)
+    setFloatingEmojis((prev) => [...prev, { id, emoji, x: Math.random() * 70 + 15 }])
+    setTimeout(() => setFloatingEmojis((prev) => prev.filter((e) => e.id !== id)), 2300)
+    // 他メンバーに broadcast
+    reactChannelRef.current?.send({ type: "broadcast", event: "emoji_reaction", payload: { emoji } })
+  }
   useEffect(() => {
     if (!winner) return
     setShowFlash(true)
@@ -193,8 +223,26 @@ export function RoomPlayOverlays({
           onSaveGroup={isCurrentGroupSaved ? undefined : handleSaveGroup}
           isGuest={!currentUser}
           onAdvanceToDetails={handleDetailsPhase}
+          onReact={handleReact}
         />
       )}
+
+      {/* ISSUE-213: フローティング絵文字 */}
+      <AnimatePresence>
+        {floatingEmojis.map(({ id, emoji, x }) => (
+          <motion.div
+            key={id}
+            className="fixed text-4xl pointer-events-none z-50"
+            style={{ left: `${x}%`, bottom: "25%" }}
+            initial={{ opacity: 1, y: 0, scale: 0.8 }}
+            animate={{ opacity: 0, y: -220, scale: 1.5 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 2.0, ease: "easeOut" }}
+          >
+            {emoji}
+          </motion.div>
+        ))}
+      </AnimatePresence>
     </>
   )
 }
