@@ -356,9 +356,9 @@ export default function WelcomePage() {
             まず試してみる
           </Button>
 
-          {/* Sub text for guest mode */}
+          {/* Sub text for guest mode — ISSUE-222: 制限を明示してゲストモードの誤解を防ぐ */}
           <p className="text-xs text-muted-foreground">
-            ログイン不要で体験できます
+            ログイン不要・履歴は保存されません
           </p>
         </div>
 

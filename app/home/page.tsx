@@ -46,6 +46,8 @@ export default function HomePage() {
   const { soundEnabled, toggle: toggleSound } = useSoundSetting()
   // ISSUE-162: first-visit hint — pulse on SPIN button until first spin
   const [showSpinHint, setShowSpinHint] = useState(false)
+  // ISSUE-222: 初回スピン後バナー「ルームを作ってみる」導線
+  const [showFirstSpinBanner, setShowFirstSpinBanner] = useState(false)
   useEffect(() => {
     const mql = window.matchMedia('(min-width: 1024px)')
     const update = (e: MediaQueryList | MediaQueryListEvent) => setWheelSize(e.matches ? 360 : 280)
@@ -308,9 +310,11 @@ export default function HomePage() {
     // ISSUE-161: increment session spin counter
     setSessionSpinCount((c) => c + 1)
     // ISSUE-162: dismiss hint after first spin
+    // ISSUE-222: 初回スピン後バナーを表示
     if (showSpinHint) {
       setShowSpinHint(false)
       localStorage.setItem('ogoroulette_spun_once', 'true')
+      setShowFirstSpinBanner(true)
     }
     // ISSUE-155: 300ms silence after wheel stops — creates anticipation before reveal
     setTimeout(() => {
@@ -1063,6 +1067,28 @@ export default function HomePage() {
             )}
           </Button>
           {/* ISSUE-161: Desktop stats bar — visible only at lg+ */}
+          {/* ISSUE-222: 初回スピン後バナー — WinnerCard が閉じた後に表示 */}
+          {showFirstSpinBanner && !winner && (
+            <div className="relative mt-4 p-4 rounded-2xl bg-primary/10 border border-primary/20 text-center w-full max-w-[280px]">
+              <button
+                onClick={() => setShowFirstSpinBanner(false)}
+                className="absolute top-2 right-2 text-muted-foreground/50 hover:text-muted-foreground text-lg leading-none"
+                aria-label="閉じる"
+              >
+                ×
+              </button>
+              <p className="text-sm font-semibold text-foreground mb-1">友達と一緒に使うともっと楽しい！</p>
+              <p className="text-xs text-muted-foreground mb-3">QRコードで招待して全員で回そう</p>
+              <a
+                href="/room/create"
+                className="inline-block px-4 py-2 rounded-xl text-sm font-semibold text-white"
+                style={{ background: 'linear-gradient(to right, #F97316, #EC4899)' }}
+              >
+                ルームを作る →
+              </a>
+            </div>
+          )}
+
           {sessionSpinCount > 0 && (
             <div className="hidden lg:flex items-center gap-4 mt-4 px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-xs text-muted-foreground">
               <span>👥 {participants.length}人</span>
