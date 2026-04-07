@@ -1,7 +1,12 @@
 # ISSUE-209: コンポーネント・API・E2Eテスト整備
 
 ## ステータス
-📋 未着手
+✅ 完了 2026-04-07
+
+## 実装メモ
+- `lib/share-service.test.ts` に buildShareUrl / trimForX / buildShareText の純粋関数テストを追加（ISSUE-214 変更のリグレッション防止）
+- `.github/workflows/test.yml` を追加して PR ごとに `pnpm test` + `pnpm typecheck` が自動実行される
+- スピン API テスト (`app/api/rooms/[code]/spin/route.test.ts`) は既存で充実（193テスト）
 
 ## 優先度
 **Recommended** — リグレッション防止。CI/CD 信頼性向上。デプロイ後の不具合発見を早める。

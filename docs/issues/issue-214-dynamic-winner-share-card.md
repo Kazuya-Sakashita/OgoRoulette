@@ -1,7 +1,12 @@
 # ISSUE-214: AARRR-Referral強化 — 当選者名入り動的シェアカード生成
 
 ## ステータス
-📋 未着手
+✅ 完了 2026-04-07
+
+## 実装メモ
+`buildShareUrl` を `/result?winner=...&room=CODE` に統一。
+既存の `/result` ページ + `/api/og` で当選者名入り動的OGPが生成される。
+`room=` パラメータがあると ISSUE-094 の「このグループに参加する」CTA が表示されウイルスループ維持。
 
 ## 優先度
 **Medium** — 感情スコアが 15/20 を超えた後に着手（AARRR-Referral ボトルネック解消）

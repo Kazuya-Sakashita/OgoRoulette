@@ -110,21 +110,24 @@ describe('share-service', () => {
   // ─── buildShareUrl ────────────────────────────────────────────────────────
 
   describe('buildShareUrl', () => {
-    test('roomCode がある場合はウイルスループURL（/join?room=...&ref=share）を返す', () => {
+    // ISSUE-214: roomCode があっても /result に統一（動的OGP有効化）
+    test('roomCode がある場合も /result に飛び動的OGP が有効になる', () => {
       const url = buildShareUrl({ winner: '太郎', roomCode: 'ABC123' })
-      expect(url).toContain('/join')
+      expect(url).toContain('/result')
       expect(url).toContain('room=ABC123')
       expect(url).toContain('ref=share')
       expect(url).toContain('winner=')
+      // 以前の /join? パターンに戻っていないことを確認
+      expect(url).not.toContain('/join')
     })
 
-    test('roomCode がない場合は /result?treater=... を返す', () => {
+    test('roomCode がない場合も /result?treater=... を返す', () => {
       const url = buildShareUrl({ winner: '花子' })
       expect(url).toContain('/result')
       expect(url).toContain('winner=')
     })
 
-    test('ウイルスループURL には winner 名が含まれる', () => {
+    test('roomCode ありの URL に winner 名が含まれる', () => {
       const url = buildShareUrl({ winner: '鈴木', roomCode: 'XYZ789' })
       // winner パラメータにURLエンコードされた名前が含まれる
       expect(decodeURIComponent(url)).toContain('鈴木')
