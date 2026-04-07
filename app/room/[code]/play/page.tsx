@@ -308,7 +308,7 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
         spinError={spinError}
         handleSpin={handleSpin}
         showResult={showResult}
-        handleLeaveRoom={!isOwner ? handleLeaveRoom : undefined}
+        handleLeaveRoom={!isOwner && currentUser ? handleLeaveRoom : undefined}
       />
     </main>
   )
