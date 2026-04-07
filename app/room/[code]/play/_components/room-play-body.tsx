@@ -74,6 +74,8 @@ interface RoomPlayBodyProps {
   showResult: (room: Room | null) => void
   // ISSUE-225: メンバー退室ボタン
   handleLeaveRoom?: () => void
+  // ISSUE-229: 絵文字リアクション
+  handleReact?: (emoji: string) => void
 }
 
 export function RoomPlayBody({
@@ -93,7 +95,7 @@ export function RoomPlayBody({
   wheelSize, wheelRotationRef,
   pendingWinnerIndex, spinStartedAtMs, spinRemainingMs,
   handleSpinComplete, handleSpinStart, handleSlowingDown, handleNearMiss,
-  countdownValue, spinError, handleSpin, showResult, handleLeaveRoom,
+  countdownValue, spinError, handleSpin, showResult, handleLeaveRoom, handleReact,
 }: RoomPlayBodyProps) {
   // ISSUE-212: 新規参加者を検出して ✨ スパーク演出
   const isFirstRenderRef = useRef(true)
@@ -173,121 +175,130 @@ export function RoomPlayBody({
         </div>
       )}
 
-      {/* Participants */}
-      <section className="mb-4">
-        <div className="flex items-center gap-2 mb-2">
-          <Users className="w-4 h-4 text-muted-foreground" />
-          <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">参加者</span>
+      {/* ISSUE-232: md以上で2カラムグリッド */}
+      <div className="flex-1 flex flex-col md:grid md:grid-cols-[1fr_auto] md:gap-8 md:items-start">
+
+        {/* 左カラム: 参加者 + 金額入力 */}
+        <div className="md:pt-2">
+          {/* Participants */}
+          <section className="mb-4">
+            <div className="flex items-center gap-2 mb-2">
+              <Users className="w-4 h-4 text-muted-foreground" />
+              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">参加者</span>
+            </div>
+            {/* ISSUE-212: 参加者チップに入場スプリングアニメーション */}
+            <div className="flex flex-wrap gap-2">
+              {room.members.map((member, index) => (
+                <motion.div
+                  key={member.id}
+                  className="relative"
+                  initial={{ scale: 0, rotate: -8, opacity: 0 }}
+                  animate={{ scale: 1, rotate: 0, opacity: 1 }}
+                  transition={{ type: "spring", stiffness: 380, damping: 18 }}
+                >
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full glass-card border border-white/10">
+                    <div
+                      className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold text-white"
+                      style={{ backgroundColor: SEGMENT_COLORS[index % SEGMENT_COLORS.length] }}
+                    >
+                      {(participants[index] ?? "?").charAt(0)}
+                    </div>
+                    <span className="text-sm font-medium text-foreground">{participants[index]}</span>
+                    {member.isHost && <Crown className="w-3 h-3 text-primary" />}
+                  </div>
+                  {/* 新規入場時 ✨ スパーク */}
+                  {newMemberIds.has(member.id) && (
+                    <motion.span
+                      className="absolute -top-1.5 -right-1 text-xs pointer-events-none"
+                      initial={{ opacity: 1, y: 0, scale: 1 }}
+                      animate={{ opacity: 0, y: -14, scale: 1.4 }}
+                      transition={{ delay: 0.15, duration: 0.7 }}
+                    >
+                      ✨
+                    </motion.span>
+                  )}
+                </motion.div>
+              ))}
+            </div>
+            {/* ISSUE-212: 熱量メーター + スピン促進テキスト */}
+            <HypeBar count={room.members.length} />
+            {isOwner && phase === "waiting" && participants.length >= 3 && (
+              <motion.p
+                className="text-xs text-primary font-semibold text-center mt-2"
+                animate={{ opacity: [0.55, 1, 0.55] }}
+                transition={{ repeat: Infinity, duration: 1.8 }}
+              >
+                🎯 全員揃ったらスピン！
+              </motion.p>
+            )}
+          </section>
+
+          {/* Bill input */}
+          <BillInputSection
+            phase={phase}
+            showBillInput={showBillInput}
+            setShowBillInput={setShowBillInput}
+            totalBill={totalBill}
+            treatAmount={treatAmount}
+            splitAmount={splitAmount}
+            hasBillInput={hasBillInput}
+            handleTotalBillChange={handleTotalBillChange}
+            handleTreatAmountChange={handleTreatAmountChange}
+            setTreatAmount={setTreatAmount}
+          />
         </div>
-        {/* ISSUE-212: 参加者チップに入場スプリングアニメーション */}
-        <div className="flex flex-wrap gap-2">
-          {room.members.map((member, index) => (
+
+        {/* 右カラム: ルーレット + SPIN */}
+        <div className="flex flex-col items-center justify-center py-4 md:py-2 min-h-0">
+          <div className="relative mb-6">
             <motion.div
-              key={member.id}
-              className="relative"
-              initial={{ scale: 0, rotate: -8, opacity: 0 }}
-              animate={{ scale: 1, rotate: 0, opacity: 1 }}
-              transition={{ type: "spring", stiffness: 380, damping: 18 }}
-            >
-              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full glass-card border border-white/10">
-                <div
-                  className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold text-white"
-                  style={{ backgroundColor: SEGMENT_COLORS[index % SEGMENT_COLORS.length] }}
-                >
-                  {(participants[index] ?? "?").charAt(0)}
-                </div>
-                <span className="text-sm font-medium text-foreground">{participants[index]}</span>
-                {member.isHost && <Crown className="w-3 h-3 text-primary" />}
-              </div>
-              {/* 新規入場時 ✨ スパーク */}
-              {newMemberIds.has(member.id) && (
-                <motion.span
-                  className="absolute -top-1.5 -right-1 text-xs pointer-events-none"
-                  initial={{ opacity: 1, y: 0, scale: 1 }}
-                  animate={{ opacity: 0, y: -14, scale: 1.4 }}
-                  transition={{ delay: 0.15, duration: 0.7 }}
-                >
-                  ✨
-                </motion.span>
-              )}
-            </motion.div>
-          ))}
-        </div>
-        {/* ISSUE-212: 熱量メーター + スピン促進テキスト */}
-        <HypeBar count={room.members.length} />
-        {isOwner && phase === "waiting" && participants.length >= 3 && (
-          <motion.p
-            className="text-xs text-primary font-semibold text-center mt-2"
-            animate={{ opacity: [0.55, 1, 0.55] }}
-            transition={{ repeat: Infinity, duration: 1.8 }}
-          >
-            🎯 全員揃ったらスピン！
-          </motion.p>
-        )}
-      </section>
+              className="absolute inset-0 rounded-full pointer-events-none"
+              animate={{
+                scale: phase === "spinning" ? [1.5, 1.7, 1.5] : 1.5,
+                opacity: phase === "spinning" ? [0.15, 0.25, 0.15] : 0.1,
+              }}
+              transition={phase === "spinning"
+                ? { duration: 1.2, repeat: Infinity, ease: "easeInOut" }
+                : { duration: 0.5 }
+              }
+              style={{ background: "radial-gradient(circle, #F97316 0%, transparent 70%)", filter: "blur(30px)" }}
+            />
+            <RouletteWheel
+              isSpinning={phase === "spinning"}
+              size={wheelSize}
+              participants={participants}
+              targetWinnerIndex={pendingWinnerIndex}
+              onSpinComplete={handleSpinComplete}
+              onSpinStart={handleSpinStart}
+              onSlowingDown={handleSlowingDown}
+              onNearMiss={handleNearMiss}
+              wheelRotationRef={wheelRotationRef}
+              spinRemainingMs={spinRemainingMs}
+              spinSeed={spinStartedAtMs ?? undefined}
+            />
+          </div>
 
-      {/* Bill input */}
-      <BillInputSection
-        phase={phase}
-        showBillInput={showBillInput}
-        setShowBillInput={setShowBillInput}
-        totalBill={totalBill}
-        treatAmount={treatAmount}
-        splitAmount={splitAmount}
-        hasBillInput={hasBillInput}
-        handleTotalBillChange={handleTotalBillChange}
-        handleTreatAmountChange={handleTreatAmountChange}
-        setTreatAmount={setTreatAmount}
-      />
-
-      {/* Roulette wheel */}
-      <div className="flex-1 flex flex-col items-center justify-center py-4 min-h-0">
-        <div className="relative mb-6">
-          <motion.div
-            className="absolute inset-0 rounded-full pointer-events-none"
-            animate={{
-              scale: phase === "spinning" ? [1.5, 1.7, 1.5] : 1.5,
-              opacity: phase === "spinning" ? [0.15, 0.25, 0.15] : 0.1,
-            }}
-            transition={phase === "spinning"
-              ? { duration: 1.2, repeat: Infinity, ease: "easeInOut" }
-              : { duration: 0.5 }
-            }
-            style={{ background: "radial-gradient(circle, #F97316 0%, transparent 70%)", filter: "blur(30px)" }}
-          />
-          <RouletteWheel
-            isSpinning={phase === "spinning"}
-            size={wheelSize}
+          <SpinControls
+            isCompleted={room.status === "COMPLETED"}
+            isOwner={isOwner}
+            phase={phase}
             participants={participants}
-            targetWinnerIndex={pendingWinnerIndex}
-            onSpinComplete={handleSpinComplete}
-            onSpinStart={handleSpinStart}
-            onSlowingDown={handleSlowingDown}
-            onNearMiss={handleNearMiss}
-            wheelRotationRef={wheelRotationRef}
-            spinRemainingMs={spinRemainingMs}
-            spinSeed={spinStartedAtMs ?? undefined}
+            room={room}
+            countdownValue={countdownValue}
+            spinError={spinError}
+            handleSpin={handleSpin}
+            showResult={showResult}
+            handleLeaveRoom={handleLeaveRoom}
+            handleReact={handleReact}
           />
+
+          {isOwner && (phase === "result" || (phase === "waiting" && participants.length < 2)) && (
+            <p className="text-xs text-muted-foreground text-center mt-2">
+              {phase === "result" ? "結果カードを閉じると再スピンできます" : "参加者を2人以上追加してください"}
+            </p>
+          )}
         </div>
 
-        <SpinControls
-          isCompleted={room.status === "COMPLETED"}
-          isOwner={isOwner}
-          phase={phase}
-          participants={participants}
-          room={room}
-          countdownValue={countdownValue}
-          spinError={spinError}
-          handleSpin={handleSpin}
-          showResult={showResult}
-          handleLeaveRoom={handleLeaveRoom}
-        />
-
-        {isOwner && (phase === "result" || (phase === "waiting" && participants.length < 2)) && (
-          <p className="text-xs text-muted-foreground text-center mt-2">
-            {phase === "result" ? "結果カードを閉じると再スピンできます" : "参加者を2人以上追加してください"}
-          </p>
-        )}
       </div>
     </div>
   )

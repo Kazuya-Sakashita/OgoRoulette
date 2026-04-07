@@ -18,6 +18,8 @@ interface SpinControlsProps {
   showResult: (room: Room) => void
   // ISSUE-225: メンバー退室ボタン用
   handleLeaveRoom?: () => void
+  // ISSUE-229: 待機中絵文字リアクション
+  handleReact?: (emoji: string) => void
 }
 
 export function SpinControls({
@@ -31,6 +33,7 @@ export function SpinControls({
   handleSpin,
   showResult,
   handleLeaveRoom,
+  handleReact,
 }: SpinControlsProps) {
   return (
     <>
@@ -124,6 +127,21 @@ export function SpinControls({
                   <motion.span animate={{ opacity: [1, 0.3, 1] }} transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}>…？</motion.span>
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">オーナーの回転を待っています</p>
+                {/* ISSUE-229: 待機中絵文字リアクション */}
+                {handleReact && (
+                  <div className="flex gap-3 justify-center mt-4">
+                    {["🔥", "😂", "😱", "👀"].map((emoji) => (
+                      <button
+                        key={emoji}
+                        onClick={() => handleReact(emoji)}
+                        className="text-2xl hover:scale-125 transition-transform active:scale-110"
+                        aria-label={`${emoji} リアクション`}
+                      >
+                        {emoji}
+                      </button>
+                    ))}
+                  </div>
+                )}
                 {/* ISSUE-225: 退室ボタン */}
                 {handleLeaveRoom && (
                   <button

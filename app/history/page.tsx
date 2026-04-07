@@ -164,7 +164,7 @@ export default function HistoryPage() {
                     ログインで履歴をクラウド保存
                   </p>
                   <p className="text-xs text-muted-foreground mb-3">
-                    端末をまたいでいつでも確認できます
+                    グループを保存してどの端末からでもすぐ回せます
                   </p>
                   <Button asChild size="sm" className="h-8 px-4 rounded-xl bg-gradient-accent text-white text-xs font-semibold">
                     <Link href="/">ログインする</Link>
@@ -214,12 +214,16 @@ export default function HistoryPage() {
               </section>
             ) : (
               <div className="text-center py-12">
-                <div className="w-16 h-16 rounded-full bg-secondary flex items-center justify-center mx-auto mb-3">
-                  <Sparkles className="w-8 h-8 text-muted-foreground" />
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  ルーレットを回すとここに履歴が表示されます
+                <div className="text-4xl mb-4">🎯</div>
+                <h2 className="text-lg font-bold text-foreground mb-2">
+                  次の飲み会も、ルーレットで決めよう
+                </h2>
+                <p className="text-sm text-muted-foreground mb-6">
+                  グループを保存すると、毎回メンバーを入力せずにすぐ回せます。
                 </p>
+                <Button asChild className="bg-gradient-accent text-white">
+                  <Link href="/room/create">ルームを作る</Link>
+                </Button>
               </div>
             )}
           </>
@@ -371,19 +375,19 @@ export default function HistoryPage() {
             ) : (
               /* Empty State */
               <div className="text-center py-16">
-                <div className="w-20 h-20 rounded-full bg-secondary flex items-center justify-center mx-auto mb-4">
-                  <Calendar className="w-10 h-10 text-muted-foreground" />
-                </div>
-                <p className="text-foreground font-semibold mb-1">まだ履歴がありません</p>
+                <div className="text-4xl mb-4">🎯</div>
+                <h2 className="text-lg font-bold text-foreground mb-2">初めてのルーレット</h2>
                 <p className="text-sm text-muted-foreground mb-6">
-                  ルーレットを回して履歴を作りましょう
+                  グループを作って回すと、ここに履歴が残ります
                 </p>
-                <Button asChild className="h-12 px-6 rounded-2xl bg-gradient-accent text-white font-semibold">
-                  <Link href="/home">
-                    <Sparkles className="w-4 h-4 mr-2" />
-                    ルーレットを始める
-                  </Link>
-                </Button>
+                <div className="flex flex-col gap-3 items-center">
+                  <Button asChild className="h-12 px-6 rounded-2xl bg-gradient-accent text-white font-semibold">
+                    <Link href="/room/create">
+                      <Sparkles className="w-4 h-4 mr-2" />
+                      ルームを作る
+                    </Link>
+                  </Button>
+                </div>
               </div>
             )}
           </>

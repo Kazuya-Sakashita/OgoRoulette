@@ -173,7 +173,7 @@ function ResultInner() {
                 asChild
                 className="w-full h-12 rounded-2xl bg-linear-to-r from-orange-500 to-pink-500 hover:opacity-90 text-white font-semibold text-base shadow-md shadow-orange-500/30 transition-all active:scale-[0.98]"
               >
-                <Link href="/home">OgoRouletteを無料で試す</Link>
+                <Link href="/room/create">次の飲み会で使ってみる →</Link>
               </Button>
             </div>
           </div>

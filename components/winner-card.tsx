@@ -733,10 +733,13 @@ export function WinnerCard({
                         ) : (
                           <button
                             onClick={() => setShowSaveGroup(true)}
-                            className="w-full flex items-center justify-center gap-2 h-12 rounded-2xl border border-primary/40 bg-primary/10 hover:bg-primary/20 text-sm font-semibold text-primary transition-all"
+                            className="w-full flex flex-col items-center justify-center gap-0.5 h-14 rounded-2xl border border-primary/40 bg-primary/10 hover:bg-primary/20 text-primary transition-all"
                           >
-                            <Bookmark className="w-4 h-4" />
-                            このメンバーを次回も使う
+                            <div className="flex items-center gap-2 text-sm font-semibold">
+                              <Bookmark className="w-4 h-4" />
+                              このメンバーを次回も使う
+                            </div>
+                            <p className="text-xs text-primary/70">次の飲み会ですぐ呼び出せます</p>
                           </button>
                         )}
                       </>

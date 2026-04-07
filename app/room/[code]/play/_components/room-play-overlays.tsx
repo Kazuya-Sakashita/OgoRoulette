@@ -1,8 +1,7 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { createClient } from "@/lib/supabase/client"
 import { RecordingCanvas } from "@/components/recording-canvas"
 import { ShareSheet } from "@/components/share-sheet"
 import { PrismBurst } from "@/components/prism-burst"
@@ -12,6 +11,7 @@ import { WinnerCard } from "@/components/winner-card"
 import { SEGMENT_COLORS } from "@/lib/constants"
 import { getTreatTitle } from "@/lib/group-storage"
 import type { RecordingPhase } from "@/components/recording-canvas"
+import type { FloatingEmoji } from "../use-emoji-reactions"
 import type { WinnerData, Phase } from "../types"
 import type { User } from "@supabase/supabase-js"
 import type React from "react"
@@ -50,6 +50,9 @@ interface RoomPlayOverlaysProps {
   handleDetailsPhase: () => void
   // ISSUE-207: 感情ピーク演出
   isSlowingDown: boolean
+  // ISSUE-229: 絵文字リアクション（use-emoji-reactions hook から渡す）
+  floatingEmojis: FloatingEmoji[]
+  handleReact: (emoji: string) => void
 }
 
 export function RoomPlayOverlays({
@@ -79,39 +82,14 @@ export function RoomPlayOverlays({
   currentUser,
   handleDetailsPhase,
   isSlowingDown,
+  floatingEmojis,
+  handleReact,
 }: RoomPlayOverlaysProps) {
   const winnerColor = winner ? SEGMENT_COLORS[winner.index % SEGMENT_COLORS.length] : SEGMENT_COLORS[0]
 
   // ISSUE-207: 停止フラッシュ — winner が確定した瞬間に 0.2秒フラッシュ
   const [showFlash, setShowFlash] = useState(false)
 
-  // ISSUE-213: 絵文字フローティング状態 + Supabase リアクションチャンネル
-  type FloatingEmoji = { id: string; emoji: string; x: number }
-  const [floatingEmojis, setFloatingEmojis] = useState<FloatingEmoji[]>([])
-  const reactChannelRef = useRef<ReturnType<ReturnType<typeof createClient>["channel"]> | null>(null)
-
-  useEffect(() => {
-    const supabase = createClient()
-    const channel = supabase
-      .channel(`reactions:${roomCode}`)
-      .on("broadcast", { event: "emoji_reaction" }, ({ payload }: { payload: { emoji: string } }) => {
-        const id = Math.random().toString(36).slice(2)
-        setFloatingEmojis((prev) => [...prev, { id, emoji: payload.emoji, x: Math.random() * 70 + 15 }])
-        setTimeout(() => setFloatingEmojis((prev) => prev.filter((e) => e.id !== id)), 2300)
-      })
-      .subscribe()
-    reactChannelRef.current = channel
-    return () => { supabase.removeChannel(channel) }
-  }, [roomCode]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  const handleReact = (emoji: string) => {
-    // ローカル即時表示
-    const id = Math.random().toString(36).slice(2)
-    setFloatingEmojis((prev) => [...prev, { id, emoji, x: Math.random() * 70 + 15 }])
-    setTimeout(() => setFloatingEmojis((prev) => prev.filter((e) => e.id !== id)), 2300)
-    // 他メンバーに broadcast
-    reactChannelRef.current?.send({ type: "broadcast", event: "emoji_reaction", payload: { emoji } })
-  }
   useEffect(() => {
     if (!winner) return
     setShowFlash(true)

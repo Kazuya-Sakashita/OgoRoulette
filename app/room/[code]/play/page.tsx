@@ -14,6 +14,7 @@ import type { User } from "@supabase/supabase-js"
 import { useRoomSync } from "./use-room-sync"
 import { useBill } from "./use-bill"
 import { useSpin } from "./use-spin"
+import { useEmojiReactions } from "./use-emoji-reactions"
 import { RoomPlayOverlays } from "./_components/room-play-overlays"
 import { RoomPlayBody } from "./_components/room-play-body"
 
@@ -132,6 +133,9 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
     }
   }
 
+  // ISSUE-229: 絵文字リアクション hook（waiting フェーズからも使用可能）
+  const { floatingEmojis, handleReact } = useEmojiReactions(code)
+
   // ISSUE-225: 非オーナーメンバーの退室処理
   const handleLeaveRoom = useCallback(async () => {
     if (!window.confirm("ルームを離脱しますか？参加者リストから削除されます。")) return
@@ -146,14 +150,21 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
   // --- Effects ---
 
   // ISSUE-141: ビューポートサイズに合わせてルーレットホイールのサイズを動的に計算する
+  // ISSUE-232: md以上（768px+）の2カラム時は右カラム幅でルーレットサイズを決定
   useEffect(() => {
     const RESERVED_HEIGHT = 440
     const update = () => {
       const vw = window.innerWidth
       const vh = window.innerHeight
-      const byWidth = Math.min(360, vw - 40)
-      const byHeight = Math.min(360, vh - RESERVED_HEIGHT)
-      setWheelSize(Math.max(200, Math.min(byWidth, byHeight)))
+      const isMd = vw >= 768
+      if (isMd) {
+        const rightColWidth = Math.min(340, (vw - 64) / 2)
+        setWheelSize(Math.min(400, rightColWidth - 16))
+      } else {
+        const byWidth = Math.min(360, vw - 40)
+        const byHeight = Math.min(360, vh - RESERVED_HEIGHT)
+        setWheelSize(Math.max(200, Math.min(byWidth, byHeight)))
+      }
     }
     update()
     window.addEventListener("resize", update)
@@ -274,6 +285,8 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
         currentUser={currentUser}
         handleDetailsPhase={handleDetailsPhase}
         isSlowingDown={isSlowingDown}
+        floatingEmojis={floatingEmojis}
+        handleReact={handleReact}
       />
 
       <RoomPlayBody
@@ -309,6 +322,7 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
         handleSpin={handleSpin}
         showResult={showResult}
         handleLeaveRoom={!isOwner && currentUser ? handleLeaveRoom : undefined}
+        handleReact={handleReact}
       />
     </main>
   )
