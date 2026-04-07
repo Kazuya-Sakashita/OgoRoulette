@@ -405,7 +405,7 @@
 | ID | タイトル | 概要 | ステータス | 期待スコア |
 |----|--------|------|----------|----------|
 | [ISSUE-207](./issue-207-emotional-peak-buildup.md) | 感情ピーク強化 — ルーレット停止前の緊張感ビルドアップ演出 | パルスオーバーレイ・フラッシュ・名前リビール演出 | ✅ 完了（2026-04-06） | 感情+3 |
-| [ISSUE-208](./issue-208-next-font-migration.md) | Google Fonts CDN → next/font/google 移行 | フォント読み込みのパフォーマンス最適化 | 📋 未着手 | 技術+0.5 |
+| [ISSUE-208](./issue-208-next-font-migration.md) | Google Fonts CDN → next/font/google 移行 | フォント読み込みのパフォーマンス最適化 | ✅ 完了（2026-04-07） | 技術+0.5 |
 | [ISSUE-209](./issue-209-test-coverage.md) | コンポーネント・API・E2Eテスト整備 | テストカバレッジ向上 | ✅ 完了（2026-04-07） | 技術+0.5 |
 | [ISSUE-210](./issue-210-retention-group-reuse.md) | リテンション強化 — グループ再利用ショートカット | WinnerCard後CTA・ワンタップ再開・PWA shortcuts | ✅ 完了（2026-04-06） | AARRR+3 |
 | [ISSUE-211](./issue-211-aarrr-acquisition-seo.md) | AARRR-Acquisition強化 — GSC登録 + OGP確認 + SEO | Google Search Console登録・sitemap・キーワード最適化 | 📋 未着手 | AARRR+2 |

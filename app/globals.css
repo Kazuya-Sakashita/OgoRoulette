@@ -69,7 +69,8 @@
 }
 
 @theme inline {
-  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Noto Sans JP', sans-serif;
+  /* ISSUE-208: next/font が <html> に注入する CSS 変数を参照 */
+  --font-sans: var(--font-inter), var(--font-noto-sans-jp), -apple-system, BlinkMacSystemFont, sans-serif;
   --font-mono: 'JetBrains Mono', 'SF Mono', monospace;
   --color-background: var(--background);
   --color-foreground: var(--foreground);

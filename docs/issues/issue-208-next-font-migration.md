@@ -1,7 +1,7 @@
 # ISSUE-208: Google Fonts CDN → next/font/google 移行
 
 ## ステータス
-📋 未着手
+✅ 完了 2026-04-07
 
 ## 優先度
 **Recommended** — LCP・プライバシー・FOUT に影響。Lighthouse パフォーマンス改善。

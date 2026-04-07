@@ -1,7 +1,23 @@
 import type { Metadata, Viewport } from 'next'
+import { Inter, Noto_Sans_JP } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { SwRegister } from '@/components/sw-register'
 import './globals.css'
+
+// ISSUE-208: next/font/google に移行（CDN フェッチ排除・FOUT 防止・self-host）
+const inter = Inter({
+  subsets: ['latin'],
+  weight: ['400', '500', '700'],
+  variable: '--font-inter',
+  display: 'swap',
+})
+
+const notoSansJP = Noto_Sans_JP({
+  subsets: ['latin'],
+  weight: ['400', '700', '900'],
+  variable: '--font-noto-sans-jp',
+  display: 'swap',
+})
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://ogo-roulette.vercel.app'),
@@ -49,15 +65,8 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="ja" suppressHydrationWarning>
+    <html lang="ja" className={`${inter.variable} ${notoSansJP.variable}`} suppressHydrationWarning>
       <head>
-        {/* Google Fonts — 直接 CDN から読み込み（next/font/google の Turbopack ビルド問題を回避） */}
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Noto+Sans+JP:wght@400;700;900&display=swap"
-          rel="stylesheet"
-        />
         <link rel="manifest" href="/manifest.json" />
       </head>
       <body className="font-sans antialiased">
