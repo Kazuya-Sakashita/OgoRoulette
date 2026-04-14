@@ -35,6 +35,7 @@ import { unlockAudioContext, playPressSound, playSpinStartSound, playTickSound, 
 import { useSoundSetting } from "@/lib/use-sound-setting"
 import { vibrate, HapticPattern } from "@/lib/haptic"
 import { trackEvent, AnalyticsEvent } from "@/lib/analytics"
+import { SaveMembersModal } from "@/components/modals/save-members-modal"
 
 export default function HomePage() {
   const [isSpinning, setIsSpinning] = useState(false)
@@ -48,6 +49,8 @@ export default function HomePage() {
   const [showSpinHint, setShowSpinHint] = useState(false)
   // ISSUE-222: 初回スピン後バナー「ルームを作ってみる」導線
   const [showFirstSpinBanner, setShowFirstSpinBanner] = useState(false)
+  // ISSUE-234: ゲスト→ログイン転換モーダル
+  const [showSaveMembersModal, setShowSaveMembersModal] = useState(false)
   useEffect(() => {
     const mql = window.matchMedia('(min-width: 1024px)')
     const update = (e: MediaQueryList | MediaQueryListEvent) => setWheelSize(e.matches ? 360 : 280)
@@ -327,6 +330,18 @@ export default function HomePage() {
       clearTimeout(confettiTimerRef.current ?? undefined)
       confettiTimerRef.current = setTimeout(() => setShowConfetti(false), 4000)
 
+      // ISSUE-234: 2回目のスピン完了後（ゲストのみ）、1.5秒後にメンバー保存モーダル表示
+      const nextCount = sessionSpinCount + 1
+      if (!user && nextCount >= 2) {
+        try {
+          if (!sessionStorage.getItem('ogoroulette_save_modal_dismissed')) {
+            setTimeout(() => setShowSaveMembersModal(true), 1500)
+          }
+        } catch {
+          // sessionStorage unavailable — silently skip
+        }
+      }
+
       // ISSUE-182/198: グループが選択されていた場合、スピン結果をグループに記録（履歴・リテンション用）
       if (selectedGroupId) {
         recordGroupSpin(selectedGroupId, winnerName, participants)
@@ -390,6 +405,16 @@ export default function HomePage() {
     setLastTreatTitle(undefined)
     setLastRanking(undefined)
     resetRecording()
+  }
+
+  // ISSUE-234: メンバー保存モーダルを閉じる — 同セッション内は再表示しない
+  const dismissSaveMembersModal = () => {
+    setShowSaveMembersModal(false)
+    try {
+      sessionStorage.setItem('ogoroulette_save_modal_dismissed', '1')
+    } catch {
+      // sessionStorage unavailable — silently skip
+    }
   }
 
   // ISSUE-196: 再スピン — WinnerCard を閉じて同メンバーで即スピン
@@ -531,6 +556,11 @@ export default function HomePage() {
           onRespin={handleRespin}
           sessionSpinCount={sessionSpinCount}
         />
+      )}
+
+      {/* ISSUE-234: ゲスト→ログイン転換モーダル — 2回目スピン後1.5秒で出現 */}
+      {showSaveMembersModal && (
+        <SaveMembersModal onDismiss={dismissSaveMembersModal} />
       )}
 
       {/* Share sheet — appears when recording is ready */}
