@@ -215,6 +215,12 @@ export default function CreateRoomPage() {
                 "QRコードを作成"
               )}
             </Button>
+            {/* ISSUE-233: 名前未入力時のインラインヒント */}
+            {!currentUser && !guestNickname.trim() && !loading && (
+              <p className="mt-2 text-xs text-center text-amber-400">
+                ⚠ 名前を入力してください
+              </p>
+            )}
           </div>
 
           {/* Info Section */}

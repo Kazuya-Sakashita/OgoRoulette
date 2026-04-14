@@ -9,7 +9,7 @@ import { useRouter } from "next/navigation"
 import { startSupabaseOAuth, startLineAuth } from "@/lib/auth"
 import { validateReturnTo } from "@/lib/safe-redirect"
 import { RouletteWheel } from "@/components/roulette-wheel"
-import { Users } from "lucide-react"
+import { Users, Loader2 } from "lucide-react"
 
 // ISSUE-096: Demo spin names shown on the welcome page
 const DEMO_NAMES = ["さくら", "たろう", "はな"]
@@ -17,6 +17,8 @@ const DEMO_NAMES = ["さくら", "たろう", "はな"]
 export default function WelcomePage() {
   const [isLoading, setIsLoading] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  // ISSUE-235: ゲスト遷移中のローディング表示
+  const [isGuestPending, setIsGuestPending] = useState(false)
   // Demo roulette state — uses real RouletteWheel component
   const [demoSpinning, setDemoSpinning] = useState(false)
   const [demoWinner, setDemoWinner] = useState<string | null>(null)
@@ -345,15 +347,23 @@ export default function WelcomePage() {
           </div>
 
           {/* Try without login */}
+          {/* ISSUE-235: isPending state でローディング表示、二重クリック防止 */}
           <Button
             variant="outline"
             onClick={() => {
+              if (isGuestPending) return
+              setIsGuestPending(true)
               localStorage.setItem('ogoroulette_visited', 'true')
               router.push('/home')
             }}
-            className="w-full h-14 rounded-2xl border-white/10 bg-secondary hover:bg-white/10 text-foreground font-semibold press-effect text-base"
+            disabled={isGuestPending}
+            className="w-full h-14 rounded-2xl border-white/10 bg-secondary hover:bg-white/10 text-foreground font-semibold press-effect text-base disabled:opacity-70"
           >
-            まず試してみる
+            {isGuestPending ? (
+              <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> 準備中...</>
+            ) : (
+              "まず試してみる"
+            )}
           </Button>
 
           {/* Sub text for guest mode — ISSUE-222: 制限を明示してゲストモードの誤解を防ぐ */}
