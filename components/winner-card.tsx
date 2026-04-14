@@ -135,14 +135,14 @@ export function WinnerCard({
     new Intl.NumberFormat("ja-JP", { style: "currency", currency: "JPY" }).format(amount)
 
   // Phase A animation sequence — staggered reveals
+  // ISSUE-236: タイムライン再設計 — 2番手ハイライト(wheel側)→当選者名ズームイン→Confetti→シェアCTA
   useEffect(() => {
     const t1 = setTimeout(() => setShowCrown(true), 300)
-    const t2 = setTimeout(() => setShowName(true), 650)
-    const t3 = setTimeout(() => setShowReaction(true), 1150)
-    // ISSUE-093: instant share button appears 1.5 s after reveal
-    const t4 = setTimeout(() => setShowInstantShare(true), 1500)
-    const t5 = setTimeout(() => setShowHint(true), 1800)
-    // ISSUE-193: t6 auto-advance removed — user advances by tap (30s fallback below)
+    const t2 = setTimeout(() => setShowName(true), 600)   // 名前ズームイン (spring)
+    const t3 = setTimeout(() => setShowReaction(true), 1000)
+    // ISSUE-236: シェアCTA は +2.5秒後に表示（盛り上がりピーク後）
+    const t4 = setTimeout(() => setShowInstantShare(true), 2500)
+    const t5 = setTimeout(() => setShowHint(true), 2700)
 
     return () => {
       clearTimeout(t1)
@@ -355,16 +355,16 @@ export function WinnerCard({
                 />
               </motion.div>
 
-              {/* Winner avatar + name: zoom-out focus-in */}
+              {/* Winner avatar + name: ISSUE-236 spring zoom 0→1.3→1.0 */}
               <motion.div
                 className="mb-4"
-                initial={{ scale: 2.8, opacity: 0, filter: "blur(24px)" }}
+                initial={{ scale: 0, opacity: 0 }}
                 animate={
                   showName
-                    ? { scale: 1, opacity: 1, filter: "blur(0px)" }
-                    : { scale: 2.8, opacity: 0, filter: "blur(24px)" }
+                    ? { scale: [0, 1.3, 1.0], opacity: 1 }
+                    : { scale: 0, opacity: 0 }
                 }
-                transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
+                transition={{ type: "spring", stiffness: 400, damping: 15 }}
               >
                 <div
                   className="w-32 h-32 rounded-full flex items-center justify-center text-5xl font-black mx-auto mb-5 border-4 border-white/40"
@@ -385,15 +385,28 @@ export function WinnerCard({
                 <p className="text-2xl text-white/70 font-semibold mt-2">さん</p>
               </motion.div>
 
+              {/* ISSUE-236: 「🎉 {name}さんが奢ります！」大テキスト */}
+              <motion.p
+                className="text-2xl font-black text-white mb-2"
+                style={{ textShadow: `0 0 30px ${color}, 0 2px 12px rgba(0,0,0,0.6)` }}
+                initial={{ y: 20, opacity: 0 }}
+                animate={
+                  showReaction ? { y: 0, opacity: 1 } : { y: 20, opacity: 0 }
+                }
+                transition={{ duration: 0.4, ease: "easeOut" }}
+              >
+                🎉 {winner}さんが奢ります！
+              </motion.p>
+
               {/* Reaction text slides up */}
               <motion.p
-                className="text-3xl font-bold mb-4"
+                className="text-2xl font-bold mb-4"
                 style={{ color }}
                 initial={{ y: 28, opacity: 0 }}
                 animate={
                   showReaction ? { y: 0, opacity: 1 } : { y: 28, opacity: 0 }
                 }
-                transition={{ duration: 0.45, ease: "easeOut" }}
+                transition={{ duration: 0.45, delay: 0.15, ease: "easeOut" }}
               >
                 {reaction}
               </motion.p>

@@ -38,6 +38,8 @@ export function RouletteWheel({
   const rotation = useMotionValue(0)
   const [glowIntensity, setGlowIntensity] = useState(0.2)
   const [winnerIndex, setWinnerIndex] = useState<number | null>(null)
+  // ISSUE-236: 2番手ハイライト — 400ms間だけ gold border を表示
+  const [nearMissIndex, setNearMissIndex] = useState<number | null>(null)
   const [isSlowingDown, setIsSlowingDown] = useState(false)
   const lastRotation = useRef(0)
 
@@ -146,16 +148,18 @@ export function RouletteWheel({
             setIsSlowingDown(false)
             setGlowIntensity(0.35)
             // ISSUE-098: ニアミス演出 — 本当の当選者の1〜3つ前のセグメントを
-            // 280ms だけハイライトして「惜しかった！」感を演出する
-            // ISSUE-132: オフセットをランダム化し、毎回パターンが読めないようにする
-            const nearMissOffset = 1 + Math.floor(Math.random() * 3)
+            // ハイライトして「惜しかった！」感を演出する
+            // ISSUE-236: 直前セグメント（2番手）を400ms固定でハイライト → 演出強化
+            const nearMissOffset = 1
             const neighborIdx = (resolvedIdx - nearMissOffset + snapshotParticipants.length) % snapshotParticipants.length
             setWinnerIndex(neighborIdx)
+            setNearMissIndex(snapshotParticipants.length > 1 ? neighborIdx : null)
             onNearMissRef.current?.()
             setTimeout(() => {
+              setNearMissIndex(null)
               setWinnerIndex(resolvedIdx)
               onSpinCompleteRef.current?.(snapshotParticipants[resolvedIdx], resolvedIdx)
-            }, 280)
+            }, 400)
           })
         })
       }
@@ -283,13 +287,14 @@ export function RouletteWheel({
         {/* Segments */}
         {Array.from({ length: segments }).map((_, index) => {
           const isWinner = winnerIndex === index && !isSpinning
+          const isNearMiss = nearMissIndex === index && !isSpinning
           return (
-            <motion.g 
+            <motion.g
               key={index}
               initial={{ opacity: 1 }}
-              animate={{ 
+              animate={{
                 opacity: isWinner ? 1 : (winnerIndex !== null && !isSpinning ? 0.5 : 1),
-                scale: isWinner ? 1.02 : 1,
+                scale: isWinner ? 1.02 : (isNearMiss ? 1.05 : 1),
               }}
               transition={{ duration: 0.3 }}
             >
@@ -305,6 +310,16 @@ export function RouletteWheel({
                 fill="url(#highlightGrad)"
                 style={{ pointerEvents: 'none' }}
               />
+              {/* ISSUE-236: 2番手 gold ring highlight */}
+              {isNearMiss && (
+                <path
+                  d={createSegmentPath(index)}
+                  fill="none"
+                  stroke="#FBBF24"
+                  strokeWidth="3"
+                  style={{ pointerEvents: 'none' }}
+                />
+              )}
             </motion.g>
           )
         })}

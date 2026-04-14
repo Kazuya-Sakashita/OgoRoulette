@@ -324,11 +324,15 @@ export default function HomePage() {
       playIfEnabled(playResultSound)
       vibrate(HapticPattern.result)
       setWinner({ name: winnerName, index: winnerIndex })
-      setShowConfetti(true)
-      setShowPrismBurst(true)
-      setTimeout(() => setShowPrismBurst(false), 1800)
-      clearTimeout(confettiTimerRef.current ?? undefined)
-      confettiTimerRef.current = setTimeout(() => setShowConfetti(false), 4000)
+      // ISSUE-236: Confetti/PrismBurst を当選者名アニメーション完了後に発火
+      // 名前は +600ms に spring で出現 → confetti は +700ms 後（WinnerCard表示から）
+      setTimeout(() => {
+        setShowConfetti(true)
+        setShowPrismBurst(true)
+        setTimeout(() => setShowPrismBurst(false), 1800)
+        clearTimeout(confettiTimerRef.current ?? undefined)
+        confettiTimerRef.current = setTimeout(() => setShowConfetti(false), 4000)
+      }, 700)
 
       // ISSUE-234: 2回目のスピン完了後（ゲストのみ）、1.5秒後にメンバー保存モーダル表示
       const nextCount = sessionSpinCount + 1
