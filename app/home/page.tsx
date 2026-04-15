@@ -134,6 +134,23 @@ export default function HomePage() {
       setShowSpinHint(true)
     }
 
+    // ISSUE-237: 前回スピン時のメンバー構成を復元（EEM Valley 解消）
+    try {
+      const saved = localStorage.getItem('ogoroulette_last_members')
+      if (saved) {
+        const parsed = JSON.parse(saved) as unknown
+        if (
+          Array.isArray(parsed) &&
+          parsed.length >= 2 &&
+          parsed.every((m) => typeof m === 'string' && m.trim())
+        ) {
+          setParticipants(parsed as string[])
+        }
+      }
+    } catch {
+      // localStorage 読み取り失敗 — デフォルトのまま
+    }
+
     // Optimistic: show cached profile immediately (zero lag on repeat visits)
     const CACHE_KEY = "ogoroulette_profile_v1"
     const cached = localStorage.getItem(CACHE_KEY)
@@ -360,6 +377,13 @@ export default function HomePage() {
 
       // Trigger reveal phase in recording canvas, then stop recording 2.5s later
       stopRecordingAfterReveal()
+
+      // ISSUE-237: 現在のメンバー構成を保存（次回起動時に即復元）
+      try {
+        localStorage.setItem('ogoroulette_last_members', JSON.stringify(participants))
+      } catch {
+        // localStorage unavailable — silently skip
+      }
 
       // ISSUE-163: save to localStorage for guest local history
       try {
