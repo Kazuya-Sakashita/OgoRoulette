@@ -61,6 +61,14 @@ export const AnalyticsEvent = {
   PUSH_SUBSCRIBE_FAILED:   "push_subscribe_failed",
   PUSH_PROMPT_SHOWN:       "push_prompt_shown",
   PUSH_PROMPT_DISMISSED:   "push_prompt_dismissed",
+
+  // ISSUE-238: NSM 計測 — スピン回数/セッション（North Star Metric）
+  // properties: { session_spin_count: number, participants_count: number }
+  HOME_SPIN_COMPLETE:      "home_spin_complete",
+
+  // ISSUE-238: ゲスト→ログイン転換率計測
+  // モーダル表示が分母、SIGNED_IN が分子
+  GUEST_CONVERSION_MODAL_SHOWN: "guest_conversion_modal_shown",
 } as const
 
 export type AnalyticsEventName = typeof AnalyticsEvent[keyof typeof AnalyticsEvent]

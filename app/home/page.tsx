@@ -328,7 +328,13 @@ export default function HomePage() {
   const handleSpinComplete = (winnerName: string, winnerIndex: number) => {
     setIsSpinning(false)
     // ISSUE-161: increment session spin counter
-    setSessionSpinCount((c) => c + 1)
+    const nextSpinCount = sessionSpinCount + 1
+    setSessionSpinCount(nextSpinCount)
+    // ISSUE-238: NSM 計測 — スピン回数/セッション
+    trackEvent(AnalyticsEvent.HOME_SPIN_COMPLETE, {
+      session_spin_count: nextSpinCount,
+      participants_count: participants.length,
+    })
     // ISSUE-162: dismiss hint after first spin
     // ISSUE-222: 初回スピン後バナーを表示
     if (showSpinHint) {
@@ -352,11 +358,14 @@ export default function HomePage() {
       }, 700)
 
       // ISSUE-234: 2回目のスピン完了後（ゲストのみ）、1.5秒後にメンバー保存モーダル表示
-      const nextCount = sessionSpinCount + 1
-      if (!user && nextCount >= 2) {
+      if (!user && nextSpinCount >= 2) {
         try {
           if (!sessionStorage.getItem('ogoroulette_save_modal_dismissed')) {
-            setTimeout(() => setShowSaveMembersModal(true), 1500)
+            setTimeout(() => {
+              setShowSaveMembersModal(true)
+              // ISSUE-238: ゲスト転換率の分母を計測
+              trackEvent(AnalyticsEvent.GUEST_CONVERSION_MODAL_SHOWN)
+            }, 1500)
           }
         } catch {
           // sessionStorage unavailable — silently skip
