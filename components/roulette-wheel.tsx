@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState, useRef, useCallback, MutableRefObject } from "react"
-import { motion, useMotionValue, animate } from "framer-motion"
+import { motion, AnimatePresence, useMotionValue, animate } from "framer-motion"
 import { SEGMENT_COLORS } from "@/lib/constants"
 
 interface RouletteWheelProps {
@@ -223,6 +223,25 @@ export function RouletteWheel({
 
   return (
     <div className="relative" style={{ width: size, height: size }}>
+      {/* ISSUE-239: 2番手ハイライト中「惜しかった！」テキスト — ルーレット上部に表示 */}
+      <AnimatePresence>
+        {nearMissIndex !== null && (
+          <motion.div
+            key="near-miss-label"
+            className="absolute left-1/2 -translate-x-1/2 -top-8 z-10
+                       px-3 py-1 rounded-full pointer-events-none
+                       text-sm font-black text-black whitespace-nowrap"
+            style={{ background: "#FBBF24" }}
+            initial={{ opacity: 0, y: 4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            transition={{ duration: 0.15 }}
+          >
+            惜しかった！
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Ambient glow — pointer-events: none to prevent blocking elements below the wheel */}
       <motion.div
         className="absolute inset-[-25%] rounded-full pointer-events-none"
