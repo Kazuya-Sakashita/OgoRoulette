@@ -227,6 +227,22 @@ export default function HomePage() {
   useEffect(() => () => clearTimeout(confettiTimerRef.current ?? undefined), [])
   useEffect(() => () => countdownTimersRef.current.forEach(clearTimeout), [])
 
+  // ISSUE-240: グループ読み込み完了時に最後に使ったグループを自動選択
+  // ログインユーザーのみ。ISSUE-237 の last_members より保存グループを優先する
+  useEffect(() => {
+    if (!groupsLoaded || savedGroups.length === 0) return
+    try {
+      const lastGroupId = localStorage.getItem('ogoroulette_last_group_id')
+      if (!lastGroupId) return
+      const lastGroup = savedGroups.find((g) => g.id === lastGroupId)
+      if (!lastGroup) return
+      const members = selectGroup(lastGroup.id)
+      setParticipants(members)
+    } catch {
+      // localStorage unavailable — silently skip
+    }
+  }, [groupsLoaded]) // eslint-disable-line react-hooks/exhaustive-deps
+
   const handleLogout = async () => {
     const supabase = createClient()
     // ユーザー依存の localStorage データをクリアしてから signOut
@@ -288,6 +304,8 @@ export default function HomePage() {
     const members = selectGroup(id)
     setParticipants(members)
     startSpin(members.length)
+    // ISSUE-240: 最後にスピンしたグループを記録
+    try { localStorage.setItem('ogoroulette_last_group_id', id) } catch {}
   }
 
   // ISSUE-023: グループからルームを作成 — ログインユーザー専用
@@ -480,6 +498,8 @@ export default function HomePage() {
   const handleSelectGroup = (id: string) => {
     const members = selectGroup(id)
     setParticipants(members)
+    // ISSUE-240: 最後に選択したグループを記録
+    try { localStorage.setItem('ogoroulette_last_group_id', id) } catch {}
   }
 
   const isCurrentGroupSaved = savedGroups.some(
