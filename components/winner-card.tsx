@@ -50,6 +50,8 @@ interface WinnerCardProps {
   sessionSpinCount?: number
   // ISSUE-213: 絵文字リアクション（マルチプレイヤー共有）
   onReact?: (emoji: string) => void
+  // ISSUE-243: グループ連続当選カウント（2以上で表示）
+  consecutiveCount?: number
 }
 
 const REACTIONS = [
@@ -92,6 +94,7 @@ export function WinnerCard({
   onAdvanceToDetails,
   sessionSpinCount,
   onReact,
+  consecutiveCount,
 }: WinnerCardProps) {
   const color = SEGMENT_COLORS[winnerIndex % SEGMENT_COLORS.length]
   const [reaction] = useState(() => getPersonalizedReaction(treatCount))
@@ -434,6 +437,19 @@ export function WinnerCard({
                   transition={{ delay: 0.3, type: "spring", stiffness: 400, damping: 20 }}
                 >
                   🍺 通算{treatCount}回目{treatTitle ? ` — ${treatTitle}` : ""}
+                </motion.div>
+              )}
+
+              {/* ISSUE-243: 連続当選バッジ（グループスピン時のみ） */}
+              {typeof consecutiveCount === "number" && consecutiveCount >= 2 && (
+                <motion.div
+                  className="mt-2 px-4 py-1.5 rounded-full text-sm font-black text-black"
+                  style={{ background: "#FBBF24" }}
+                  initial={{ scale: 0, opacity: 0 }}
+                  animate={showReaction ? { scale: 1, opacity: 1 } : { scale: 0, opacity: 0 }}
+                  transition={{ delay: 0.4, type: "spring", stiffness: 500, damping: 18 }}
+                >
+                  {consecutiveCount >= 3 ? `🔥 ${consecutiveCount}連続！呪われてる？` : "2連続！"}
                 </motion.div>
               )}
 

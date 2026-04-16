@@ -144,10 +144,12 @@ export function useGroups(user: User | null) {
     [user, groups, selectedGroupId, refresh]
   )
 
-  /** ISSUE-182/198: スピン完了後にグループの lastSpinAt/lastWinner/spinHistory を記録 */
-  const recordGroupSpin = useCallback((id: string, winner: string, participants: string[] = []) => {
-    updateGroupLastSpin(id, winner, participants)
+  /** ISSUE-182/198: スピン完了後にグループの lastSpinAt/lastWinner/spinHistory を記録
+   *  ISSUE-243: consecutiveCount（連続当選回数）を返す */
+  const recordGroupSpin = useCallback((id: string, winner: string, participants: string[] = []): { consecutiveCount: number } => {
+    const result = updateGroupLastSpin(id, winner, participants)
     refresh()
+    return result
   }, [refresh])
 
   return { groups, isLoaded, selectedGroupId, selectGroup, saveGroup, updateGroup, deleteGroup, recordGroupSpin }

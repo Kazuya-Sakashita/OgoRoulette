@@ -17,6 +17,8 @@ export interface SavedGroup {
   lastWinner?: string
   // ISSUE-198: スピン履歴（最大 10 件）
   spinHistory?: SpinRecord[]
+  // ISSUE-243: 連続当選カウント（同じ人が連続で当選した回数）
+  consecutiveCount?: number
 }
 
 export interface TreatStats {
@@ -118,17 +120,22 @@ export function updateGroupLastSpin(
   id: string,
   winner: string,
   participants: string[] = []
-): void {
+): { consecutiveCount: number } {
   const groups = loadGroups()
   const target = groups.find((g) => g.id === id)
-  if (!target) return
+  if (!target) return { consecutiveCount: 1 }
   const now = Date.now()
+  // ISSUE-243: 連続当選カウント — 同じ人が連続で当選した場合にインクリメント
+  const isConsecutive = target.lastWinner === winner
+  const consecutiveCount = isConsecutive ? (target.consecutiveCount ?? 1) + 1 : 1
   target.lastSpinAt = now
   target.lastWinner = winner
+  target.consecutiveCount = consecutiveCount
   // ISSUE-198: 履歴を先頭に追加し、最大 10 件に切り詰める
   const record: SpinRecord = { winner, spinAt: now, participants }
   target.spinHistory = [record, ...(target.spinHistory ?? [])].slice(0, 10)
   localStorage.setItem(GROUPS_KEY, JSON.stringify(groups))
+  return { consecutiveCount }
 }
 
 /** Update name and/or participants for a local group */

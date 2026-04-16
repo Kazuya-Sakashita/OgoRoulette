@@ -96,6 +96,8 @@ export default function HomePage() {
   const [lastTreatCount, setLastTreatCount] = useState<number | undefined>(undefined)
   const [lastTreatTitle, setLastTreatTitle] = useState<string | undefined>(undefined)
   const [lastRanking, setLastRanking] = useState<Array<{ name: string; count: number }> | undefined>(undefined)
+  // ISSUE-243: グループ連続当選カウント
+  const [lastConsecutiveCount, setLastConsecutiveCount] = useState<number | undefined>(undefined)
 
   // Video recording
   const {
@@ -391,8 +393,12 @@ export default function HomePage() {
       }
 
       // ISSUE-182/198: グループが選択されていた場合、スピン結果をグループに記録（履歴・リテンション用）
+      // ISSUE-243: consecutiveCount を受け取ってWinnerCardに渡す
       if (selectedGroupId) {
-        recordGroupSpin(selectedGroupId, winnerName, participants)
+        const { consecutiveCount } = recordGroupSpin(selectedGroupId, winnerName, participants)
+        setLastConsecutiveCount(consecutiveCount >= 2 ? consecutiveCount : undefined)
+      } else {
+        setLastConsecutiveCount(undefined)
       }
 
       // Record treat in LocalStorage and compute gamification data
@@ -459,6 +465,7 @@ export default function HomePage() {
     setLastTreatCount(undefined)
     setLastTreatTitle(undefined)
     setLastRanking(undefined)
+    setLastConsecutiveCount(undefined)
     resetRecording()
   }
 
@@ -606,6 +613,7 @@ export default function HomePage() {
           treatCount={lastTreatCount}
           treatTitle={lastTreatTitle}
           ranking={lastRanking}
+          consecutiveCount={lastConsecutiveCount}
           videoBlob={recordedBlob}
           onShareVideo={() => setShowShareSheet(true)}
           onSaveGroup={isCurrentGroupSaved ? undefined : handleSaveGroupFromWinner}
