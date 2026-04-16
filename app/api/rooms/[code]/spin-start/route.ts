@@ -18,7 +18,7 @@ export async function POST(
 
     const room = await prisma.room.findUnique({
       where: { inviteCode: code.toUpperCase() },
-      select: { id: true, status: true },
+      select: { id: true, status: true, ownerId: true },
     })
 
     if (!room) {
@@ -31,6 +31,12 @@ export async function POST(
         { error: "Room is not in WAITING state" },
         { status: 409 }
       )
+    }
+
+    // ISSUE-256: 認証ルームへの未認証アクセスを早期拒否
+    // spin / spin-complete / reset と同パターンで一貫性を確保
+    if (room.ownerId && !user) {
+      return NextResponse.json({ error: "ログインが必要です" }, { status: 401 })
     }
 
     // 認証ユーザーはオーナー検証必須

@@ -30,10 +30,16 @@ export async function GET(request: NextRequest) {
   lineAuthUrl.searchParams.set("state", state)
   lineAuthUrl.searchParams.set("scope", "profile openid")
 
+  // ISSUE-253: NEXT_PUBLIC_APP_URL が https:// で始まるかを優先して secure フラグを決定
+  // NODE_ENV だけに依存すると将来の Docker 移行時等に staging で secure=false になるリスクがある
+  const isSecure =
+    process.env.NEXT_PUBLIC_APP_URL?.startsWith("https://") ??
+    process.env.NODE_ENV === "production"
+
   const response = NextResponse.redirect(lineAuthUrl.toString())
   response.cookies.set("line_oauth_state", state, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: isSecure,
     sameSite: "lax",
     maxAge: 600, // 10分
     path: "/",
@@ -44,7 +50,7 @@ export async function GET(request: NextRequest) {
   if (returnTo !== "/home") {
     response.cookies.set("line_oauth_return_to", returnTo, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: isSecure,
       sameSite: "lax",
       maxAge: 600,
       path: "/",

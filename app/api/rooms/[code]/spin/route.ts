@@ -228,7 +228,12 @@ export async function POST(
     if (statusCode) {
       return NextResponse.json({ error: (error as Error).message }, { status: statusCode })
     }
-    console.error("[spin] unexpected error:", error instanceof Error ? error.stack : String(error))
+    // ISSUE-254: 本番ではスタックトレースを出力しない（DB エラー詳細の漏洩防止）
+    if (process.env.NODE_ENV === "development") {
+      console.error("[spin] unexpected error:", error instanceof Error ? error.stack : String(error))
+    } else {
+      console.error("[spin] unexpected error occurred")
+    }
     return NextResponse.json({ error: "予期せぬエラーが発生しました。時間をおいて再試行してください" }, { status: 500 })
   }
 }

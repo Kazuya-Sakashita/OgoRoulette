@@ -128,40 +128,49 @@ export async function POST(request: Request) {
           completedAt: new Date(),
           participants: {
             // ISSUE-248: クライアント送信の participants をサニタイズ・バリデーション
-            create: (
-              Array.isArray(participants)
-                ? participants
-                    .filter(
-                      (p): p is { name: string; color: string; index: number } =>
-                        typeof p === "object" &&
-                        p !== null &&
-                        typeof p.name === "string" &&
-                        typeof p.color === "string" &&
-                        typeof p.index === "number" &&
-                        Number.isInteger(p.index) &&
-                        p.index >= 0
-                    )
-                    .map((p) => ({
-                      ...p,
-                      name: sanitizeName(p.name).slice(0, 20) || "ゲスト",
-                      // 有効なセグメントカラー以外はインデックスで割り当て
-                      color: SEGMENT_COLORS.includes(p.color as typeof SEGMENT_COLORS[number])
-                        ? p.color
-                        : SEGMENT_COLORS[p.index % SEGMENT_COLORS.length],
-                    }))
-                    .slice(0, 20) // 最大人数を制限
-                : []
-            ).map((p) => ({
-              name: p.name,
-              color: p.color,
-              isWinner: typeof winnerIndex === "number"
-                ? p.index === winnerIndex
-                : p.name === winnerName,
-              amountToPay: (typeof winnerIndex === "number" ? p.index === winnerIndex : p.name === winnerName)
-                ? (treatAmount || null)
-                : (perPersonAmount || null),
-              orderIndex: p.index,
-            })),
+            create: (() => {
+              const safeParticipants = (
+                Array.isArray(participants)
+                  ? participants
+                      .filter(
+                        (p): p is { name: string; color: string; index: number } =>
+                          typeof p === "object" &&
+                          p !== null &&
+                          typeof p.name === "string" &&
+                          typeof p.color === "string" &&
+                          typeof p.index === "number" &&
+                          Number.isInteger(p.index) &&
+                          p.index >= 0
+                      )
+                      .map((p) => ({
+                        ...p,
+                        name: sanitizeName(p.name).slice(0, 20) || "ゲスト",
+                        // 有効なセグメントカラー以外はインデックスで割り当て
+                        color: SEGMENT_COLORS.includes(p.color as typeof SEGMENT_COLORS[number])
+                          ? p.color
+                          : SEGMENT_COLORS[p.index % SEGMENT_COLORS.length],
+                      }))
+                      .slice(0, 20) // 最大人数を制限
+                  : []
+              )
+
+              // ISSUE-255: winnerIndex が存在する場合はサーバー側で winnerName を導出し
+              // クライアント送信の winnerName との矛盾を排除する
+              const resolvedWinnerName =
+                typeof winnerIndex === "number"
+                  ? (safeParticipants.find((p) => p.index === winnerIndex)?.name ?? winnerName)
+                  : winnerName
+
+              return safeParticipants.map((p) => ({
+                name: p.name,
+                color: p.color,
+                isWinner: p.name === resolvedWinnerName,
+                amountToPay: p.name === resolvedWinnerName
+                  ? (treatAmount || null)
+                  : (perPersonAmount || null),
+                orderIndex: p.index,
+              }))
+            })(),
           },
         },
         include: {
