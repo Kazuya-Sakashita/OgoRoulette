@@ -6,6 +6,7 @@ import { randomInt } from "crypto"
 import { signGuestToken } from "@/lib/guest-token"
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
 import { getDisplayName } from "@/lib/display-name"
+import { sanitizeName } from "@/lib/sanitize"
 
 // Generate random invite code (6 characters, avoids confusing chars)
 function generateInviteCode(): string {
@@ -93,11 +94,16 @@ export async function POST(request: Request) {
     const { name, maxMembers = 10, guestNickname, isPersistent = false, presetMemberNames } = body
 
     // ISSUE-023: 事前登録メンバー名のバリデーション
+    // ISSUE-244: 制御文字除去 / ISSUE-249: 重複排除
     const validPresetNames: string[] = Array.isArray(presetMemberNames)
-      ? presetMemberNames
-          .filter((n: unknown): n is string => typeof n === "string" && n.trim().length > 0 && n.trim().length <= 20)
-          .map((n: string) => n.trim())
-          .slice(0, 19) // ホスト込み最大20人
+      ? [
+          ...new Set(
+            presetMemberNames
+              .filter((n: unknown): n is string => typeof n === "string")
+              .map((n: string) => sanitizeName(n))
+              .filter((n) => n.length > 0 && n.length <= 20)
+          ),
+        ].slice(0, 19) // ホスト込み最大20人
       : []
 
     // ISSUE-014: 常設グループはログインユーザーのみ作成可能
@@ -117,8 +123,9 @@ export async function POST(request: Request) {
     }
 
     // Guest requires a nickname
+    // ISSUE-244: 制御文字・ゼロ幅文字を除去してからバリデーション
     if (!user) {
-      const trimmedNickname = guestNickname?.trim() ?? ""
+      const trimmedNickname = sanitizeName(guestNickname ?? "")
       if (!trimmedNickname) {
         return NextResponse.json({ error: "ニックネームを入力してください" }, { status: 400 })
       }

@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server"
 import { SEGMENT_COLORS } from "@/lib/constants"
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
 import { getDisplayName } from "@/lib/display-name"
+import { sanitizeName } from "@/lib/sanitize"
 
 // POST /api/rooms/join - Join a room with invite code
 export async function POST(request: Request) {
@@ -133,7 +134,11 @@ export async function POST(request: Request) {
       })
     }
 
-    const trimmedGuestName = (guestName as string).trim()
+    // ISSUE-244: 制御文字・ゼロ幅文字を除去してからバリデーション
+    const trimmedGuestName = sanitizeName(guestName as string)
+    if (trimmedGuestName.length === 0) {
+      return NextResponse.json({ error: "名前を入力してください" }, { status: 400 })
+    }
     if (trimmedGuestName.length > 20) {
       return NextResponse.json({ error: "名前は20文字以内で入力してください" }, { status: 400 })
     }
