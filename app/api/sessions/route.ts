@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { createClient } from "@/lib/supabase/server"
+import { SEGMENT_COLORS } from "@/lib/constants"
+import { sanitizeName } from "@/lib/sanitize"
 
 const SESSION_PAGE_LIMIT = 50
 
@@ -125,7 +127,31 @@ export async function POST(request: Request) {
           status: "COMPLETED",
           completedAt: new Date(),
           participants: {
-            create: (participants as { name: string; color: string; index: number }[]).map((p) => ({
+            // ISSUE-248: クライアント送信の participants をサニタイズ・バリデーション
+            create: (
+              Array.isArray(participants)
+                ? participants
+                    .filter(
+                      (p): p is { name: string; color: string; index: number } =>
+                        typeof p === "object" &&
+                        p !== null &&
+                        typeof p.name === "string" &&
+                        typeof p.color === "string" &&
+                        typeof p.index === "number" &&
+                        Number.isInteger(p.index) &&
+                        p.index >= 0
+                    )
+                    .map((p) => ({
+                      ...p,
+                      name: sanitizeName(p.name).slice(0, 20) || "ゲスト",
+                      // 有効なセグメントカラー以外はインデックスで割り当て
+                      color: SEGMENT_COLORS.includes(p.color as typeof SEGMENT_COLORS[number])
+                        ? p.color
+                        : SEGMENT_COLORS[p.index % SEGMENT_COLORS.length],
+                    }))
+                    .slice(0, 20) // 最大人数を制限
+                : []
+            ).map((p) => ({
               name: p.name,
               color: p.color,
               isWinner: typeof winnerIndex === "number"
