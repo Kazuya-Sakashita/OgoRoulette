@@ -1,0 +1,124 @@
+name: Security
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    # 毎週月曜 2:00 UTC — 新たに公開された脆弱性を定期検出
+    - cron: '0 2 * * 1'
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  # ─── 1. 依存関係の既知脆弱性チェック ───────────────────────────────
+  dependency-audit:
+    name: Dependency Audit
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        # version は package.json の packageManager フィールドから自動取得
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Audit dependencies (high severity+)
+        # high / critical の脆弱性が見つかった場合に CI を失敗させる
+        # moderate 以下は --audit-level=moderate に変更することで厳格化可能
+        run: pnpm audit --audit-level=high
+
+  # ─── 2. シークレット漏洩スキャン (TruffleHog) ────────────────────────
+  secret-scan:
+    name: Secret Scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # 全コミット履歴をスキャン対象に含める
+          fetch-depth: 0
+
+      - name: TruffleHog OSS — シークレット漏洩検出
+        uses: trufflesecurity/trufflehog@main
+        with:
+          # push 時: 前回コミットとの差分のみスキャン（高速）
+          # PR 時: PR のすべてのコミットをスキャン
+          extra_args: --only-verified
+
+  # ─── 3. セキュリティヘッダー確認（本番 URL） ────────────────────────
+  security-headers:
+    name: Security Headers
+    runs-on: ubuntu-latest
+    # push to main のみ実行（本番デプロイ後に確認）
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    steps:
+      - name: Check security headers on production
+        run: |
+          echo "=== Checking https://ogo-roulette.vercel.app/ ==="
+          HEADERS=$(curl -sI https://ogo-roulette.vercel.app/)
+          echo "$HEADERS"
+
+          # X-Frame-Options または CSP の frame-ancestors が必要
+          if echo "$HEADERS" | grep -qi "x-frame-options"; then
+            echo "✅ X-Frame-Options: OK"
+          elif echo "$HEADERS" | grep -qi "frame-ancestors"; then
+            echo "✅ CSP frame-ancestors: OK"
+          else
+            echo "⚠️  X-Frame-Options / CSP frame-ancestors が見つかりません"
+          fi
+
+          # X-Content-Type-Options
+          if echo "$HEADERS" | grep -qi "x-content-type-options"; then
+            echo "✅ X-Content-Type-Options: OK"
+          else
+            echo "⚠️  X-Content-Type-Options が見つかりません"
+          fi
+
+          # Strict-Transport-Security (HSTS)
+          if echo "$HEADERS" | grep -qi "strict-transport-security"; then
+            echo "✅ Strict-Transport-Security (HSTS): OK"
+          else
+            echo "⚠️  Strict-Transport-Security が見つかりません"
+          fi
+
+          echo "=== Header check complete ==="
+          # ヘッダー不足は警告のみ（CI は失敗させない）
+          # 将来的に必須ヘッダーが整備されたら exit 1 に変更する
+
+  # ─── 4. ESLint — セキュリティ関連の Lint ────────────────────────────
+  lint-security:
+    name: Lint (Security Rules)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: ESLint
+        run: pnpm lint
+        env:
+          # Supabase / Prisma はビルド時に不要
+          DATABASE_URL: ""
+          NEXT_PUBLIC_SUPABASE_URL: "https://example.supabase.co"
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: "test-anon-key"
+          NEXT_PUBLIC_APP_URL: "https://ogo-roulette.vercel.app"
