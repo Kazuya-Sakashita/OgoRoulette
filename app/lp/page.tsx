@@ -288,28 +288,30 @@ export default function LPPage() {
             <div className="exp__step">
               <div className="exp__num">3</div>
               <div className="exp__content">
-                <div className="exp__title">ドキドキの演出が流れる</div>
-                <div className="exp__desc">減速するたびにカチカチ音。ニアミス演出で「惜しかった！」が連発。</div>
+                <div className="exp__title">「惜しかった！」演出で会場がざわめく</div>
+                <div className="exp__desc">停止直前に2番手がゴールドで光る。「惜しかった！」テキストが現れ、全員がツッコミを入れる。</div>
                 <div className="exp__emoji">😱</div>
               </div>
             </div>
             <div className="exp__step">
               <div className="exp__num">4</div>
               <div className="exp__content">
-                <div className="exp__title">「〇〇さんが奢り！」確定</div>
-                <div className="exp__desc">紙吹雪と演出でお祝い。動画保存・SNSシェアもワンタップ。</div>
+                <div className="exp__title">3段階演出で「〇〇さんが奢ります！」確定</div>
+                <div className="exp__desc">スポットライト → 名前が飛び込んでくる → Confetti爆発。絵文字リアクションで全員が参加できる。</div>
                 <div className="exp__emoji">🎉</div>
               </div>
             </div>
           </div>
 
           <div className="experience__demo">
-            <div style={{ fontSize: '48px', marginBottom: '16px' }}>🎊</div>
-            <div style={{ fontSize: '22px', fontWeight: 900, marginBottom: '8px' }}>たろうさんが奢り確定！</div>
+            <div style={{ fontSize: '14px', color: 'var(--c-muted)', marginBottom: '12px', letterSpacing: '0.05em' }}>✨ 3段階演出イメージ</div>
+            <div style={{ fontSize: '16px', fontWeight: 700, marginBottom: '6px', color: 'var(--c-gold)' }}>🏆 惜しかった！← さくら（2番手）</div>
+            <div style={{ fontSize: '22px', fontWeight: 900, marginBottom: '8px' }}>🎉 たろうさんが奢ります！</div>
             <div style={{ fontSize: '14px', color: 'var(--c-muted)', marginBottom: '20px' }}>合計 ¥24,800 のうち ¥12,400 を奢り</div>
             <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', flexWrap: 'wrap' }}>
-              <span style={{ background: 'rgba(249,115,22,0.15)', border: '1px solid rgba(249,115,22,0.3)', color: 'var(--c-orange)', padding: '6px 14px', borderRadius: '100px', fontSize: '13px', fontWeight: 700 }}>📹 動画保存</span>
-              <span style={{ background: 'rgba(236,72,153,0.15)', border: '1px solid rgba(236,72,153,0.3)', color: 'var(--c-pink)', padding: '6px 14px', borderRadius: '100px', fontSize: '13px', fontWeight: 700 }}>📤 シェアする</span>
+              <span style={{ background: 'rgba(249,115,22,0.15)', border: '1px solid rgba(249,115,22,0.3)', color: 'var(--c-orange)', padding: '6px 14px', borderRadius: '100px', fontSize: '13px', fontWeight: 700 }}>👏 絵文字リアクション</span>
+              <span style={{ background: 'rgba(236,72,153,0.15)', border: '1px solid rgba(236,72,153,0.3)', color: 'var(--c-pink)', padding: '6px 14px', borderRadius: '100px', fontSize: '13px', fontWeight: 700 }}>📹 動画保存</span>
+              <span style={{ background: 'rgba(251,191,36,0.15)', border: '1px solid rgba(251,191,36,0.3)', color: 'var(--c-gold)', padding: '6px 14px', borderRadius: '100px', fontSize: '13px', fontWeight: 700 }}>📤 即シェア</span>
             </div>
           </div>
         </div>
@@ -325,42 +327,52 @@ export default function LPPage() {
 
           <div className="features__grid">
             <div className="feature__card">
+              <div className="feature__icon">🏆</div>
+              <div className="feature__title">3段階当選演出</div>
+              <div className="feature__desc">2番手ハイライト「惜しかった！」→ 名前zoom-in → Confetti爆発。会場が確実に沸く。</div>
+            </div>
+            <div className="feature__card">
+              <div className="feature__icon">👏</div>
+              <div className="feature__title">絵文字リアクション</div>
+              <div className="feature__desc">当選発表の瞬間、参加者全員がリアクション。全員が同じ瞬間を共有できる。</div>
+            </div>
+            <div className="feature__card">
               <div className="feature__icon">🔗</div>
               <div className="feature__title">QRコード参加</div>
               <div className="feature__desc">スキャンだけでルームに入れる。アプリ不要。</div>
             </div>
             <div className="feature__card">
               <div className="feature__icon">💰</div>
-              <div className="feature__title">金額設定</div>
-              <div className="feature__desc">合計金額と奢り額を設定。割り勘計算も自動。</div>
+              <div className="feature__title">金額設定・割り勘計算</div>
+              <div className="feature__desc">合計金額と奢り額を設定。割り勘の一人分も自動で表示。</div>
             </div>
             <div className="feature__card">
               <div className="feature__icon">📹</div>
-              <div className="feature__title">動画録画</div>
-              <div className="feature__desc">ルーレットの瞬間を動画で保存。思い出になる。</div>
-            </div>
-            <div className="feature__card">
-              <div className="feature__icon">📤</div>
-              <div className="feature__title">SNSシェア</div>
-              <div className="feature__desc">結果を一発でX/LINEに投稿できる。</div>
-            </div>
-            <div className="feature__card">
-              <div className="feature__icon">📅</div>
-              <div className="feature__title">履歴管理</div>
-              <div className="feature__desc">過去の結果を振り返り。「俺ばっかり」が防げる。</div>
+              <div className="feature__title">動画録画 &amp; 即シェア</div>
+              <div className="feature__desc">ルーレットの瞬間を動画で保存。シェアリンクから友達も即スピン体験できる。</div>
             </div>
             <div className="feature__card">
               <div className="feature__icon">👥</div>
-              <div className="feature__title">グループ保存</div>
-              <div className="feature__desc">いつものメンバーを保存。次回は即スタート。</div>
+              <div className="feature__title">グループ保存 &amp; 自動復元</div>
+              <div className="feature__desc">いつものメンバーを保存。次回起動時に自動でメンバーが復元される。</div>
+            </div>
+            <div className="feature__card">
+              <div className="feature__icon">🔥</div>
+              <div className="feature__title">連続記録バッジ</div>
+              <div className="feature__desc">同じ人が2回以上連続当選すると「🔥N連続！」バッジ表示。盛り上がりが加速。</div>
+            </div>
+            <div className="feature__card">
+              <div className="feature__icon">📅</div>
+              <div className="feature__title">履歴・ランキング</div>
+              <div className="feature__desc">過去の結果・奢り回数を記録。「俺ばっかり」が防げる本物の公平さ。</div>
             </div>
           </div>
 
           <div className="features__highlight">
             <div className="features__highlight-icon">🔒</div>
             <div>
-              <div className="features__highlight-title">サーバー側で公平に決定</div>
-              <div className="features__highlight-desc">当選者は暗号的乱数でサーバーが決定。誰も操作できない本物の公平さ。</div>
+              <div className="features__highlight-title">サーバー側で公平に決定 · セキュリティスコア 99/100</div>
+              <div className="features__highlight-desc">当選者は暗号的乱数でサーバーが決定。誰も操作できない本物の公平さ。セキュリティ監査で全評価軸 PASS 取得済み。</div>
             </div>
           </div>
         </div>
