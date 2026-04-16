@@ -494,9 +494,34 @@ export function WinnerCard({
               )}
             </AnimatePresence>
 
+            {/* ISSUE-242: Phase A リアクションボタン — 当選発表の瞬間に反応できる */}
+            <AnimatePresence>
+              {showInstantShare && onReact && (
+                <motion.div
+                  className="absolute bottom-14 flex gap-3"
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.3, delay: 0.1 }}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {["👏", "🍺", "🎉", "😂", "😭"].map((emoji) => (
+                    <motion.button
+                      key={emoji}
+                      whileTap={{ scale: 1.8 }}
+                      className="text-2xl p-2 rounded-full bg-black/20 backdrop-blur-sm hover:bg-black/30 transition-colors"
+                      onClick={() => onReact(emoji)}
+                    >
+                      {emoji}
+                    </motion.button>
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
+
             {/* ISSUE-193: Hint at bottom — "タップして続ける" with pulse */}
             <motion.p
-              className="absolute bottom-12 text-white/35 text-sm tracking-wider animate-pulse"
+              className="absolute bottom-6 text-white/35 text-sm tracking-wider animate-pulse"
               initial={{ opacity: 0 }}
               animate={showHint ? { opacity: 1 } : { opacity: 0 }}
               transition={{ duration: 0.5 }}
