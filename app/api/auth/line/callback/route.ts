@@ -156,12 +156,14 @@ export async function GET(request: NextRequest) {
       supabaseUserId = existingLinkData.user.id
       hashedToken = existingLinkData.properties.hashed_token
 
-      // メタデータを最新の LINE プロフィールに更新（non-blocking）
-      supabaseAdmin.auth.admin
+      // ISSUE-258: メタデータを最新の LINE プロフィールに更新（blocking に変更）
+      // non-blocking のまま放置するとプロフィール名が古いまま残るリスクがある
+      // エラー時はログに記録するのみ — ログイン処理自体は継続する
+      const { error: updateError } = await supabaseAdmin.auth.admin
         .updateUserById(supabaseUserId, { user_metadata: lineUserMeta })
-        .then(({ error }) => {
-          if (error) console.warn("[LINE callback] step=user_update WARN", { message: error.message })
-        })
+      if (updateError) {
+        console.warn("[LINE callback] step=user_update WARN", { message: updateError.message })
+      }
     } else {
       if (!createData?.user?.id) {
         console.error("[LINE callback] step=user_create no user in response")
