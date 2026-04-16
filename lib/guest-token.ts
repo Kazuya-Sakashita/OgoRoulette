@@ -26,11 +26,14 @@ export function signGuestToken(memberId: string, roomCode: string): string {
  */
 export function verifyGuestToken(token: string, memberId: string, roomCode: string): boolean {
   if (!SECRET) return false
+  // ISSUE-245: HMAC-SHA256 は常に 64 文字の hex を出力する。
+  // 長さチェックを先行させ、padEnd によるゼロ埋めを排除する。
+  if (typeof token !== "string" || token.length !== 64) return false
   try {
     const expected = createHmac("sha256", SECRET)
       .update(`${memberId}:${roomCode}`)
       .digest("hex")
-    const tokenBuf = Buffer.from(token.padEnd(64, "0"), "hex")
+    const tokenBuf = Buffer.from(token, "hex")
     const expectedBuf = Buffer.from(expected, "hex")
     if (tokenBuf.length !== expectedBuf.length) return false
     return timingSafeEqual(tokenBuf, expectedBuf)
