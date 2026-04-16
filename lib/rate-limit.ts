@@ -113,11 +113,28 @@ export async function checkRateLimit(
   return checkRateLimitMemory(ip, endpoint, limit, windowMs)
 }
 
-/** NextRequest の headers から最善の IP を取得する */
+/**
+ * NextRequest の headers から実際のクライアント IP を取得する。
+ *
+ * ISSUE-247: X-Forwarded-For の先頭はクライアントが偽装できるため使用しない。
+ *
+ * Vercel 環境での優先順:
+ *   1. x-real-ip       — Vercel のエッジが設定する実 IP（偽装不可）
+ *   2. x-forwarded-for の末尾 — 最後に追加したホップ（Vercel エッジ）が付与した IP
+ *   3. "unknown"       — フォールバック
+ */
 export function getClientIp(headers: Headers): string {
-  return (
-    headers.get("x-forwarded-for")?.split(",")[0].trim() ??
-    headers.get("x-real-ip") ??
-    "unknown"
-  )
+  // Vercel は x-real-ip に実クライアント IP を設定する（最も信頼性が高い）
+  const realIp = headers.get("x-real-ip")
+  if (realIp) return realIp.trim()
+
+  // x-forwarded-for が存在する場合は末尾（最後に追加したホップ）を使用
+  // 先頭はクライアントが自由に設定できるため使用しない
+  const forwarded = headers.get("x-forwarded-for")
+  if (forwarded) {
+    const ips = forwarded.split(",").map((s) => s.trim()).filter(Boolean)
+    if (ips.length > 0) return ips[ips.length - 1]
+  }
+
+  return "unknown"
 }
