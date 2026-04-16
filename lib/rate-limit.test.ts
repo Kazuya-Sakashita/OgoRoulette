@@ -123,9 +123,11 @@ describe('checkRateLimit', () => {
 
 describe('getClientIp', () => {
 
-  test('x-forwarded-for の最初の IP を返す', () => {
+  // ISSUE-247: x-forwarded-for の末尾（最後のホップ = Vercel エッジが追加した実 IP）を使用
+  // 先頭はクライアントが偽装できるため使用しない
+  test('x-forwarded-for の末尾 IP を返す（スプーフィング防止）', () => {
     const headers = new Headers({ 'x-forwarded-for': '1.2.3.4, 5.6.7.8, 9.9.9.9' })
-    expect(getClientIp(headers)).toBe('1.2.3.4')
+    expect(getClientIp(headers)).toBe('9.9.9.9')
   })
 
   test('x-forwarded-for が単一 IP の場合', () => {
@@ -135,7 +137,7 @@ describe('getClientIp', () => {
 
   test('x-forwarded-for の値の空白をトリムする', () => {
     const headers = new Headers({ 'x-forwarded-for': '  1.2.3.4  , 5.6.7.8' })
-    expect(getClientIp(headers)).toBe('1.2.3.4')
+    expect(getClientIp(headers)).toBe('5.6.7.8')
   })
 
   test('x-forwarded-for がない場合は x-real-ip を返す', () => {

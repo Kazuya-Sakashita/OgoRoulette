@@ -29,12 +29,12 @@ describe('getSupportedMimeType', () => {
 
     expect(getSupportedMimeType()).toBe('video/mp4;codecs=h264')
 
-    // @ts-expect-error
+    // @ts-expect-error テスト用に MediaRecorder を操作するため型エラーを無視
     delete globalThis.MediaRecorder
   })
 
   test('Chrome/Firefox: vp9,opus 対応 → WebM が選ばれる（mp4 より後退しない）', () => {
-    // @ts-expect-error
+    // @ts-expect-error テスト用に MediaRecorder を操作するため型エラーを無視
     globalThis.MediaRecorder = {
       isTypeSupported: (t: string) =>
         ['video/webm;codecs=vp9,opus', 'video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm'].includes(t),
@@ -44,13 +44,13 @@ describe('getSupportedMimeType', () => {
     // ISSUE-007: Chrome では mp4;codecs=h264 が false → 最初に一致するのは vp9,opus
     expect(result).toBe('video/webm;codecs=vp9,opus')
 
-    // @ts-expect-error
+    // @ts-expect-error テスト用に MediaRecorder を操作するため型エラーを無視
     delete globalThis.MediaRecorder
   })
 
   test('mp4;codecs=h264 が先頭候補（インデックス 0）であることを確認', () => {
     const callOrder: string[] = []
-    // @ts-expect-error
+    // @ts-expect-error テスト用に MediaRecorder を操作するため型エラーを無視
     globalThis.MediaRecorder = {
       isTypeSupported: (t: string) => {
         callOrder.push(t)
@@ -63,31 +63,31 @@ describe('getSupportedMimeType', () => {
     // 先頭が mp4;codecs=h264 であること（ISSUE-007 修正の核心）
     expect(callOrder[0]).toBe('video/mp4;codecs=h264')
 
-    // @ts-expect-error
+    // @ts-expect-error テスト用に MediaRecorder を操作するため型エラーを無視
     delete globalThis.MediaRecorder
   })
 
   test('候補がすべて非対応のときは空文字を返す', () => {
-    // @ts-expect-error
+    // @ts-expect-error テスト用に MediaRecorder を操作するため型エラーを無視
     globalThis.MediaRecorder = {
       isTypeSupported: () => false,
     }
 
     expect(getSupportedMimeType()).toBe('')
 
-    // @ts-expect-error
+    // @ts-expect-error テスト用に MediaRecorder を操作するため型エラーを無視
     delete globalThis.MediaRecorder
   })
 
   test('mp4（コーデック指定なし）のみ対応するとき → "video/mp4" を返す', () => {
-    // @ts-expect-error
+    // @ts-expect-error テスト用に MediaRecorder を操作するため型エラーを無視
     globalThis.MediaRecorder = {
       isTypeSupported: (t: string) => t === 'video/mp4',
     }
 
     expect(getSupportedMimeType()).toBe('video/mp4')
 
-    // @ts-expect-error
+    // @ts-expect-error テスト用に MediaRecorder を操作するため型エラーを無視
     delete globalThis.MediaRecorder
   })
 })
@@ -103,10 +103,10 @@ describe('canRecord', () => {
   test('MediaRecorder が undefined のときは false を返す', () => {
     // window を疑似的に定義
     const origWindow = globalThis.window
-    // @ts-expect-error
+    // @ts-expect-error テスト用に MediaRecorder を操作するため型エラーを無視
     globalThis.window = {}
     const original = globalThis.MediaRecorder
-    // @ts-expect-error
+    // @ts-expect-error テスト用に MediaRecorder を操作するため型エラーを無視
     globalThis.MediaRecorder = undefined
 
     expect(canRecord()).toBe(false)

@@ -1174,13 +1174,13 @@ export default function HomePage() {
               </button>
               <p className="text-sm font-semibold text-foreground mb-1">友達と一緒に使うともっと楽しい！</p>
               <p className="text-xs text-muted-foreground mb-3">QRコードで招待して全員で回そう</p>
-              <a
+              <Link
                 href="/room/create"
                 className="inline-block px-4 py-2 rounded-xl text-sm font-semibold text-white"
                 style={{ background: 'linear-gradient(to right, #F97316, #EC4899)' }}
               >
                 ルームを作る →
-              </a>
+              </Link>
             </div>
           )}
 
