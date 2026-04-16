@@ -15,9 +15,14 @@ export type SupabaseOAuthProvider = "google" | "x"
  * returnTo が指定された場合、callback 後に元のパスへ戻るための `?next=` を付与する。
  */
 export function buildOAuthRedirectUrl(returnTo?: string | null): string {
-  // 開発環境: NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL を優先（Supabase ダッシュボードの
-  // Redirect URLs ホワイトリストに localhost を追加しなくて済む）
-  if (process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL) {
+  // 開発環境のみ: NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL を優先する
+  // ISSUE-246: NODE_ENV ガードにより本番ビルドでは絶対に参照されない
+  //   → next build 時に process.env.NODE_ENV が "production" に置換されるため
+  //     このブロックはデッドコードとして除去される
+  if (
+    process.env.NODE_ENV === "development" &&
+    process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL
+  ) {
     return process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL
   }
 
