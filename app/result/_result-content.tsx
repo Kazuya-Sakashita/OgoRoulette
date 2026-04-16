@@ -6,6 +6,7 @@ import { ArrowLeft, Share2, Crown, Sparkles, Copy, Check, Users } from "lucide-r
 import { useState, useEffect, Suspense } from "react"
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
+import { trackEvent, AnalyticsEvent } from "@/lib/analytics"
 
 function ResultInner() {
   const searchParams = useSearchParams()
@@ -19,6 +20,8 @@ function ResultInner() {
   const treaterName = searchParams.get("treater") || "A"
   const participantNames = (searchParams.get("participants") || "A,B,C,D,E").split(",")
   const roomCode = searchParams.get("room") || ""
+  // ISSUE-241: シェアリンク経由の流入を検出
+  const isShareRef = searchParams.get("ref") === "share"
 
   const remainingAmount = Math.max(0, totalBill - treatAmount)
   const nonTreaters = participantNames.filter((name) => name !== treaterName)
@@ -35,6 +38,13 @@ function ResultInner() {
     const timer = setTimeout(() => setShowConfetti(false), 4000)
     return () => clearTimeout(timer)
   }, [])
+
+  // ISSUE-241: シェアリンク経由の流入を計測
+  useEffect(() => {
+    if (isShareRef) {
+      trackEvent(AnalyticsEvent.SHARE_JOIN_CLICK, { winner: treaterName })
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ISSUE-094: Check if the source room is still joinable
   useEffect(() => {
@@ -163,18 +173,38 @@ function ResultInner() {
         ) : (
           <div className="rounded-3xl bg-linear-to-br from-orange-500 via-pink-500 to-purple-500 p-px">
             <div className="bg-background rounded-[23px] px-6 py-5 text-center">
-              <p className="text-base font-bold text-foreground mb-1">
-                あなたも試してみよう 🎰
-              </p>
-              <p className="text-sm text-muted-foreground mb-4">
-                「誰が奢る？」をルーレットで即決。無料・登録30秒。
-              </p>
-              <Button
-                asChild
-                className="w-full h-12 rounded-2xl bg-linear-to-r from-orange-500 to-pink-500 hover:opacity-90 text-white font-semibold text-base shadow-md shadow-orange-500/30 transition-all active:scale-[0.98]"
-              >
-                <Link href="/room/create">次の飲み会で使ってみる →</Link>
-              </Button>
+              {isShareRef ? (
+                <>
+                  {/* ISSUE-241: シェア流入 → 即スピン導線 */}
+                  <p className="text-base font-bold text-foreground mb-1">
+                    あなたのグループでも試してみる？🎰
+                  </p>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    ログイン不要・30秒で使える
+                  </p>
+                  <Button
+                    asChild
+                    className="w-full h-12 rounded-2xl bg-linear-to-r from-orange-500 to-pink-500 hover:opacity-90 text-white font-semibold text-base shadow-md shadow-orange-500/30 transition-all active:scale-[0.98]"
+                  >
+                    <Link href="/home">今すぐスピン！</Link>
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <p className="text-base font-bold text-foreground mb-1">
+                    あなたも試してみよう 🎰
+                  </p>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    「誰が奢る？」をルーレットで即決。無料・登録30秒。
+                  </p>
+                  <Button
+                    asChild
+                    className="w-full h-12 rounded-2xl bg-linear-to-r from-orange-500 to-pink-500 hover:opacity-90 text-white font-semibold text-base shadow-md shadow-orange-500/30 transition-all active:scale-[0.98]"
+                  >
+                    <Link href="/room/create">次の飲み会で使ってみる →</Link>
+                  </Button>
+                </>
+              )}
             </div>
           </div>
         )}
