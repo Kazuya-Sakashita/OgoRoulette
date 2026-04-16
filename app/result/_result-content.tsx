@@ -15,10 +15,19 @@ function ResultInner() {
   // ISSUE-094: room join CTA — check if the source room is still active
   const [roomActive, setRoomActive] = useState<"loading" | "active" | "inactive">("loading")
 
-  const totalBill = Number(searchParams.get("total")) || 30000
-  const treatAmount = Number(searchParams.get("treat")) || 20000
-  const treaterName = searchParams.get("treater") || "A"
-  const participantNames = (searchParams.get("participants") || "A,B,C,D,E").split(",")
+  // ISSUE-259: URL パラメータの長さ・型・範囲バリデーション
+  // React の自動エスケープで XSS は発生しないが、超長入力によるレイアウト崩れ・計算誤差を防ぐ
+  const rawTotal = Number(searchParams.get("total"))
+  const totalBill = Number.isFinite(rawTotal) && rawTotal >= 0 && rawTotal <= 9_999_999
+    ? Math.floor(rawTotal) : 0
+  const rawTreat = Number(searchParams.get("treat"))
+  const treatAmount = Number.isFinite(rawTreat) && rawTreat >= 0 && rawTreat <= 9_999_999
+    ? Math.floor(rawTreat) : 0
+  const treaterName = (searchParams.get("treater") ?? "A").slice(0, 20) || "A"
+  const participantNames = (searchParams.get("participants") ?? "A,B,C,D,E")
+    .split(",")
+    .slice(0, 20)
+    .map((n) => n.slice(0, 20))
   const roomCode = searchParams.get("room") || ""
   // ISSUE-241: シェアリンク経由の流入を検出
   const isShareRef = searchParams.get("ref") === "share"
