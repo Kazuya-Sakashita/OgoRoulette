@@ -1,12 +1,28 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { getDisplayName } from "@/lib/display-name"
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
 
 // GET /api/rooms/[code] - Get room by invite code
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ code: string }> }
 ) {
+  // ISSUE-250: ルームコード列挙攻撃（ブルートフォース）防止
+  // ポーリング: IN_SESSION 中 2s 間隔 × 最大4台同WiFi = ~120 req/min
+  // 300/min は正規利用に余裕を持たせつつ自動化攻撃を制限する
+  const ip = getClientIp(request.headers)
+  const { allowed, resetAt } = await checkRateLimit(ip, "room-read", 300, 60_000)
+  if (!allowed) {
+    return NextResponse.json(
+      { error: "リクエストが多すぎます。しばらくしてからお試しください。" },
+      {
+        status: 429,
+        headers: { "Retry-After": String(Math.ceil((resetAt - Date.now()) / 1000)) },
+      }
+    )
+  }
+
   try {
     const { code } = await params
 

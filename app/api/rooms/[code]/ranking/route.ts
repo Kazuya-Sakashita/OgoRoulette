@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
 
 // GET /api/rooms/[code]/ranking
 // WHAT: ルームの全スピン履歴から奢りランキングを集計して返す
@@ -7,9 +8,23 @@ import { prisma } from "@/lib/prisma"
 //       長期利用の常設グループでランキングが不正確になる (ISSUE-047)
 // HOW:  全 COMPLETED セッションの winner participants を name で集計し上位10件を返す
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ code: string }> }
 ) {
+  // ISSUE-251: 全セッション集計クエリの連打防止
+  // ページロード時とスピン完了後のみ呼ばれるため 30/min で十分
+  const ip = getClientIp(request.headers)
+  const { allowed, resetAt } = await checkRateLimit(ip, "room-ranking", 30, 60_000)
+  if (!allowed) {
+    return NextResponse.json(
+      { error: "リクエストが多すぎます。しばらくしてからお試しください。" },
+      {
+        status: 429,
+        headers: { "Retry-After": String(Math.ceil((resetAt - Date.now()) / 1000)) },
+      }
+    )
+  }
+
   try {
     const { code } = await params
 
