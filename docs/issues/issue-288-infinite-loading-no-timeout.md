@@ -1,7 +1,7 @@
 # ISSUE-288: Medium — 無限ローディングが発生しタイムアウト機構がない
 
 ## ステータス
-🔲 TODO
+✅ 修正済み（2026-04-18）— AbortController で fetchRoom に 10 秒タイムアウトを追加
 
 ## 優先度
 **Medium / UX / 信頼性**

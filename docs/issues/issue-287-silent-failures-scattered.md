@@ -1,7 +1,7 @@
 # ISSUE-287: Medium — silent failure がコード全体に散在し障害検知が不能
 
 ## ステータス
-🔲 TODO
+⚠️ 部分対応（2026-04-18）— ランキング取得失敗を console.error に格上げ。useEmojiReactions は調査済みでサイレント障害なし。スピン系エラーは既に setSpinError でUI表示済み。
 
 ## 優先度
 **Medium / 可観測性 / 信頼性**

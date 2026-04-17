@@ -17,9 +17,20 @@ export function useRoomSync(code: string) {
   // ISSUE-221: Broadcast 送信用チャンネル ref（オーナーが spin_start を送信する）
   const channelRef = useRef<ReturnType<ReturnType<typeof createClient>["channel"]> | null>(null)
 
+  // ISSUE-286: 並行 fetchRoom 呼び出しを防ぐゲートフラグ
+  const isFetchingRef = useRef(false)
+
   const fetchRoom = async () => {
+    // ISSUE-286: 既にフェッチ中なら新規リクエストをスキップ（Realtime + polling の二重発火対策）
+    if (isFetchingRef.current) return
+    isFetchingRef.current = true
+
+    // ISSUE-288: ネットワーク障害でフェッチがハングしても 10 秒でタイムアウトさせる
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 10_000)
+
     try {
-      const res = await fetch(`/api/rooms/${code}`)
+      const res = await fetch(`/api/rooms/${code}`, { signal: controller.signal })
       const data = await res.json()
 
       if (!res.ok) {
@@ -39,9 +50,16 @@ export function useRoomSync(code: string) {
         ) return prev
         return data
       })
-    } catch {
-      setError("ルームの取得に失敗しました")
+    } catch (e) {
+      if (e instanceof DOMException && e.name === "AbortError") {
+        // ISSUE-288: タイムアウト時はユーザーにリロードを促すエラーを表示
+        setError("接続がタイムアウトしました。ページをリロードしてください。")
+      } else {
+        setError("ルームの取得に失敗しました")
+      }
     } finally {
+      clearTimeout(timeoutId)
+      isFetchingRef.current = false
       setLoading(false)
     }
   }
@@ -53,8 +71,9 @@ export function useRoomSync(code: string) {
       if (!res.ok) return
       const data = await res.json()
       setRoomRanking(data.ranking)
-    } catch {
-      // ランキング取得失敗は非致命的 — 無視
+    } catch (e) {
+      // ISSUE-287: ランキング取得失敗は非致命的だがログを残して観測可能にする
+      console.error("[OgoRoulette] fetchRanking failed", e)
     }
   }
 

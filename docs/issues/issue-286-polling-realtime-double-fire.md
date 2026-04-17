@@ -1,7 +1,7 @@
 # ISSUE-286: Medium — polling + Realtime の二重発火でフリッカーが発生する
 
 ## ステータス
-🔲 TODO
+✅ 修正済み（2026-04-18）— isFetchingRef ゲートで並行 fetchRoom 呼び出しを防止
 
 ## 優先度
 **Medium / UX / パフォーマンス**

@@ -1,7 +1,7 @@
 # ISSUE-284: High — WinnerCard share ハンドラの stale closure でシェアURLが古い当選者を参照する
 
 ## ステータス
-🔲 TODO
+✅ 調査完了・対応不要（2026-04-18）— ISSUE-276 で resultToken/sessionId を WinnerData state に含めた時点で解消済み。setWinner() でアトミックに更新されるため stale closure リスクなし。share handler は shareUrl（sessionId/resultToken を含む）を deps に持つ。
 
 ## 優先度
 **High / バグ / UX**

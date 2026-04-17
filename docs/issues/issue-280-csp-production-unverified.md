@@ -1,7 +1,7 @@
 # ISSUE-280: High — CSP 本番未検証（ISSUE-263 追加分）
 
 ## ステータス
-🔲 TODO
+🔲 手動検証待ち — ISSUE-289 で Vercel Analytics とフォントブロックは修正済み。残りのフロー（OAuth・Realtime・MediaRecorder・QRスキャン）はブラウザDevToolsでの手動確認が必要。自動化不可。
 
 ## 優先度
 **High / セキュリティ / 回帰確認**

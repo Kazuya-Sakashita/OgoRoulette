@@ -1,7 +1,7 @@
 # ISSUE-277: Critical — レートリミットが Vercel マルチインスタンスで完全無効
 
 ## ステータス
-🔲 TODO
+🔲 未対応（設計フェーズ）— globalThis.rateLimitStore はインスタンス間で共有されないため本番で無効。修正には Supabase テーブル（upsert+SELECT方式）または Upstash KV の導入が必要。スキーマ変更を伴うため単独ISSUEとして別途対応予定。
 
 ## 優先度
 **Critical / セキュリティ**
