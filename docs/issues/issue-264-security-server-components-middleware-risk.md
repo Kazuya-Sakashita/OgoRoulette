@@ -1,7 +1,7 @@
-# ISSUE-264: Security(Medium) — Server Components 導入時の middleware 認可リスク
+# ISSUE-264: Security(Medium) — Server Components 導入時の middleware 認可リスク（✅ 規約記録済み）
 
 ## ステータス
-🔲 TODO（将来の実装変更時に対応）
+✅ 規約記録済み（2026-04-17）— CLAUDE.md に Server Components コーディング規約を追記
 
 ## 優先度
 **Medium / セキュリティ（予防的）**
