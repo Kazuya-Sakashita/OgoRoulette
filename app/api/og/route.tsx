@@ -34,7 +34,9 @@ async function loadFont(text: string): Promise<ArrayBuffer | null> {
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const winner = searchParams.get("winner") || "???"
-  const color = searchParams.get("color") || "#F97316"
+  // ISSUE-274: hex カラーのみ許可（CSS Injection 防止）
+  const rawColor = searchParams.get("color") || "#F97316"
+  const color = /^#[0-9a-fA-F]{3,6}$/.test(rawColor) ? rawColor : "#F97316"
   const amount = searchParams.get("amount")
 
   // ISSUE-189: 参加人数（シェアURL の participants からカウントして渡す）
