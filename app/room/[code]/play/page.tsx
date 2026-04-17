@@ -158,8 +158,10 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
       const vh = window.innerHeight
       const isMd = vw >= 768
       if (isMd) {
-        const rightColWidth = Math.min(340, (vw - 64) / 2)
-        setWheelSize(Math.min(400, rightColWidth - 16))
+        // ISSUE-227: md:max-w-[760px] container, md:px-8 (64px) → content max 696px
+        // grid-cols-[1fr_auto] with gap-8 (32px), keep left col ≥ 260px
+        const containerContent = Math.min(760 - 64, vw - 64)
+        setWheelSize(Math.min(400, Math.max(280, containerContent - 260 - 32)))
       } else {
         const byWidth = Math.min(360, vw - 40)
         const byHeight = Math.min(360, vh - RESERVED_HEIGHT)
@@ -209,7 +211,7 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
   if (loading || !authLoaded || !isGuestHostResolved) {
     return (
       <main className="min-h-screen bg-background">
-        <div className="mx-auto max-w-[390px] md:max-w-lg min-h-dvh flex flex-col px-5 py-6">
+        <div className="mx-auto max-w-[390px] md:max-w-[760px] min-h-dvh flex flex-col px-5 py-6">
           <div className="flex items-center gap-4 mb-8">
             <div className="w-9 h-9 rounded-xl bg-white/10 animate-pulse" />
             <div className="h-5 w-32 rounded-full bg-white/10 animate-pulse" />
@@ -228,7 +230,7 @@ export default function RoomPlayPage({ params }: { params: Promise<{ code: strin
     const isExpiredError = error === "expired"
     return (
       <main className="min-h-screen bg-background">
-        <div className="mx-auto max-w-[390px] md:max-w-lg min-h-dvh flex flex-col px-5 py-6">
+        <div className="mx-auto max-w-[390px] md:max-w-[760px] min-h-dvh flex flex-col px-5 py-6">
           <header className="flex items-center gap-4 mb-8">
             <Button asChild variant="ghost" size="icon" className="text-muted-foreground">
               <Link href="/home"><ArrowLeft className="w-5 h-5" /></Link>

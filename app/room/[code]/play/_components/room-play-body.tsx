@@ -132,7 +132,7 @@ export function RoomPlayBody({
   }, [room.members])
 
   return (
-    <div className="mx-auto max-w-[390px] md:max-w-[680px] min-h-dvh flex flex-col px-5 py-6 md:px-8">
+    <div className="mx-auto max-w-[390px] md:max-w-[760px] min-h-dvh flex flex-col px-5 py-6 md:px-8">
 
       {/* Header */}
       <header className="flex items-center gap-3 mb-4">
