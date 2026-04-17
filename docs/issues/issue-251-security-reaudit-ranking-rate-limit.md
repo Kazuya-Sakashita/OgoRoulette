@@ -1,4 +1,4 @@
-# ISSUE-251: Security Re-audit(Medium) — GET /api/rooms/[code]/ranking にレート制限なし
+# ISSUE-251: Security Re-audit(Medium) — GET /api/rooms/[code]/ranking にレート制限なし（✅ 修正済み）
 
 ## ステータス
 🔲 TODO

@@ -1,4 +1,4 @@
-# ISSUE-253: Security(High) — LINE OAuth Cookie の secure フラグが NODE_ENV 依存
+# ISSUE-253: Security(High) — LINE OAuth Cookie の secure フラグが NODE_ENV 依存（✅ 修正済み）
 
 ## ステータス
 🔲 TODO

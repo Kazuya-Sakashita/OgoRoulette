@@ -1,4 +1,4 @@
-# ISSUE-255: Security(Low) — sessions API の winnerIndex / winnerName 矛盾の潜在的不整合
+# ISSUE-255: Security(Low) — sessions API の winnerIndex / winnerName 矛盾の潜在的不整合（✅ 修正済み）
 
 ## ステータス
 🔲 TODO

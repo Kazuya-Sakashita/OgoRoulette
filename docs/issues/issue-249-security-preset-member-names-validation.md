@@ -1,4 +1,4 @@
-# ISSUE-249: Security(Low) — presetMemberNames の重複・整合性チェック不足
+# ISSUE-249: Security(Low) — presetMemberNames の重複・整合性チェック不足（✅ 修正済み）
 
 ## ステータス
 🔲 TODO

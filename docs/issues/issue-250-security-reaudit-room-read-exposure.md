@@ -1,4 +1,4 @@
-# ISSUE-250: Security Re-audit(High) — GET /api/rooms/[code] の認可なし・セッション履歴露出
+# ISSUE-250: Security Re-audit(High) — GET /api/rooms/[code] の認可なし・セッション履歴露出（✅ 修正済み）
 
 ## ステータス
 🔲 TODO

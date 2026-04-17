@@ -1,4 +1,4 @@
-# ISSUE-248: Security(Medium) — /api/sessions のクライアント送信 participants 改ざん
+# ISSUE-248: Security(Medium) — /api/sessions のクライアント送信 participants 改ざん（✅ 修正済み）
 
 ## ステータス
 🔲 TODO

@@ -1,4 +1,4 @@
-# ISSUE-246: Security(High) — Open Redirect リスク：NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL
+# ISSUE-246: Security(High) — Open Redirect リスク：NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL（✅ 修正済み）
 
 ## ステータス
 🔲 TODO

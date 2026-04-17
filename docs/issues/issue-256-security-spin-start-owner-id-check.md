@@ -1,4 +1,4 @@
-# ISSUE-256: Security(Low) — spin-start の ownerId 早期チェック欠如（設計一貫性）
+# ISSUE-256: Security(Low) — spin-start の ownerId 早期チェック欠如（✅ 修正済み）
 
 ## ステータス
 🔲 TODO

@@ -1,4 +1,4 @@
-# ISSUE-259: Security(Low) — result ページの URL パラメータに長さ・型バリデーションなし
+# ISSUE-259: Security(Low) — result ページの URL パラメータに長さ・型バリデーションなし（✅ 修正済み）
 
 ## ステータス
 🔲 TODO

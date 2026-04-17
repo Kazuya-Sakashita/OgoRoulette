@@ -1,4 +1,4 @@
-# ISSUE-245: Security(Medium) — HMAC ゲストトークン検証の padEnd 設計
+# ISSUE-245: Security(Medium) — HMAC ゲストトークン検証の padEnd 設計（✅ 修正済み）
 
 ## ステータス
 🔲 TODO

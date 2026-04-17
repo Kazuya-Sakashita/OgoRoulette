@@ -1,4 +1,4 @@
-# ISSUE-247: Security(High) — X-Forwarded-For スプーフィングによるレート制限回避
+# ISSUE-247: Security(High) — X-Forwarded-For スプーフィングによるレート制限回避（✅ 修正済み）
 
 ## ステータス
 🔲 TODO

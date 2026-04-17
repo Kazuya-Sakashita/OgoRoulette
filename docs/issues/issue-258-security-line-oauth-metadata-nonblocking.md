@@ -1,4 +1,4 @@
-# ISSUE-258: Security(Medium) — LINE OAuth metadata 更新が non-blocking でプロフィール不整合リスク
+# ISSUE-258: Security(Medium) — LINE OAuth metadata 更新が non-blocking でプロフィール不整合リスク（✅ 修正済み）
 
 ## ステータス
 🔲 TODO
