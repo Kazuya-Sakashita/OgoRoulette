@@ -86,6 +86,10 @@ export function useRoomSync(code: string) {
       .on("broadcast", { event: "spin_start" }, () => { fetchRoom() })
       .subscribe((status) => {
         if (status === "SUBSCRIBED") fetchRoom()
+        // ISSUE-275: CHANNEL_ERROR は anon ユーザーの RLS ブロック等で発生しうる。
+        // polling fallback（2s/10s）がカバーするため致命的ではないが、
+        // fetchRoom() を即時呼んで最新状態を確保する。
+        if (status === "CHANNEL_ERROR") fetchRoom()
       })
     channelRef.current = channel
 

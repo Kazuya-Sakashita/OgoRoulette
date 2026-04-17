@@ -1,4 +1,4 @@
-# ISSUE-275: rooms テーブルの anon SELECT ポリシー欠落によるリアルタイム・リアクション リグレッション
+# ISSUE-275: rooms テーブルの anon SELECT ポリシー欠落によるリアルタイム・リアクション リグレッション（✅ 修正済み）
 
 ## 概要
 
@@ -125,11 +125,12 @@ table: "Room",  // → "rooms" を revert
 
 ## 受け入れ条件
 
-- [ ] rooms に `anon` SELECT ポリシーを追加する migration を作成
-- [ ] ゲストユーザーで `room-play:${code}` チャンネルが CHANNEL_ERROR にならないことを確認
-- [ ] ゲストメンバー画面で絵文字リアクションが正常に表示されることを確認
-- [ ] ゲストメンバー画面でスピン後 WinnerCard が遅延なく表示されることを確認
-- [ ] `pnpm typecheck` 通過
+- [x] rooms に `anon` SELECT ポリシーを追加する migration を作成（`20260417100000_add_rooms_anon_rls`）
+- [x] `use-room-sync.ts` subscribe callback に CHANNEL_ERROR ハンドラを追加（fetchRoom フォールバック）
+- [x] `pnpm typecheck` 通過
+- [ ] Supabase に migration を適用後、ゲストユーザーで CHANNEL_ERROR が出ないことを確認
+- [ ] ゲストメンバー画面で絵文字リアクションが正常に表示されることを実機確認
+- [ ] ゲストメンバー画面でスピン後 WinnerCard が遅延なく表示されることを実機確認
 
 ---
 
