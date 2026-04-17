@@ -76,7 +76,7 @@ export function useRoomSync(code: string) {
         {
           event: "*",
           schema: "public",
-          table: "Room",
+          table: "rooms",
           filter: `invite_code=eq.${code.toUpperCase()}`,
         },
         () => { fetchRoom() }

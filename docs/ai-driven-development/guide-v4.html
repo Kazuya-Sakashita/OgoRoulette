@@ -1,0 +1,3015 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>AI駆動開発 完全教科書 ver.4.0 — セキュリティ評価ループとスコア99/100達成プロセス</title>
+<style>
+@page { size: A4; margin: 0; }
+
+:root {
+  --blue: #2563eb;
+  --blue-dark: #1d4ed8;
+  --purple: #7c3aed;
+  --green: #059669;
+  --amber: #d97706;
+  --red: #dc2626;
+  --slate-50: #f8fafc;
+  --slate-100: #f1f5f9;
+  --slate-200: #e2e8f0;
+  --slate-500: #64748b;
+  --slate-700: #334155;
+  --slate-900: #0f172a;
+  --text: #1e293b;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+.page {
+  width: 210mm;
+  min-height: 297mm;
+  max-height: 297mm;
+  padding: 14mm 18mm 16mm;
+  page-break-after: always;
+  break-after: page;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  font-family: 'Helvetica Neue', 'Hiragino Sans', 'BIZ UDPGothic', sans-serif;
+  font-size: 10pt;
+  color: var(--text);
+  line-height: 1.7;
+  background: white;
+}
+
+.page-stripe { position: absolute; top: 0; left: 0; right: 0; height: 6mm; }
+.stripe-blue { background: linear-gradient(90deg, #2563eb, #7c3aed); }
+.stripe-green { background: linear-gradient(90deg, #059669, #0284c7); }
+.stripe-amber { background: linear-gradient(90deg, #d97706, #dc2626); }
+.stripe-purple { background: linear-gradient(90deg, #7c3aed, #2563eb); }
+.stripe-slate { background: linear-gradient(90deg, #334155, #475569); }
+.stripe-teal { background: linear-gradient(90deg, #0891b2, #059669); }
+.stripe-gold { background: linear-gradient(90deg, #d97706, #f59e0b); }
+
+.page-cover {
+  background: linear-gradient(145deg, #0f172a 0%, #1e3a5f 60%, #0c1a35 100%);
+  color: white;
+  justify-content: flex-start;
+  align-items: flex-start;
+  padding: 20mm 22mm;
+}
+
+.page-footer {
+  position: absolute;
+  bottom: 6mm; left: 18mm; right: 18mm;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 8pt;
+  color: #94a3b8;
+  border-top: 1px solid #e2e8f0;
+  padding-top: 3mm;
+}
+.page-footer-white { border-top-color: rgba(255,255,255,0.15); color: rgba(255,255,255,0.4); }
+
+.sec-label { font-size: 8pt; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: var(--blue); margin-bottom: 2mm; }
+.sec-label-white { color: rgba(255,255,255,0.6); }
+.sec-title { font-size: 20pt; font-weight: 900; color: var(--slate-900); line-height: 1.2; margin-bottom: 2mm; }
+.sec-desc { font-size: 10pt; color: var(--slate-500); margin-bottom: 5mm; }
+
+p { font-size: 9.5pt; margin-bottom: 2.5mm; line-height: 1.7; }
+h3 { font-size: 11.5pt; font-weight: 700; color: var(--slate-900); margin: 4mm 0 2mm; }
+h4 { font-size: 10.5pt; font-weight: 700; color: var(--blue); margin: 3mm 0 1.5mm; }
+
+.callout { border-radius: 6px; padding: 3mm 4mm; margin: 2.5mm 0; font-size: 9.5pt; line-height: 1.7; display: flex; gap: 3mm; align-items: flex-start; }
+.callout.blue { background: #eff6ff; border: 1px solid #bfdbfe; }
+.callout.green { background: #f0fdf4; border: 1px solid #bbf7d0; }
+.callout.amber { background: #fffbeb; border: 1px solid #fde68a; }
+.callout.red { background: #fff1f2; border: 1px solid #fecdd3; }
+.callout.purple { background: #faf5ff; border: 1px solid #e9d5ff; }
+.callout.teal { background: #f0fdfa; border: 1px solid #99f6e4; }
+.callout-icon { font-size: 12pt; flex-shrink: 0; margin-top: 0.5mm; }
+.callout-body strong { display: block; font-size: 10pt; font-weight: 700; margin-bottom: 1mm; }
+
+.code {
+  background: #1e293b; color: #e2e8f0; border-radius: 6px; padding: 3mm 4mm;
+  font-family: 'SF Mono', 'Fira Code', 'Menlo', monospace; font-size: 8pt;
+  line-height: 1.6; margin: 2.5mm 0; white-space: pre-wrap; word-break: break-word; overflow: hidden;
+}
+code { font-family: 'SF Mono', 'Fira Code', monospace; background: #f1f5f9; padding: 1px 4px; border-radius: 3px; font-size: 8.5pt; color: #2563eb; }
+
+.template-block {
+  background: #0f172a; color: #e2e8f0; border-radius: 8px; padding: 4mm 5mm;
+  font-family: 'SF Mono', 'Fira Code', 'Menlo', monospace; font-size: 7.5pt;
+  line-height: 1.8; margin: 2.5mm 0; white-space: pre-wrap; word-break: break-word;
+  border-left: 4px solid #60a5fa; overflow: hidden; flex-shrink: 0; min-height: min-content;
+}
+.template-var { color: #fb923c; font-style: italic; }
+.template-label { font-size: 7.5pt; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #60a5fa; margin-bottom: 1.5mm; display: block; font-family: 'Helvetica Neue', sans-serif; }
+
+table { width: 100%; border-collapse: collapse; margin: 2.5mm 0; font-size: 8.5pt; }
+th { background: var(--slate-100); color: var(--slate-700); font-size: 8pt; font-weight: 700; padding: 2mm 3mm; text-align: left; border: 1px solid var(--slate-200); }
+td { padding: 2mm 3mm; border: 1px solid var(--slate-200); vertical-align: top; line-height: 1.5; }
+tr:nth-child(even) td { background: var(--slate-50); }
+
+.cards { display: grid; gap: 2.5mm; margin: 2.5mm 0; }
+.cards.col2 { grid-template-columns: 1fr 1fr; }
+.cards.col3 { grid-template-columns: 1fr 1fr 1fr; }
+.card { background: var(--slate-50); border: 1px solid var(--slate-200); border-radius: 6px; padding: 3mm 4mm; }
+.card-icon { font-size: 14pt; margin-bottom: 1.5mm; }
+.card h3 { font-size: 10pt; font-weight: 700; margin: 0 0 1.5mm; color: var(--slate-900); }
+.card p { font-size: 8.5pt; color: var(--slate-500); margin: 0; line-height: 1.5; }
+
+.principle { background: var(--slate-50); border: 1px solid var(--slate-200); border-left: 3px solid var(--blue); border-radius: 6px; padding: 3mm 4mm; margin: 2mm 0; }
+.principle-num { font-size: 7.5pt; font-weight: 700; color: var(--blue); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 0.5mm; }
+.principle-title { font-size: 10.5pt; font-weight: 800; color: var(--slate-900); margin-bottom: 1mm; }
+.principle-body { font-size: 8.5pt; color: var(--slate-700); line-height: 1.6; }
+.principle-example { font-size: 8pt; color: var(--green); font-style: italic; margin-top: 1mm; }
+.principle-ng { font-size: 8pt; color: #dc2626; margin-top: 0.5mm; }
+
+.loop-diagram { background: var(--slate-900); color: white; border-radius: 8px; padding: 5mm; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 8.5pt; line-height: 1.9; text-align: center; margin: 3mm 0; }
+
+.timeline { margin: 2.5mm 0; }
+.timeline-item { display: flex; gap: 3mm; margin-bottom: 3mm; }
+.timeline-dot { width: 8mm; height: 8mm; border-radius: 50%; background: var(--blue); color: white; display: flex; align-items: center; justify-content: center; font-size: 7.5pt; font-weight: 700; flex-shrink: 0; margin-top: 0.5mm; }
+.timeline-dot.green { background: var(--green); }
+.timeline-dot.purple { background: var(--purple); }
+.timeline-dot.amber { background: var(--amber); }
+.timeline-dot.red { background: var(--red); }
+.timeline-content h4 { font-size: 10pt; font-weight: 700; margin: 0 0 1mm; color: var(--slate-900); }
+.timeline-content p { font-size: 8.5pt; color: var(--slate-500); margin: 0; line-height: 1.5; }
+
+.badge { display: inline-block; padding: 1px 6px; border-radius: 100px; font-size: 7.5pt; font-weight: 700; }
+.badge-blue { background: #dbeafe; color: #1d4ed8; }
+.badge-green { background: #d1fae5; color: #065f46; }
+.badge-red { background: #fee2e2; color: #991b1b; }
+.badge-purple { background: #ede9fe; color: #5b21b6; }
+.badge-amber { background: #fef3c7; color: #92400e; }
+
+.blockquote { border-left: 3px solid var(--blue); padding: 2mm 0 2mm 4mm; margin: 2.5mm 0; font-size: 10.5pt; font-style: italic; color: var(--slate-700); }
+.blockquote-source { font-size: 8.5pt; font-style: normal; color: var(--slate-500); margin-top: 1mm; }
+
+.sp { margin-top: 3mm; } .sp2 { margin-top: 5mm; }
+ul, ol { padding-left: 5mm; margin: 1.5mm 0 2.5mm; }
+li { font-size: 9pt; margin-bottom: 1mm; line-height: 1.6; }
+strong { font-weight: 700; color: var(--slate-900); }
+.hl { background: #fef9c3; padding: 0 2px; }
+.blue-text { color: var(--blue); font-weight: 700; }
+
+.stat { display: inline-block; font-size: 22pt; font-weight: 900; color: var(--blue); line-height: 1; }
+.stat-label { font-size: 9pt; color: var(--slate-500); display: block; margin-top: 1mm; }
+
+.compare { display: grid; grid-template-columns: 1fr 1fr; gap: 2.5mm; margin: 2.5mm 0; }
+.compare-item { border-radius: 6px; padding: 3mm; }
+.compare-ng { background: #fff1f2; border: 1px solid #fecdd3; }
+.compare-ok { background: #f0fdf4; border: 1px solid #bbf7d0; }
+.compare-label { font-size: 8pt; font-weight: 700; margin-bottom: 1.5mm; }
+.compare-ng .compare-label { color: #dc2626; }
+.compare-ok .compare-label { color: #059669; }
+.compare-body { font-size: 8.5pt; line-height: 1.6; }
+
+.divider { border: none; border-top: 1px solid var(--slate-200); margin: 3mm 0; }
+
+.toc-item { display: flex; align-items: baseline; gap: 2mm; margin-bottom: 2mm; font-size: 9.5pt; }
+.toc-num { font-weight: 700; color: var(--blue); min-width: 14mm; font-size: 8.5pt; }
+.toc-title { font-weight: 700; color: var(--slate-900); }
+.toc-desc { font-size: 8.5pt; color: var(--slate-500); margin-left: 16mm; margin-bottom: 3mm; margin-top: 0; }
+.toc-new { display: inline-block; padding: 1px 5px; border-radius: 3px; font-size: 7pt; font-weight: 700; background: linear-gradient(90deg, #d97706, #f59e0b); color: white; margin-left: 2mm; vertical-align: middle; }
+
+.cover-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 8pt; font-weight: 700; background: rgba(255,255,255,0.15); color: rgba(255,255,255,0.85); margin-right: 2mm; margin-bottom: 2mm; border: 1px solid rgba(255,255,255,0.2); }
+
+.stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 3mm; margin: 3mm 0; }
+.stat-box { background: var(--slate-50); border: 1px solid var(--slate-200); border-radius: 6px; padding: 3mm 4mm; text-align: center; }
+.stat-box .num { font-size: 20pt; font-weight: 900; color: var(--blue); line-height: 1; }
+.stat-box .lbl { font-size: 7.5pt; color: var(--slate-500); margin-top: 1mm; }
+
+.chapter-header { border-left: 4px solid var(--blue); padding: 2mm 0 2mm 4mm; margin-bottom: 4mm; }
+.chapter-header .ch-num { font-size: 8pt; font-weight: 700; color: var(--blue); letter-spacing: 0.15em; text-transform: uppercase; }
+.chapter-header .ch-title { font-size: 18pt; font-weight: 900; color: var(--slate-900); line-height: 1.2; }
+.chapter-header .ch-sub { font-size: 9.5pt; color: var(--slate-500); margin-top: 1mm; }
+
+.flow-step { display: flex; align-items: flex-start; gap: 3mm; margin-bottom: 2.5mm; }
+.flow-num { width: 7mm; height: 7mm; border-radius: 50%; background: var(--blue); color: white; display: flex; align-items: center; justify-content: center; font-size: 8pt; font-weight: 700; flex-shrink: 0; margin-top: 1mm; }
+.flow-content h4 { font-size: 10pt; font-weight: 700; margin: 0 0 0.5mm; color: var(--slate-900); }
+.flow-content p { font-size: 8.5pt; color: var(--slate-600); margin: 0; line-height: 1.5; }
+
+.fw-quartet { display: grid; grid-template-columns: 1fr 1fr; gap: 2.5mm; margin: 2.5mm 0; }
+.fw-card { border-radius: 8px; padding: 3mm 4mm; }
+.fw-card-gstack { background: linear-gradient(135deg, #eff6ff, #e0e7ff); border: 1px solid #bfdbfe; }
+.fw-card-heart { background: linear-gradient(135deg, #fdf2f8, #fce7f3); border: 1px solid #f9a8d4; }
+.fw-card-aarrr { background: linear-gradient(135deg, #f0fdf4, #dcfce7); border: 1px solid #86efac; }
+.fw-card-kano { background: linear-gradient(135deg, #fffbeb, #fef3c7); border: 1px solid #fde68a; }
+.fw-card-label { font-size: 7.5pt; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 1mm; }
+.fw-card-gstack .fw-card-label { color: #1d4ed8; }
+.fw-card-heart .fw-card-label { color: #be185d; }
+.fw-card-aarrr .fw-card-label { color: #065f46; }
+.fw-card-kano .fw-card-label { color: #92400e; }
+.fw-card h4 { font-size: 10pt; font-weight: 800; margin: 0 0 1mm; color: var(--slate-900); }
+.fw-card p { font-size: 8pt; color: var(--slate-700); margin: 0; line-height: 1.5; }
+
+.score-formula { background: linear-gradient(135deg, #0f172a, #1e3a5f); color: white; border-radius: 8px; padding: 4mm 5mm; margin: 3mm 0; text-align: center; }
+.score-formula .formula { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11pt; font-weight: 700; color: #60a5fa; margin-bottom: 2mm; }
+.score-formula .weights { display: flex; justify-content: center; gap: 4mm; margin-top: 2mm; }
+.score-formula .weight-item { text-align: center; }
+.score-formula .weight-num { font-size: 14pt; font-weight: 900; line-height: 1; }
+.score-formula .weight-lbl { font-size: 7pt; color: rgba(255,255,255,0.6); margin-top: 0.5mm; }
+
+.gstack-axes { display: grid; grid-template-columns: repeat(5, 1fr); gap: 2mm; margin: 2.5mm 0; }
+.gstack-axis { background: var(--slate-50); border: 1px solid var(--slate-200); border-radius: 6px; padding: 2.5mm; text-align: center; }
+.gstack-axis .letter { font-size: 18pt; font-weight: 900; color: var(--blue); line-height: 1; margin-bottom: 1mm; }
+.gstack-axis .word { font-size: 7pt; font-weight: 700; color: var(--slate-700); margin-bottom: 0.5mm; }
+.gstack-axis .desc { font-size: 6.5pt; color: var(--slate-500); line-height: 1.4; }
+
+.heart-axes { display: grid; grid-template-columns: 1fr 1fr; gap: 2mm; margin: 2.5mm 0; }
+.heart-axis { background: #fdf2f8; border: 1px solid #f9a8d4; border-radius: 6px; padding: 2.5mm 3mm; }
+.heart-axis .letter { font-size: 13pt; font-weight: 900; color: #be185d; line-height: 1; display: inline; margin-right: 2mm; }
+.heart-axis .word { font-size: 8.5pt; font-weight: 700; color: var(--slate-900); }
+.heart-axis .desc { font-size: 7.5pt; color: var(--slate-600); line-height: 1.4; margin-top: 0.5mm; }
+
+.kano-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 2.5mm; margin: 2.5mm 0; }
+.kano-card { border-radius: 6px; padding: 2.5mm 3mm; }
+.kano-basic { background: #f8fafc; border: 1px solid #e2e8f0; border-top: 3px solid #64748b; }
+.kano-linear { background: #eff6ff; border: 1px solid #bfdbfe; border-top: 3px solid #2563eb; }
+.kano-delight { background: linear-gradient(135deg, #fdf2f8, #fffbeb); border: 1px solid #f9a8d4; border-top: 3px solid #d97706; }
+.kano-card .kano-label { font-size: 7pt; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 1mm; }
+.kano-basic .kano-label { color: #64748b; }
+.kano-linear .kano-label { color: var(--blue); }
+.kano-delight .kano-label { color: #d97706; }
+.kano-card h4 { font-size: 9.5pt; font-weight: 800; margin: 0 0 1mm; color: var(--slate-900); }
+.kano-card p { font-size: 7.5pt; color: var(--slate-600); margin: 0; line-height: 1.4; }
+
+.flow-chart-box { background: var(--slate-900); border-radius: 8px; padding: 4mm 5mm; margin: 3mm 0; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 7.5pt; line-height: 1.8; color: #e2e8f0; }
+.flow-yes { color: #34d399; font-weight: 700; }
+.flow-no { color: #f87171; font-weight: 700; }
+.flow-fw { color: #60a5fa; font-weight: 700; }
+
+.phase-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2.5mm; margin: 2.5mm 0; }
+.phase-item { border-radius: 6px; padding: 3mm 3.5mm; }
+.phase-1 { background: #eff6ff; border: 1px solid #bfdbfe; border-left: 3px solid #2563eb; }
+.phase-2 { background: #f0fdf4; border: 1px solid #bbf7d0; border-left: 3px solid #059669; }
+.phase-3 { background: #faf5ff; border: 1px solid #e9d5ff; border-left: 3px solid #7c3aed; }
+.phase-4 { background: #fffbeb; border: 1px solid #fde68a; border-left: 3px solid #d97706; }
+.phase-num { font-size: 7pt; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 0.5mm; }
+.phase-1 .phase-num { color: #1d4ed8; }
+.phase-2 .phase-num { color: #059669; }
+.phase-3 .phase-num { color: #7c3aed; }
+.phase-4 .phase-num { color: #d97706; }
+.phase-item h4 { font-size: 9.5pt; font-weight: 800; color: var(--slate-900); margin: 0 0 1mm; }
+.phase-item p { font-size: 7.5pt; color: var(--slate-600); margin: 0; line-height: 1.45; }
+
+.case-header { background: linear-gradient(135deg, #1e3a5f, #2563eb); color: white; border-radius: 8px; padding: 4mm 5mm; margin-bottom: 3mm; }
+.case-header h2 { font-size: 13pt; font-weight: 800; margin: 0 0 1mm; }
+.case-header p { font-size: 9pt; opacity: 0.85; margin: 0; }
+
+/* =========== v3 NEW =========== */
+.quickstart-step {
+  background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+  border: 1px solid #86efac;
+  border-left: 4px solid #059669;
+  border-radius: 8px;
+  padding: 4mm 5mm;
+  margin: 2.5mm 0;
+}
+.quickstart-step .qs-time { font-size: 7.5pt; font-weight: 700; color: #065f46; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 1mm; }
+.quickstart-step h4 { font-size: 11pt; font-weight: 800; color: var(--slate-900); margin: 0 0 1.5mm; }
+.quickstart-step p { font-size: 8.5pt; color: var(--slate-700); margin: 0; line-height: 1.5; }
+
+.prescription-row { display: grid; grid-template-columns: 22mm 40mm 1fr; gap: 0; border: 1px solid var(--slate-200); border-radius: 6px; overflow: hidden; margin: 1.5mm 0; font-size: 8pt; }
+.prescription-score { background: var(--slate-900); color: white; padding: 2.5mm 3mm; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 10pt; }
+.prescription-diag { background: var(--slate-100); padding: 2.5mm 3mm; border-right: 1px solid var(--slate-200); font-size: 8pt; font-weight: 700; color: var(--slate-700); display: flex; align-items: center; }
+.prescription-action { padding: 2.5mm 3mm; background: white; font-size: 8pt; color: var(--slate-700); line-height: 1.5; }
+.prescription-action ol { margin: 0; padding-left: 4mm; }
+.prescription-action li { margin-bottom: 0.5mm; }
+
+.checklist-section { background: var(--slate-50); border: 1px solid var(--slate-200); border-radius: 8px; padding: 3mm 4mm; margin: 2mm 0; }
+.checklist-section h4 { font-size: 9.5pt; font-weight: 800; color: var(--slate-900); margin: 0 0 2mm; }
+.checklist-item { display: flex; align-items: flex-start; gap: 2mm; margin-bottom: 1.5mm; font-size: 8.5pt; color: var(--slate-700); line-height: 1.4; }
+.checklist-box { width: 4mm; height: 4mm; border: 1.5px solid #94a3b8; border-radius: 1px; flex-shrink: 0; margin-top: 0.5mm; }
+
+.cycle-step { background: white; border: 1px solid var(--slate-200); border-radius: 6px; padding: 3mm 4mm; margin: 1.5mm 0; display: grid; grid-template-columns: 8mm 1fr; gap: 3mm; }
+.cycle-num { width: 8mm; height: 8mm; border-radius: 50%; background: linear-gradient(135deg, #2563eb, #7c3aed); color: white; display: flex; align-items: center; justify-content: center; font-size: 9pt; font-weight: 900; flex-shrink: 0; }
+.cycle-content h4 { font-size: 9.5pt; font-weight: 700; color: var(--slate-900); margin: 0 0 0.5mm; }
+.cycle-content p { font-size: 8pt; color: var(--slate-500); margin: 0; line-height: 1.45; }
+
+.v2-badge { display: inline-block; padding: 2px 7px; border-radius: 4px; font-size: 8pt; font-weight: 700; background: linear-gradient(90deg, #d97706, #dc2626); color: white; margin-left: 3mm; vertical-align: middle; }
+.v3-badge { display: inline-block; padding: 2px 7px; border-radius: 4px; font-size: 8pt; font-weight: 700; background: linear-gradient(90deg, #0891b2, #7c3aed); color: white; margin-left: 3mm; vertical-align: middle; }
+
+.action-card { background: linear-gradient(135deg, #eff6ff, #f0fdf4); border: 1px solid #bfdbfe; border-radius: 8px; padding: 3.5mm 4mm; margin: 2mm 0; }
+.action-card .ac-step { font-size: 7.5pt; font-weight: 700; color: var(--blue); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 1mm; }
+.action-card h4 { font-size: 10.5pt; font-weight: 800; color: var(--slate-900); margin: 0 0 1mm; }
+.action-card p { font-size: 8.5pt; color: var(--slate-600); margin: 0; line-height: 1.4; }
+</style>
+</head>
+<body>
+
+<!-- ========== PAGE 1: カバー ========== -->
+<div class="page page-cover">
+  <div class="page-stripe stripe-blue"></div>
+  <div style="flex: 1; display: flex; flex-direction: column; justify-content: center;">
+    <div style="margin-bottom: 8mm;">
+      <div class="sec-label sec-label-white">AI-DRIVEN DEVELOPMENT COMPLETE TEXTBOOK</div>
+      <div style="font-size: 28pt; font-weight: 900; color: white; line-height: 1.15; margin-bottom: 2mm;">AI駆動開発<br>完全教科書</div>
+      <div style="display: flex; align-items: center; gap: 3mm; margin-bottom: 3mm;">
+        <span style="display: inline-block; padding: 2px 10px; border-radius: 5px; font-size: 9pt; font-weight: 900; background: linear-gradient(90deg, #dc2626, #7c3aed); color: white; letter-spacing: 0.05em;">ver. 4.0</span>
+        <span style="display: inline-block; padding: 2px 8px; border-radius: 5px; font-size: 8pt; font-weight: 800; background: rgba(255,255,255,0.15); color: rgba(255,255,255,0.9); border: 1px solid rgba(255,255,255,0.3);">セキュリティ強化版</span>
+        <span style="font-size: 8.5pt; color: rgba(255,255,255,0.55);">理解するではなく「できる」にする</span>
+      </div>
+      <div style="font-size: 12pt; color: rgba(255,255,255,0.75); font-weight: 400; line-height: 1.5; margin-bottom: 3mm;">
+        OgoRoulette実践から学ぶ、再現可能な開発手法<br>
+        <span style="font-size: 9.5pt; color: rgba(255,255,255,0.55);">テンプレート全収録 / 手順 / 1サイクル完全再現 / スコア別処方箋</span>
+      </div>
+      <div style="width: 40mm; height: 1px; background: rgba(255,255,255,0.3); margin-bottom: 4mm;"></div>
+    </div>
+    <div style="margin-bottom: 6mm;">
+      <div style="font-size: 9pt; color: rgba(255,255,255,0.5); margin-bottom: 3mm; letter-spacing: 0.1em; text-transform: uppercase;">プロジェクト実績</div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 3mm;">
+        <div style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); border-radius: 6px; padding: 3mm; text-align: center;">
+          <div style="font-size: 20pt; font-weight: 900; color: #60a5fa; line-height: 1;">260+</div>
+          <div style="font-size: 7.5pt; color: rgba(255,255,255,0.5); margin-top: 1mm;">総ISSUE数</div>
+        </div>
+        <div style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); border-radius: 6px; padding: 3mm; text-align: center;">
+          <div style="font-size: 20pt; font-weight: 900; color: #34d399; line-height: 1;">約5週間</div>
+          <div style="font-size: 7.5pt; color: rgba(255,255,255,0.5); margin-top: 1mm;">開発期間</div>
+        </div>
+        <div style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); border-radius: 6px; padding: 3mm; text-align: center;">
+          <div style="font-size: 20pt; font-weight: 900; color: #fb923c; line-height: 1;">62→95</div>
+          <div style="font-size: 7.5pt; color: rgba(255,255,255,0.5); margin-top: 1mm;">Lighthouseスコア</div>
+        </div>
+        <div style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); border-radius: 6px; padding: 3mm; text-align: center;">
+          <div style="font-size: 20pt; font-weight: 900; color: #a78bfa; line-height: 1;">99/100</div>
+          <div style="font-size: 7.5pt; color: rgba(255,255,255,0.5); margin-top: 1mm;">6軸スコア</div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-bottom: 6mm;">
+      <div style="font-size: 9pt; color: rgba(255,255,255,0.5); margin-bottom: 3mm; letter-spacing: 0.1em; text-transform: uppercase;">技術スタック</div>
+      <div>
+        <span class="cover-badge">Next.js / TypeScript</span>
+        <span class="cover-badge">Supabase Realtime</span>
+        <span class="cover-badge">Framer Motion</span>
+        <span class="cover-badge">Tailwind CSS v4</span>
+        <span class="cover-badge">Claude Code</span>
+        <span class="cover-badge">Vercel</span>
+      </div>
+    </div>
+    <div style="border-top: 1px solid rgba(255,255,255,0.15); padding-top: 4mm;">
+      <div style="display: flex; gap: 6mm; align-items: center;">
+        <div><div style="font-size: 8pt; color: rgba(255,255,255,0.4);">本番URL</div><div style="font-size: 9pt; color: #60a5fa;">https://ogo-roulette.vercel.app/</div></div>
+        <div style="width: 1px; height: 8mm; background: rgba(255,255,255,0.2);"></div>
+        <div><div style="font-size: 8pt; color: rgba(255,255,255,0.4);">最終更新日</div><div style="font-size: 9pt; color: rgba(255,255,255,0.7);">2026年4月17日</div></div>
+        <div style="width: 1px; height: 8mm; background: rgba(255,255,255,0.2);"></div>
+        <div><div style="font-size: 8pt; color: rgba(255,255,255,0.4);">v3の主な追加</div><div style="font-size: 9pt; color: rgba(255,255,255,0.7);">セキュリティ評価ループ・スコア99/100達成プロセス</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="page-footer page-footer-white">
+    <span>AI駆動開発 完全教科書 ver.4.0</span><span>1 / 42</span>
+  </div>
+</div>
+
+<!-- ========== PAGE 2: 目次 ========== -->
+<div class="page">
+  <div class="page-stripe stripe-blue"></div>
+  <div style="padding-top: 4mm;">
+    <div class="sec-label">TABLE OF CONTENTS</div>
+    <div class="sec-title" style="font-size: 18pt;">目次</div>
+    <div style="width: 30mm; height: 2px; background: var(--blue); margin-bottom: 4mm;"></div>
+  </div>
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0 8mm; flex: 1;">
+    <div>
+      <div class="toc-item"><span class="toc-num">第1章</span><span class="toc-title">はじめに</span></div>
+      <p class="toc-desc">AI駆動開発の定義・なぜ今必要か・従来開発との違い</p>
+      <div class="toc-item"><span class="toc-num">第2章</span><span class="toc-title">全体フロー（最重要）</span></div>
+      <p class="toc-desc">AI駆動開発エンジンの6ステップ・ループを速く回すコツ</p>
+      <div class="toc-item" style="color: var(--green);">
+        <span class="toc-num" style="color: var(--green);">第2.5章</span>
+        <span class="toc-title">30分クイックスタート</span>
+      </div>
+      <p class="toc-desc">今日から始める3ステップ・CLAUDE.md・初ISSUE・初指示</p>
+      <div class="toc-item"><span class="toc-num">第3章</span><span class="toc-title">ISSUE駆動開発</span></div>
+      <p class="toc-desc">ISSUEの役割・良いISSUEの5条件・フォーマット・NG/OK</p>
+      <div class="toc-item" style="color: var(--blue);">
+        <span class="toc-num" style="color: var(--blue);">第3.5章</span>
+        <span class="toc-title">Claudeテンプレート集（全文）</span>
+      </div>
+      <p class="toc-desc">コピペできるT-A〜T-Eの5テンプレート全文収録</p>
+      <div class="toc-item"><span class="toc-num">第4章</span><span class="toc-title">開発ストーリー</span></div>
+      <p class="toc-desc">Day 0からスコア99/100に至るまでのリアルな軌跡（セキュリティ強化フェーズ含む）</p>
+      <div class="toc-item" style="color: var(--amber);">
+        <span class="toc-num" style="color: var(--amber);">第4.5章</span>
+        <span class="toc-title">6軸評価システム</span>
+      </div>
+      <p class="toc-desc">G-STACK・HEART・AARRR・Kano・感情・技術の6軸100点</p>
+      <div class="toc-item" style="color: var(--amber);">
+        <span class="toc-num" style="color: var(--amber);">第4.7章</span>
+        <span class="toc-title">スコア別処方箋</span>
+      </div>
+      <p class="toc-desc">スコア帯別に「次の3アクション」を処方する</p>
+    </div>
+    <div>
+      <div class="toc-item"><span class="toc-num">第5章</span><span class="toc-title">ケーススタディ</span></div>
+      <p class="toc-desc">Race Condition・感情設計・パフォーマンス・動的OGP</p>
+      <div class="toc-item"><span class="toc-num">第6章</span><span class="toc-title">テンプレート集</span></div>
+      <p class="toc-desc">T-01〜T-07の7種。要件定義からgstack評価まで</p>
+      <div class="toc-item"><span class="toc-num">第7章</span><span class="toc-title">プロンプト集</span></div>
+      <p class="toc-desc">5カテゴリ・21プロンプト。場面別クイックリファレンス</p>
+      <div class="toc-item"><span class="toc-num">第8章</span><span class="toc-title">AI活用戦略</span></div>
+      <p class="toc-desc">AIに任せる領域・人間が握る領域・役割分担マトリクス</p>
+      <div class="toc-item"><span class="toc-num">第9章</span><span class="toc-title">プロの実践原則18選</span></div>
+      <p class="toc-desc">OgoRoulette開発から得た原則。NGパターンと実践方法</p>
+      <div class="toc-item"><span class="toc-num">第10章</span><span class="toc-title">よくある失敗</span></div>
+      <p class="toc-desc">5大失敗パターン。Before/After形式で処方箋付き</p>
+      <div class="toc-item"><span class="toc-num">第11〜12章</span><span class="toc-title">成功パターン・バズ設計</span></div>
+      <p class="toc-desc">再現可能な成功の型・SNS設計・体験設計図</p>
+      <div class="toc-item" style="color: #0891b2;">
+        <span class="toc-num" style="color: #0891b2;">第12.5章</span>
+        <span class="toc-title">1サイクル完全再現 <span class="toc-new">UPDATE</span></span>
+      </div>
+      <p class="toc-desc">ISSUE-208/214/244〜260を使った3サイクル再現（パフォーマンス・OGP・セキュリティ）</p>
+      <div class="toc-item"><span class="toc-num">第13章</span><span class="toc-title">まとめ + 5ステップCTA</span></div>
+      <p class="toc-desc">今日〜3ヶ月の行動計画・実践チェックリスト</p>
+      <div style="margin-top: 3mm; padding: 2.5mm 3mm; background: #f0fdfa; border: 1px solid #99f6e4; border-radius: 6px;">
+        <div style="font-size: 7.5pt; font-weight: 700; color: #0e7490; margin-bottom: 1mm;">ver.4.0 新規追加（+2ページ）</div>
+        <div style="font-size: 7.5pt; color: var(--slate-700); line-height: 1.5;">
+          2.5章: 30分クイックスタート<br>
+          3.5章: テンプレート全文（コピペ可）<br>
+          4.7章: スコア別処方箋テーブル<br>
+          12.5章: 1サイクル完全再現（実例3本）<br>
+          ★新: サイクルC — セキュリティ評価ループ（99点達成）
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="callout blue" style="margin-top: auto; margin-bottom: 12mm;">
+    <span class="callout-icon">🎯</span>
+    <div class="callout-body"><strong>ver.3.0のコンセプト：「理解する」から「できる」へ</strong>
+    v2は「理解するための教材」だった。v3は「実践するための教材」だ。テンプレートをコピペして、手順通りに進めれば、同じことが再現できる。抽象論ではなくHOWまで落とした。</div>
+  </div>
+  <div class="page-footer"><span>AI駆動開発 完全教科書 ver.4.0</span><span>2 / 42</span></div>
+</div>
+
+<!-- ========== PAGE 3: 第1章 はじめに（前半） ========== -->
+<div class="page">
+  <div class="page-stripe stripe-blue"></div>
+  <div style="padding-top: 4mm;">
+    <div class="chapter-header">
+      <div class="ch-num">Chapter 01</div>
+      <div class="ch-title">はじめに</div>
+      <div class="ch-sub">WHY: なぜ今必要か — WHAT: 何が変わるか — HOW: どう始めるか</div>
+    </div>
+  </div>
+
+  <h3 style="margin-top: 0;">1.1 AI駆動開発とは何か</h3>
+  <p>AI駆動開発とは、<strong>AIをペアプログラマーとして中心に据えた開発手法</strong>だ。「AIにコードを書いてもらう」のとは根本的に違う。AIは「速く書けるツール」ではなく、<span class="hl">「自分が言語化できていないことを実装に落としてくれるパートナー」</span>だ。</p>
+  <p>本質は3つある。<strong>① 思考の言語化</strong>（頭の中の「なんかおかしい」をISSUEとして言語化する）、<strong>② AIへの文脈転送</strong>（言語化した文脈をAIに正確に渡す）、<strong>③ 人間による判断</strong>（AIの提案を評価して採用・却下を決める）。この3つがそろって初めて機能する。</p>
+
+  <div class="callout blue">
+    <span class="callout-icon">🎯</span>
+    <div class="callout-body"><strong>AI駆動開発の核心公式</strong><br>
+    <strong style="font-size: 10.5pt;">AI駆動開発 ＝ ISSUE駆動開発 × AI × プロの判断基準</strong><br>
+    どれか一つ欠けると「AIにコードを書いてもらってるだけ」になる。OgoRouletteではこの3ステップを230回以上繰り返した。毎回のISSUEがドキュメントになり、品質は積み上がる。</div>
+  </div>
+
+  <h3>1.2 なぜ今必要か</h3>
+  <p>2026年現在、個人開発の民主化が加速している。かつては「フルスタックエンジニア＋デザイナー＋PM」の3人チームで数ヶ月かかっていたアプリが、AIを使えば<strong>1人で約3週間</strong>で作れる時代だ。しかし多くの開発者が「AIを使っているのに品質が上がらない」「意図しないものが出てきた」という壁に当たっている。</p>
+  <p>この壁の正体は <span class="hl"><strong>「AIの使い方の問題」ではなく「思考の言語化の問題」</strong></span>だ。思考の言語化→AIへの転送→判断のサイクルを速く正確に回せる人が、圧倒的に有利な時代になった。</p>
+
+  <h3>1.3 従来開発との違い</h3>
+  <table style="margin-top: 1mm;">
+    <tr><th>観点</th><th>従来開発</th><th>AI駆動開発</th></tr>
+    <tr><td><strong>ボトルネック</strong></td><td>コーディング速度</td><td><strong>思考の言語化速度</strong></td></tr>
+    <tr><td>設計</td><td>人間が全部設計してから実装</td><td>ISSUEを書いてAIと一緒に設計</td></tr>
+    <tr><td>実装速度</td><td>一行ずつ人間が書く</td><td>AIがドラフト生成、人間がレビュー</td></tr>
+    <tr><td>デバッグ</td><td>スタックトレースを手動調査</td><td>ログ+コードをAIに渡して原因仮説を得る</td></tr>
+    <tr><td>ドキュメント</td><td>後回しになりがち</td><td>ISSUEがそのままドキュメントになる</td></tr>
+    <tr><td>品質管理</td><td>テスト・レビューのみ</td><td>6軸評価→数値化→改善ループ</td></tr>
+    <tr><td>技術的負債</td><td>気づかず積み上がる</td><td>ISSUEで可視化・計画的に返済</td></tr>
+    <tr><td>チームサイズ</td><td>複数人前提</td><td>1人でフルスタック対応可能</td></tr>
+  </table>
+  <div style="margin-bottom: 12mm;"></div>
+
+  <div class="page-footer"><span>AI駆動開発 完全教科書 ver.4.0</span><span>3 / 42</span></div>
+</div>
+
+<!-- ========== PAGE 4: 第1章 はじめに（後半） ========== -->
+<div class="page">
+  <div class="page-stripe stripe-blue"></div>
+  <div style="padding-top: 4mm;">
+    <div class="sec-label">Chapter 01 — continued</div>
+    <div class="sec-title" style="font-size: 15pt;">この教科書でできること</div>
+    <hr class="divider">
+  </div>
+
+  <div class="blockquote">
+    従来開発では「コードを書く速さ」がボトルネックだった。AI駆動開発では「思考を言語化する速さ」がボトルネックになる。だからこそ、ISSUEの書き方が最も重要なスキルになる。
+  </div>
+
+  <h3>1.4 この教科書でできること</h3>
+  <div class="cards col2" style="margin: 2mm 0;">
+    <div class="card">
+      <div class="card-icon">🗺️</div>
+      <h3>AI駆動開発の全体像</h3>
+      <p>何をどの順序でやるか、なぜその順序なのかが理解できる。6ステップのループを今日から実践できる状態になる。</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">✍️</div>
+      <h3>ISSUEの書き方</h3>
+      <p>「思考の言語化」の技術。AIへの指示書として完璧に機能するISSUEを書けるようになる。一生使えるスキルだ。</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">📋</div>
+      <h3>テンプレート全文（T-A〜T-E）</h3>
+      <p>コピペで即使える5種のテンプレート全文を収録。ISSUE作成から6軸評価まで、文字列をそのまま使える。</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">📊</div>
+      <h3>6軸評価の使い方</h3>
+      <p>G-STACK・HEART・AARRR・Kano・感情・技術の6軸でアプリを数値化し、次のアクションを決定できる。</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">🔄</div>
+      <h3>1サイクルの完全再現</h3>
+      <p>ISSUE-208を手本に、課題発見→ISSUE→指示→実装→検証の1サイクルをリアルに追体験できる。</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">⚡</div>
+      <h3>スコア別処方箋</h3>
+      <p>自分のスコア帯に対応する具体的アクション3つがすぐわかる。「次に何をするか」で迷わなくなる。</p>
+    </div>
+  </div>
+
+  <h3>1.5 OgoRoulette実績データ</h3>
+  <div class="stats-row">
+    <div class="stat-box"><div class="num">260+</div><div class="lbl">総ISSUE数</div></div>
+    <div class="stat-box"><div class="num" style="font-size:14pt;">約5週間</div><div class="lbl">開発期間</div></div>
+    <div class="stat-box"><div class="num" style="font-size:14pt;">62→95</div><div class="lbl">Lighthouseスコア</div></div>
+    <div class="stat-box"><div class="num">99/100</div><div class="lbl">6軸総合スコア</div></div>
+  </div>
+
+  <div class="callout green" style="margin-top: 2mm; margin-bottom: 12mm;">
+    <span class="callout-icon">✅</span>
+    <div class="callout-body"><strong>なぜOgoRouletteを実例に使うのか</strong><br>
+    飲み会の奢り決めルーレットという<b>シンプルな目的</b>のアプリだからこそ、技術の複雑さより<b>開発プロセスの本質</b>が見えやすい。Supabase Realtime・Race Condition・感情設計・SNS拡散設計まで、あらゆる課題が小さなアプリの中に凝縮されている。「書いてある通りにやれば再現できる」を最優先に設計した実践教材だ。</div>
+  </div>
+
+  <div class="page-footer"><span>AI駆動開発 完全教科書 ver.4.0</span><span>4 / 42</span></div>
+</div>
+
+<!-- ========== PAGE 5: 第2章 全体フロー（前半） ========== -->
+<div class="page">
+  <div class="page-stripe stripe-green"></div>
+  <div style="padding-top: 4mm;">
+    <div class="chapter-header" style="border-left-color: var(--green);">
+      <div class="ch-num" style="color: var(--green);">Chapter 02</div>
+      <div class="ch-title">全体フロー（最重要）</div>
+      <div class="ch-sub">AI駆動開発エンジンの6ステップ。このループを理解せずにテンプレートだけ使っても効果は半減する</div>
+    </div>
+  </div>
+
+  <h3 style="margin-top: 0;">2.1 AI駆動開発エンジン</h3>
+  <p style="margin-bottom: 2mm;">AI駆動開発の核心は、以下のループだ。OgoRouletteでは1日に複数回このループを回した。1ループあたり平均30〜40分（上限60分）、150回のループで230本以上のISSUEを消化した結果が現在のアプリだ。</p>
+
+  <div style="background:#0f172a;border-radius:8px;padding:3mm 5mm;margin:1.5mm 0;">
+    <div style="text-align:center;color:#f8fafc;font-size:10pt;font-weight:800;letter-spacing:0.1em;margin-bottom:2mm;padding-bottom:1.5mm;border-bottom:1px solid rgba(255,255,255,0.15);">AI 駆 動 開 発 エ ン ジ ン</div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:0.5mm;">
+      <div style="width:90%;background:#1d4ed8;border-radius:5px;padding:1.5mm 4mm;display:flex;align-items:center;gap:3mm;"><span style="font-size:12pt;font-weight:900;color:#93c5fd;min-width:5mm;">①</span><div style="color:#fff;font-size:9pt;font-weight:700;">課題発見<span style="font-weight:400;color:#93c5fd;font-size:8pt;margin-left:3mm;">「なんかおかしい」という直感をその場でメモする</span></div></div>
+      <div style="color:#60a5fa;font-size:12pt;line-height:1;">↓</div>
+      <div style="width:90%;background:#5b21b6;border-radius:5px;padding:1.5mm 4mm;display:flex;align-items:center;gap:3mm;"><span style="font-size:12pt;font-weight:900;color:#c4b5fd;min-width:5mm;">②</span><div style="color:#fff;font-size:9pt;font-weight:700;">ISSUE化（思考の言語化）<span style="font-weight:400;color:#c4b5fd;font-size:8pt;margin-left:3mm;">背景・問題・原因仮説・解決策・受け入れ条件を書く</span></div></div>
+      <div style="color:#60a5fa;font-size:12pt;line-height:1;">↓</div>
+      <div style="width:90%;background:#065f46;border-radius:5px;padding:1.5mm 4mm;display:flex;align-items:center;gap:3mm;"><span style="font-size:12pt;font-weight:900;color:#6ee7b7;min-width:5mm;">③</span><div style="color:#fff;font-size:9pt;font-weight:700;">AI解決案生成<span style="font-weight:400;color:#6ee7b7;font-size:8pt;margin-left:3mm;">テンプレート（T-A〜T-E）にはめてAIに渡す</span></div></div>
+      <div style="color:#60a5fa;font-size:12pt;line-height:1;">↓</div>
+      <div style="width:90%;background:#92400e;border-radius:5px;padding:1.5mm 4mm;display:flex;align-items:center;gap:3mm;"><span style="font-size:12pt;font-weight:900;color:#fcd34d;min-width:5mm;">④</span><div style="color:#fff;font-size:9pt;font-weight:700;">実装（AI＋人間の判断）<span style="font-weight:400;color:#fcd34d;font-size:8pt;margin-left:3mm;">AIの提案を評価・修正・採用する</span></div></div>
+      <div style="color:#60a5fa;font-size:12pt;line-height:1;">↓</div>
+      <div style="width:90%;background:#7e22ce;border-radius:5px;padding:1.5mm 4mm;display:flex;align-items:center;gap:3mm;"><span style="font-size:12pt;font-weight:900;color:#e9d5ff;min-width:5mm;">⑤</span><div style="color:#fff;font-size:9pt;font-weight:700;">検証（6軸評価）<span style="font-weight:400;color:#e9d5ff;font-size:8pt;margin-left:3mm;">数値でスコアを確認して記録する</span></div></div>
+      <div style="color:#60a5fa;font-size:12pt;line-height:1;">↓</div>
+      <div style="width:90%;background:#1e3a5f;border:1px solid #3b82f6;border-radius:5px;padding:1.5mm 4mm;display:flex;align-items:center;gap:3mm;"><span style="font-size:12pt;font-weight:900;color:#60a5fa;min-width:5mm;">⑥</span><div style="color:#fff;font-size:9pt;font-weight:700;">再ISSUE化 → ① に戻る<span style="font-weight:400;color:#60a5fa;font-size:8pt;margin-left:3mm;">ループを回すたびに品質が積み上がる</span></div></div>
+    </div>
+    <div style="text-align:center;color:#475569;font-size:7pt;margin-top:1.5mm;font-style:italic;">1ループ = 1〜2改善に絞る &nbsp;·&nbsp; OgoRouletteでは約5週間で150+回ループを回し、260本以上のISSUEを消化した</div>
+  </div>
+
+  <h3>2.2 各ステップの詳細（①②③）</h3>
+  <div class="flow-step" style="margin-bottom: 1.5mm;">
+    <div class="flow-num" style="background: #1d4ed8;">①</div>
+    <div class="flow-content">
+      <h4>課題発見</h4>
+      <p>「なんかおかしい」「ユーザーが戸惑いそう」という直感を大切にする。この直感をその場でメモすることが重要だ。後回しにすると消える。OgoRouletteでは「ルーレットが止まる瞬間の演出が弱い」「iOSで音が出ない」「ルーム参加時にローディングが長い」という直感がすべてISSUEになった。</p>
+    </div>
+  </div>
+  <div class="flow-step" style="margin-bottom: 1.5mm;">
+    <div class="flow-num" style="background: #5b21b6;">②</div>
+    <div class="flow-content">
+      <h4>ISSUE化（思考の言語化）</h4>
+      <p>課題を発見したら、すぐISSUEに落とす。ISSUEは「思考の結晶」だ。良いISSUEには5つの要素がある：<strong>背景</strong>（なぜ今これを解決するのか）・<strong>問題</strong>・<strong>原因仮説</strong>・<strong>解決策</strong>・<strong>受け入れ条件</strong>。この5要素がそろったISSUEは、AIへの指示書として完璧に機能する。</p>
+    </div>
+  </div>
+  <div class="flow-step" style="margin-bottom: 12mm;">
+    <div class="flow-num" style="background: #065f46;">③</div>
+    <div class="flow-content">
+      <h4>AI解決案生成</h4>
+      <p>ISSUEが書けたら、テンプレートにはめてAIに渡す。テンプレートは「AIへの文脈転送の型」だ。デバッグのISSUEなら T-C（評価テンプレート）を使う。実装指示なら T-D を使う。<strong>「どのテンプレートを使うか」の判断が人間の重要な仕事だ。</strong></p>
+    </div>
+  </div>
+
+  <div class="page-footer"><span>AI駆動開発 完全教科書 ver.4.0</span><span>5 / 42</span></div>
+</div>
+
+<!-- ========== PAGE 6: 第2章 全体フロー（後半） ========== -->
+<div class="page">
+  <div class="page-stripe stripe-green"></div>
+  <div style="padding-top: 4mm;">
+    <div class="sec-label" style="color: var(--green);">Chapter 02 — continued</div>
+    <hr class="divider">
+  </div>
+
+  <h3 style="margin-top: 0;">2.3 各ステップの詳細（④⑤⑥）</h3>
+  <div class="flow-step" style="margin-bottom: 1.5mm;">
+    <div class="flow-num" style="background: #92400e;">④</div>
+    <div class="flow-content">
+      <h4>実装（AI + 人間の判断）</h4>
+      <p>AIの提案は「叩き台」だ。そのまま使うのではなく、評価して採用・却下・修正を判断する。<strong>AIに任せる：</strong>コードのドラフト生成、テスト作成、コメント追加、リファクタ候補の提案。<strong>人間が判断する：</strong>アーキテクチャの最終決定、状態管理の設計、ユーザー体験の評価、採用・却下の決定。この分担を崩すと丸投げになる。丸投げは必ず失敗する。</p>
+    </div>
+  </div>
+  <div class="flow-step" style="margin-bottom: 1.5mm;">
+    <div class="flow-num" style="background: #7e22ce;">⑤</div>
+    <div class="flow-content">
+      <h4>検証（6軸評価）</h4>
+      <p>実装したら必ず検証する。6軸評価はG-STACK/HEART/AARRR/Kano/感情/技術の6軸で品質を数値化するフレームワークだ。「なんとなく動いている」では品質は上がらない。数値で見ることで、改善の優先度が明確になる。OgoRouletteでは毎回スコアを記録し、CLAUDE.mdの現スコア欄を更新した。</p>
+    </div>
+  </div>
+  <div class="flow-step">
+    <div class="flow-num" style="background: #1e3a5f; border: 1px solid #3b82f6;">⑥</div>
+    <div class="flow-content">
+      <h4>再ISSUE化</h4>
+      <p>検証で見つかった問題は、すぐにISSUEにする。「あとで直す」はほぼ実現しない。ISSUEにすれば次のループで確実に処理される。OgoRouletteでは常に20〜30個のISSUEがBacklogにある状態を維持した。これが「手が止まる」状況を完全になくした。</p>
+    </div>
+  </div>
+
+  <h3 style="margin-top: 3mm;">2.4 ループを速く回すコツ</h3>
+  <div class="callout amber">
+    <span class="callout-icon">⚡</span>
+    <div class="callout-body"><strong>最重要ルール：1ループ = 1〜2個の改善に絞ること</strong><br>
+    「一気にたくさん改善しよう」とすると、何が原因で何が改善したかわからなくなる。デバッグが複雑になり、AIへの指示も曖昧になる。<span class="hl">小さく回す方が、結果として速い。</span>1ループの目標は30〜40分、60分を超えたらISSUEを分割するサインだ。</div>
+  </div>
+
+  <h3 style="margin-top: 3mm;">2.5 粒度の基準</h3>
+  <div class="compare">
+    <div class="compare-item compare-ok">
+      <div class="compare-label">✅ OK — 1セッションで完結する粒度</div>
+      <div class="compare-body">
+        「スピン後のアニメーション演出を追加する」<br>
+        「iOS Safariでの音声バグを修正する」<br>
+        「WinnerCardにシェアボタンを追加する」<br>
+        「next/fontをCDNからself-hostに移行する」
+      </div>
+    </div>
+    <div class="compare-item compare-ng">
+      <div class="compare-label">❌ NG — 分割が必要な粒度</div>
+      <div class="compare-body">
+        「UXを全体的に改善する」（大きすぎ→分割する）<br>
+        「ボタンの色を#FF6B6Bから変える」（小さすぎ→まとめる）<br>
+        「モバイル対応を全部やる」（大きすぎ→分割する）<br>
+        「バグを全部直す」（大きすぎ→優先度をつける）
+      </div>
+    </div>
+  </div>
+  <p style="margin-top: 2mm; margin-bottom: 12mm; font-size: 8.5pt; color: var(--slate-700);">「大きすぎる」は分割する。「小さすぎる」は関連するものとまとめる。<strong>1ISSUEが1セッションで完結するくらいの粒度</strong>が理想だ。OgoRouletteでは1日10〜30本のISSUEを集中的に消化するサイクルを回し続け、5週間で260+ ISSUEになった。</p>
+
+  <div class="page-footer"><span>AI駆動開発 完全教科書 ver.4.0</span><span>6 / 42</span></div>
+</div>
+
+<!-- ========== PAGE 7: 第2.5章 30分クイックスタート ========== -->
+<div class="page">
+  <div class="page-stripe stripe-teal"></div>
+  <div style="padding-top: 2mm;">
+    <div class="chapter-header" style="border-left-color: var(--green);">
+      <div class="ch-num" style="color: var(--green);">Chapter 02.5 </div>
+      <div class="ch-title">今日から始める30分クイックスタート</div>
+      <div class="ch-sub">この3ステップを終えたとき、あなたはAI駆動開発の最初のループを完走している</div>
+    </div>
+  </div>
+
+  <div class="quickstart-step" style="margin: 0.5mm 0; padding: 2mm 3mm;">
+    <div class="qs-time">⏱ STEP 1 — 10分 &nbsp;|&nbsp; CLAUDE.md（プロジェクト指示書）を作る</div>
+    <h4>AIへの「永続的な文脈」を作る — <span style="font-weight: 400; font-size: 9pt;">プロジェクトルートに作成。AIが毎回自動で読み込む。テンプレートの <code style="font-size: 8.5pt;">{}</code> を書き換えるだけ。</span></h4>
+  </div>
+  <div class="template-block" style="line-height: 1.6; margin: 1mm 0;"><span class="template-label">CLAUDE.md テンプレート（コピペして使う）</span># <span class="template-var">{アプリ名}</span>
+## 概要
+<span class="template-var">{アプリの1行説明}</span>　**本番URL:** <span class="template-var">{URL}</span>
+**スタック:** <span class="template-var">{技術スタック（例: Next.js / Supabase / Tailwind CSS）}</span>
+## 設計思想
+- <span class="template-var">{設計で最も重要な考え方（例: サーバー側抽選）}</span>
+- <span class="template-var">{モバイルファーストなど}</span>
+## 絶対ルール
+- 破壊的操作の前は必ず git status を確認する
+- 実装後は必ず npx tsc --noEmit で型チェックする</div>
+
+  <div class="quickstart-step" style="margin: 0.5mm 0; padding: 2mm 3mm;">
+    <div class="qs-time">⏱ STEP 2 — 10分 &nbsp;|&nbsp; 最初のISSUEを書く</div>
+    <h4>「なんかおかしい」を1つだけISSUEにする — <span style="font-weight: 400; font-size: 9pt;">完璧なISSUEは不要。型があればAIは動ける。</span></h4>
+  </div>
+  <div class="template-block" style="line-height: 1.6; margin: 1mm 0;"><span class="template-label">ISSUE テンプレート（最小構成）</span># ISSUE-001: <span class="template-var">{動詞+対象の短いタイトル}</span>
+**背景:** <span class="template-var">{なぜ今やるか（例: 使ってみて気になった / スコアが低かった）}</span>
+**問題:** <span class="template-var">{具体的に何が起きているか}</span>
+**原因仮説:** <span class="template-var">{おそらく〜だと思う}</span>
+**解決方向:** <span class="template-var">{具体的な修正方針}</span>
+**受け入れ条件:**
+- [ ] <span class="template-var">{完了と判断できる状態1}</span>
+- [ ] <span class="template-var">{完了と判断できる状態2}</span></div>
+
+  <div class="quickstart-step" style="margin: 0.5mm 0; padding: 2mm 3mm;">
+    <div class="qs-time">⏱ STEP 3 — 10分 &nbsp;|&nbsp; AIに最初の指示を出す</div>
+    <h4>ISSUEをそのまま貼り付けて送るだけ — <span style="font-weight: 400; font-size: 9pt;">下のテンプレート冒頭文を追加してISSUEを貼るだけでAIは正確に動く。</span></h4>
+  </div>
+  <div class="template-block" style="line-height: 1.6; margin: 0.5mm 0;"><span class="template-label">AI指示テンプレート（冒頭に追加する）</span>以下のISSUEを実装してください。
+CLAUDE.mdのルールを守り、関連ファイルをすべて読んでから実装してください。
+実装後は npx tsc --noEmit で型チェックを行い、エラーがないことを確認してください。
+完了したら変更ファイル一覧と受け入れ条件の充足状況を報告してください。
+<span class="template-var">{ISSUE全文をここに貼る}</span></div>
+
+  <div class="callout green" style="margin-top: 0; margin-bottom: 12mm; padding: 2mm 3mm;">
+    <span class="callout-icon">🎉</span>
+    <div class="callout-body"><strong>これで最初のループが完走した</strong>　課題発見 → ISSUE化 → AI指示 → 実装 → 次のループへ。この習慣を1週間続けると5〜10 ISSUEが消化される。ペースより継続が重要だ。積み重ねが品質を変える。</div>
+  </div>
+
+  <div class="page-footer"><span>AI駆動開発 完全教科書 ver.4.0</span><span>7 / 42</span></div>
+</div>
+
+<!-- ========== PAGE 8: 第3章 ISSUE駆動開発（前半） ========== -->
+<div class="page">
+  <div class="page-stripe stripe-purple"></div>
+  <div style="padding-top: 4mm;">
+    <div class="chapter-header" style="border-left-color: var(--purple);">
+      <div class="ch-num" style="color: var(--purple);">Chapter 03</div>
+      <div class="ch-title">ISSUE駆動開発</div>
+      <div class="ch-sub">ISSUEは「思考の結晶」だ。書く過程でAIへの指示書が完成する</div>
+    </div>
+  </div>
+
+  <h3 style="margin-top: 0;">3.1 ISSUEの役割 — タスクとは何が違うか</h3>
+  <p style="margin-bottom: 0.5mm;">ISSUEは単なるTODOリストではない。<strong>課題を構造化して言語化する思考プロセス</strong>だ。ISSUEを書く過程で「なぜおかしくなるか」を考え、「どう直すか」を設計し、「どうなれば完了か」を定義する。この過程でAIへの指示書が完成する。</p>
+
+  <div class="cards col2" style="margin-bottom: 1mm;">
+    <div class="card" style="padding: 2.5mm 3mm;">
+      <div class="card-icon" style="font-size:12pt;margin-bottom:1mm;">🧠</div>
+      <h3 style="margin:0 0 1mm;">思考の整理ツール</h3>
+      <p>「なんかおかしい」が「〇〇のときに△△が起きる」という構造化された問題になる。</p>
+    </div>
+    <div class="card" style="padding: 2.5mm 3mm;">
+      <div class="card-icon" style="font-size:12pt;margin-bottom:1mm;">📤</div>
+      <h3 style="margin:0 0 1mm;">AIへの文脈転送</h3>
+      <p>5要素がそろったISSUEは、そのまま完璧なAI指示書になる。余分な説明が不要。</p>
+    </div>
+    <div class="card" style="padding: 2.5mm 3mm;">
+      <div class="card-icon" style="font-size:12pt;margin-bottom:1mm;">📚</div>
+      <h3 style="margin:0 0 1mm;">開発ログ</h3>
+      <p>「なぜこの実装にしたか」が残る。3ヶ月後も意図が分かる。コードレビューが不要になる。</p>
+    </div>
+    <div class="card" style="padding: 2.5mm 3mm;">
+      <div class="card-icon" style="font-size:12pt;margin-bottom:1mm;">🏆</div>
+      <h3 style="margin:0 0 1mm;">品質の証拠</h3>
+      <p>260+ ISSUEを消化した事実が品質保証になる。「このアプリは260回改善した」は最強の説明だ。</p>
+    </div>
+  </div>
+
+  <table style="margin-bottom: 3mm;">
+    <tr><th>観点</th><th>タスク（NG）</th><th>ISSUE（OK）</th></tr>
+    <tr><td>粒度</td><td>大きい・あいまい</td><td>一つの問題・一つの改善</td></tr>
+    <tr><td>背景</td><td>書かない</td><td>「なぜ今やるか」を必ず書く</td></tr>
+    <tr><td>受け入れ条件</td><td>「完了したら消す」</td><td>「どうなれば完了か」を明記</td></tr>
+    <tr><td>AIへの使いやすさ</td><td>そのままでは使えない</td><td>AIへの指示書として完成している</td></tr>
+    <tr><td>後から見たとき</td><td>消えてなくなる</td><td>開発ログとして残る</td></tr>
+  </table>
+
+  <h3 style="margin: 1mm 0 0.5mm;">3.2 良いISSUEの5条件</h3>
+  <div class="flow-step" style="margin-bottom: 0mm;">
+    <div class="flow-num" style="background: var(--purple);">1</div>
+    <div class="flow-content"><h4 style="color: var(--purple);">背景が書かれている</h4><p>「なぜ今これを解決するのか」が書かれている。「感情スコアが低かった」「本番でしか発生しない」など。背景のないISSUEは後で「なぜやったのか」がわからなくなる。</p></div>
+  </div>
+  <div class="flow-step" style="margin-bottom: 0mm;">
+    <div class="flow-num" style="background: var(--purple);">2</div>
+    <div class="flow-content"><h4 style="color: var(--purple);">問題が具体的だ</h4><p>「おかしい」ではなく「iOS Safari 17.2でルーレットが途中で止まる」のように具体的だ。AIは具体的な問題記述から正確な原因を推論できる。</p></div>
+  </div>
+  <div class="flow-step" style="margin-bottom: 0mm;">
+    <div class="flow-num" style="background: var(--purple);">3</div>
+    <div class="flow-content"><h4 style="color: var(--purple);">原因の仮説がある</h4><p>「おそらく〜だと思う」という仮説を書く。仮説がないとAIは全方位から調査を始めて時間を浪費する。間違った仮説でも価値がある。</p></div>
+  </div>
+  <div class="flow-step" style="margin-bottom: 0mm;">
+    <div class="flow-num" style="background: var(--purple);">4</div>
+    <div class="flow-content"><h4 style="color: var(--purple);">解決策の方向性がある</h4><p>「コンポーネントを分割する」「useRefに変更する」など方向性がある。完全な答えでなくていい。方向性があるとAIが具体的な実装提案を出せる。</p></div>
+  </div>
+  <div class="flow-step" style="margin-bottom: 12mm;">
+    <div class="flow-num" style="background: var(--purple);">5</div>
+    <div class="flow-content"><h4 style="color: var(--purple);">受け入れ条件がある</h4><p>「どうなれば完了か」がチェックボックス形式で書かれている。受け入れ条件のないISSUEは永遠に完了しない。「iPhoneで問題なく動く」のように検証可能な形で書く。</p></div>
+  </div>
+
+  <div class="page-footer"><span>AI駆動開発 完全教科書 ver.4.0</span><span>8 / 42</span></div>
+</div>
+
+<!-- ========== PAGE 9: 第3章 ISSUE駆動開発（後半） ========== -->
+<div class="page">
+  <div class="page-stripe stripe-purple"></div>
+  <div style="padding-top: 4mm;">
+    <div class="sec-label" style="color: var(--purple);">Chapter 03 — continued</div>
+    <hr class="divider">
+  </div>
+
+  <h3 style="margin-top: 0;">3.3 ISSUEフォーマット（完全版）</h3>
+  <div class="code"># ISSUE-{番号}: {動詞+対象+状態} の短いタイトル
+
+**背景（なぜ今やるか）:**
+{6軸スコアで〇〇軸が低かった / ユーザー報告 / 本番障害 / 技術負債}
+
+**問題（何が起きているか）:**
+{具体的に何が起きているか。「〇〇のときに△△になる」形式}
+
+**原因仮説（なぜ起きているか）:**
+{おそらく〜だと思う。複数ある場合は優先度順に書く}
+
+**解決方向（どう直すか）:**
+{具体的な修正方針。アーキテクチャ変更が必要な場合は明記}
+
+**受け入れ条件:**
+- [ ] {検証可能な状態1（例: iPhone 15 Safariでスムーズに動く）}
+- [ ] {検証可能な状態2（例: npx tsc --noEmitがエラーなし）}
+- [ ] {検証可能な状態3（例: Lighthouse Performance ≥ 90）}
+
+**対象スコア:** {軸名}+{点}　　**優先度:** {High / Medium / Low}</div>
+
+  <h3 style="margin-top: 3mm;">3.4 ISSUE NG/OK 比較（実例）</h3>
+  <div class="compare">
+    <div class="compare-item compare-ng">
+      <div class="compare-label">❌ NG — 意味のないISSUE（4例）</div>
+      <div class="compare-body" style="font-size: 8pt;">
+        「ルーレットを直す」→ 何を直すか不明<br>
+        「UXを改善する」→ 範囲が広すぎる<br>
+        「バグがある」→ どのバグか不明<br>
+        「パフォーマンスが遅い」→ どの操作が遅いか不明
+      </div>
+    </div>
+    <div class="compare-item compare-ok">
+      <div class="compare-label">✅ OK — AIの指示書になるISSUE（実例）</div>
+      <div class="compare-body" style="font-size: 8pt;">
+        「iOS Safariでルーレット停止後に画面が固まるバグ修正」<br>
+        背景: 本番ユーザー3名から報告。感情スコア-2点<br>
+        問題: stopAnimation()後のsetState呼び出しで固まる<br>
+        仮説: Safariのアニメーションフレーム処理のタイミング差<br>
+        受け入れ: [ ] iPhone 15 Safariで問題なく動く
+      </div>
+    </div>
+  </div>
+
+  <h3 style="margin-top: 3mm;">3.5 ISSUE管理の実践ルール</h3>
+  <div class="cards col2" style="margin-bottom: 2mm;">
+    <div class="card" style="background: #f0fdf4; border-color: #bbf7d0; padding: 2.5mm 3mm;">
+      <h3 style="color: #059669; font-size: 9.5pt; margin: 0 0 1mm;">バックログ管理</h3>
+      <p style="font-size: 8pt;">常に20〜30個のISSUEをBacklogに維持する。「次に何をやるか迷わない」状態を保つ。ISSUEが0になったら6軸評価を回して新しいISSUEを生成する。</p>
+    </div>
+    <div class="card" style="background: #fffbeb; border-color: #fde68a; padding: 2.5mm 3mm;">
+      <h3 style="color: #d97706; font-size: 9.5pt; margin: 0 0 1mm;">保留ISSUEの扱い</h3>
+      <p style="font-size: 8pt;">「重要だが今じゃない」ISSUEは削除しない。<strong>保留理由と再検討タイミング</strong>を明記して残す。「スコア80点を超えたら再検討」のように条件を書く。</p>
+    </div>
+  </div>
+
+  <div class="callout purple" style="margin-bottom: 12mm;">
+    <span class="callout-icon">🎯</span>
+    <div class="callout-body"><strong>ISSUEを書くことが「開発の筋トレ」になる</strong><br>
+    最初はISSUEを書くのに30分かかる。それが10分になり、最終的に5分で書けるようになる。OgoRouletteで260+ISSUEを書いた結果、「課題を構造化して言語化する速度」が10倍以上になった。この速度がAI駆動開発の核心的なスキルだ。</div>
+  </div>
+
+  <div class="page-footer"><span>AI駆動開発 完全教科書 ver.4.0</span><span>9 / 42</span></div>
+</div>
+
+<!-- ========== PAGE 10: ISSUE管理 プロ運用（前半）[NEW] ========== -->
+<div class="page">
+  <div class="page-stripe stripe-blue"></div>
+  <div style="padding-top: 4mm;">
+    <div class="chapter-header" style="border-left-color: #2563eb;">
+      <div class="ch-num" style="color: #2563eb;">Chapter 3.6 </div>
+      <div class="ch-title">ISSUE管理 プロ運用</div>
+      <div class="ch-sub">ライフサイクル・運用ルール・責務分離 — 曖昧さをゼロにする標準定義</div>
+    </div>
+  </div>
+
+  <h3 style="margin: 0 0 1.5mm;">① ISSUEライフサイクル（状態遷移）</h3>
+  <div style="background:#0f172a; border-radius:8px; padding:3.5mm 4mm; margin:0 0 2.5mm;">
+    <!-- メインフロー（状態バッジ） -->
+    <div style="display:flex; align-items:center; gap:2mm; margin-bottom:2.5mm; flex-wrap:nowrap;">
+      <div style="background:#064e3b; border:2px solid #34d399; border-radius:5px; padding:1.5mm 3.5mm; color:#34d399; font-weight:800; font-size:9pt; font-family:'Helvetica Neue',sans-serif; white-space:nowrap;">TODO</div>
+      <span style="color:#475569; font-weight:700; font-size:10pt; flex-shrink:0;">──→</span>
+      <div style="background:#1e3a5f; border:2px solid #60a5fa; border-radius:5px; padding:1.5mm 3.5mm; color:#60a5fa; font-weight:800; font-size:9pt; font-family:'Helvetica Neue',sans-serif; white-space:nowrap;">DOING</div>
+      <span style="color:#475569; font-weight:700; font-size:10pt; flex-shrink:0;">──→</span>
+      <div style="background:#78350f; border:2px solid #fbbf24; border-radius:5px; padding:1.5mm 3.5mm; color:#fbbf24; font-weight:800; font-size:9pt; font-family:'Helvetica Neue',sans-serif; white-space:nowrap;">REVIEW</div>
+      <span style="color:#475569; font-weight:700; font-size:10pt; flex-shrink:0;">──→</span>
+      <div style="background:#14532d; border:2px solid #4ade80; border-radius:5px; padding:1.5mm 3.5mm; color:#4ade80; font-weight:800; font-size:9pt; font-family:'Helvetica Neue',sans-serif; white-space:nowrap;">DONE</div>
+      <div style="margin-left:auto; background:#1e293b; border:1.5px solid #475569; border-radius:5px; padding:1.5mm 3.5mm; color:#94a3b8; font-weight:800; font-size:9pt; font-family:'Helvetica Neue',sans-serif; white-space:nowrap; flex-shrink:0;">HOLD</div>
+    </div>
+    <!-- 遷移ルール（2×2グリッド） -->
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.5mm; font-family:'Helvetica Neue','Hiragino Sans',sans-serif;">
+      <div style="background:#0c1a2e; border-left:3px solid #60a5fa; border-radius:0 4px 4px 0; padding:1.5mm 2.5mm;">
+        <div style="color:#60a5fa; font-size:7pt; font-weight:700; letter-spacing:0.05em; margin-bottom:0.5mm;">DOING → HOLD</div>
+        <div style="color:#cbd5e1; font-size:7.5pt; line-height:1.5;">依存関係・判断待ち。理由と再開条件を必ず書く</div>
+      </div>
+      <div style="background:#0c1a2e; border-left:3px solid #94a3b8; border-radius:0 4px 4px 0; padding:1.5mm 2.5mm;">
+        <div style="color:#94a3b8; font-size:7pt; font-weight:700; letter-spacing:0.05em; margin-bottom:0.5mm;">HOLD → TODO</div>
+        <div style="color:#cbd5e1; font-size:7.5pt; line-height:1.5;">書いておいた再開条件が満たされたとき</div>
+      </div>
+      <div style="background:#0c1a2e; border-left:3px solid #fbbf24; border-radius:0 4px 4px 0; padding:1.5mm 2.5mm;">
+        <div style="color:#fbbf24; font-size:7pt; font-weight:700; letter-spacing:0.05em; margin-bottom:0.5mm;">REVIEW → DOING（差し戻し）</div>
+        <div style="color:#cbd5e1; font-size:7.5pt; line-height:1.5;">受け入れ条件NG。原因を追記して再実装へ</div>
+      </div>
+      <div style="background:#1a0a0a; border-left:3px solid #f87171; border-radius:0 4px 4px 0; padding:1.5mm 2.5mm;">
+        <div style="color:#f87171; font-size:7pt; font-weight:700; letter-spacing:0.05em; margin-bottom:0.5mm;">⚠ TODO → DONE 禁止</div>
+        <div style="color:#cbd5e1; font-size:7.5pt; line-height:1.5;">検証スキップは禁止。必ずREVIEWを通す</div>
+      </div>
+    </div>
+  </div>
+
+  <h3 style="margin: 0 0 1.5mm;">② 運用ルール — 命名・優先度・タイミング・クローズ</h3>
+  <div class="cards col2" style="margin: 0 0 2.5mm; gap: 2mm;">
+    <div class="card" style="padding: 2.5mm 3mm;">
+      <h3 style="font-size: 9pt; margin: 0 0 1mm; color: var(--blue);">命名規則</h3>
+      <p style="font-size: 7.5pt; margin: 0; line-height: 1.55;"><code>[カテゴリ] ISSUE-{番号}: {動詞}+{対象}+{結果}</code><br>例: <code>[UX] ISSUE-215: シェアボタン押下後にコピー完了トーストを表示する</code><br>カテゴリ: UX / Perf / Bug / Feat / Refactor / Doc</p>
+    </div>
+    <div class="card" style="padding: 2.5mm 3mm;">
+      <h3 style="font-size: 9pt; margin: 0 0 1mm; color: #d97706;">優先度ルール</h3>
+      <p style="font-size: 7.5pt; margin: 0; line-height: 1.55;"><strong>High:</strong> スコア−2以上 / 本番バグ / ユーザー離脱<br><strong>Mid:</strong> スコア±1 / 体験改善 / 技術的負債<br><strong>Low:</strong> Nice-to-have / スコア影響なし<br>→ 常にHighを先に消化する</p>
+    </div>
+    <div class="card" style="padding: 2.5mm 3mm;">
+      <h3 style="font-size: 9pt; margin: 0 0 1mm; color: #059669;">作成タイミング</h3>
+      <p style="font-size: 7.5pt; margin: 0; line-height: 1.55;">「気づいた瞬間」に書く。後回しは消える。<br>5秒悩んだらISSUEにしていい。<br>完璧なISSUEは不要 — 型があればAIは動ける。<br>→ 書くコスト &lt; 忘れるコスト</p>
+    </div>
+    <div class="card" style="padding: 2.5mm 3mm;">
+      <h3 style="font-size: 9pt; margin: 0 0 1mm; color: #7c3aed;">クローズ条件</h3>
+      <p style="font-size: 7.5pt; margin: 0; line-height: 1.55;">受け入れ条件の全チェックが埋まった時のみDONE。<br>「だいたいOK」はDONEにしない。<br>コミットハッシュを記録する。<br>→ DONEは事実の記録であり、達成感の源泉</p>
+    </div>
+  </div>
+
+  <h3 style="margin: 0 0 1.5mm;">③ 責務分離 — 人間がやること vs AIがやること</h3>
+  <table style="margin: 0 0 12mm; font-size: 8pt;">
+    <tr><th style="padding: 1.5mm 2mm;">フェーズ</th><th style="padding: 1.5mm 2mm;">人間</th><th style="padding: 1.5mm 2mm;">AI</th><th style="padding: 1.5mm 2mm;">判断ポイント</th></tr>
+    <tr><td style="padding: 1.5mm 2mm;">発見</td><td style="padding: 1.5mm 2mm; color:#059669; font-weight:700;">✓「おかしい」を記録</td><td style="padding: 1.5mm 2mm; color:#94a3b8;">—</td><td style="padding: 1.5mm 2mm;">直感・気づきの起点は必ず人間</td></tr>
+    <tr><td style="padding: 1.5mm 2mm;">調査・ISSUE化</td><td style="padding: 1.5mm 2mm;">事実・状況を伝える</td><td style="padding: 1.5mm 2mm; color:#059669; font-weight:700;">✓ 原因調査・テンプレ化</td><td style="padding: 1.5mm 2mm;">GSTACKなどで原因を構造化。人間は事実を伝えるだけ</td></tr>
+    <tr><td style="padding: 1.5mm 2mm;">優先度判断</td><td style="padding: 1.5mm 2mm;">最終承認</td><td style="padding: 1.5mm 2mm; color:#059669; font-weight:700;">✓ スコア影響を分析・提案</td><td style="padding: 1.5mm 2mm;">AIが提案、人間が「これでいい」と承認してBacklogへ</td></tr>
+    <tr><td style="padding: 1.5mm 2mm;">実装指示</td><td style="padding: 1.5mm 2mm; color:#059669; font-weight:700;">✓ ISSUEを選択・指示</td><td style="padding: 1.5mm 2mm; color:#94a3b8;">—</td><td style="padding: 1.5mm 2mm;">どのISSUEを今やるかの最終判断は人間が持つ</td></tr>
+    <tr><td style="padding: 1.5mm 2mm;">実装</td><td style="padding: 1.5mm 2mm; color:#94a3b8;">—</td><td style="padding: 1.5mm 2mm; color:#059669; font-weight:700;">✓ コード変更・型チェック</td><td style="padding: 1.5mm 2mm;">「どう作るか」はAIに完全委任</td></tr>
+    <tr><td style="padding: 1.5mm 2mm;">検証・コミット</td><td style="padding: 1.5mm 2mm; color:#059669; font-weight:700;">✓ 確認・DONE・コミット</td><td style="padding: 1.5mm 2mm;">自動テスト補助</td><td style="padding: 1.5mm 2mm;">本番動作の最終確認と記録は人間が行う</td></tr>
+  </table>
+
+  <div class="page-footer"><span>AI駆動開発 完全教科書 ver.4.0</span><span>10 / 42</span></div>
+</div>
+
+<!-- ========== PAGE 11: ISSUE管理 プロ運用（後半）[NEW] ========== -->
+<div class="page">
+  <div class="page-stripe stripe-blue"></div>
+  <div style="padding-top: 4mm;">
+    <div class="sec-label" style="color: var(--blue);">Chapter 3.6 — continued</div>
+    <hr class="divider" style="margin: 1.5mm 0 2mm;">
+  </div>
+
+  <h3 style="margin: 0 0 1mm;">④ 実務フロー（7ステップ）</h3>
+  <table style="margin: 0 0 2mm; font-size: 7.5pt;">
+    <tr><th style="padding: 1.5mm 2mm; width: 6mm;">#</th><th style="padding: 1.5mm 2mm; width: 35mm;">作業</th><th style="padding: 1.5mm 2mm; width: 16mm;">担当</th><th style="padding: 1.5mm 2mm; width: 14mm;">目安</th><th style="padding: 1.5mm 2mm;">ポイント</th></tr>
+    <tr><td style="padding: 1.5mm 2mm; text-align:center; font-weight:700; color:var(--blue);">1</td><td style="padding: 1.5mm 2mm;"><strong>発見</strong> — 課題に気づく</td><td style="padding: 1.5mm 2mm;">人間</td><td style="padding: 1.5mm 2mm;">即時</td><td style="padding: 1.5mm 2mm;">「なんかおかしい」を感じた瞬間にメモ。後回しは消える</td></tr>
+    <tr><td style="padding: 1.5mm 2mm; text-align:center; font-weight:700; color:var(--blue);">2</td><td style="padding: 1.5mm 2mm;"><strong>調査・ISSUE化</strong> — AI分析</td><td style="padding: 1.5mm 2mm; color:#2563eb; font-weight:700;">AI</td><td style="padding: 1.5mm 2mm;">5〜10分</td><td style="padding: 1.5mm 2mm;">GSTACKなどを活用して原因を調査。T-B / T-Dで構造化しISSUE化</td></tr>
+    <tr><td style="padding: 1.5mm 2mm; text-align:center; font-weight:700; color:var(--blue);">3</td><td style="padding: 1.5mm 2mm;"><strong>優先度付け</strong> — スコア分析</td><td style="padding: 1.5mm 2mm; color:#2563eb; font-weight:700;">AI →承認</td><td style="padding: 1.5mm 2mm;">1〜2分</td><td style="padding: 1.5mm 2mm;">AIがスコア影響でHigh/Mid/Lowを提案。人間が確認してBacklogへ</td></tr>
+    <tr><td style="padding: 1.5mm 2mm; text-align:center; font-weight:700; color:var(--blue);">4</td><td style="padding: 1.5mm 2mm;"><strong>実装指示</strong> — ISSUE選択</td><td style="padding: 1.5mm 2mm;">人間</td><td style="padding: 1.5mm 2mm;">1〜2分</td><td style="padding: 1.5mm 2mm;">どのISSUEを実装するか人間が決定。T-Cで指示を渡す</td></tr>
+    <tr><td style="padding: 1.5mm 2mm; text-align:center; font-weight:700; color:var(--blue);">5</td><td style="padding: 1.5mm 2mm;"><strong>実装</strong> — AI作業</td><td style="padding: 1.5mm 2mm; color:#2563eb; font-weight:700;">AI</td><td style="padding: 1.5mm 2mm;">20〜30分</td><td style="padding: 1.5mm 2mm;">コード変更・型チェック・ビルド確認まで完了させる</td></tr>
+    <tr><td style="padding: 1.5mm 2mm; text-align:center; font-weight:700; color:var(--blue);">6</td><td style="padding: 1.5mm 2mm;"><strong>検証</strong> — 受け入れ確認</td><td style="padding: 1.5mm 2mm;">人間</td><td style="padding: 1.5mm 2mm;">5分</td><td style="padding: 1.5mm 2mm;">条件を1つずつ確認。NGなら原因追記してStep 4へ戻す</td></tr>
+    <tr><td style="padding: 1.5mm 2mm; text-align:center; font-weight:700; color:var(--blue);">7</td><td style="padding: 1.5mm 2mm;"><strong>クローズ</strong> — DONE・コミット</td><td style="padding: 1.5mm 2mm;">人間</td><td style="padding: 1.5mm 2mm;">1〜2分</td><td style="padding: 1.5mm 2mm;">ステータスをDONEに更新。コミットして次ISSUEへ</td></tr>
+  </table>
+
+  <h3 style="margin: 0 0 1.5mm;">⑤ 異常系対処</h3>
+  <div class="cards col3" style="margin: 0 0 2mm; gap: 2mm;">
+    <div class="card" style="background: #fff1f2; border-color: #fecdd3; padding: 2.5mm 3mm;">
+      <h3 style="font-size: 8.5pt; margin: 0 0 1mm; color: #dc2626;">AIの調査が浅いとき</h3>
+      <p style="font-size: 7.5pt; margin: 0; line-height: 1.5;">症状・再現手順・エラーログを追加してStep 2からやり直す。情報が増えるほどAIの調査精度が上がる</p>
+    </div>
+    <div class="card" style="background: #fffbeb; border-color: #fde68a; padding: 2.5mm 3mm;">
+      <h3 style="font-size: 8.5pt; margin: 0 0 1mm; color: #d97706;">ISSUEが大きすぎたとき</h3>
+      <p style="font-size: 7.5pt; margin: 0; line-height: 1.5;">Step 2でAIに「このISSUEを30分単位に分割して」と依頼。親をHOLDにして子ISSUE 2〜3本を作る。子が全DONEで親もDONE</p>
+    </div>
+    <div class="card" style="background: #faf5ff; border-color: #e9d5ff; padding: 2.5mm 3mm;">
+      <h3 style="font-size: 8.5pt; margin: 0 0 1mm; color: #7c3aed;">実装が期待と違うとき</h3>
+      <p style="font-size: 7.5pt; margin: 0; line-height: 1.5;">git diffで差分確認 → 何が違うかを明示してStep 4に戻り再指示 → 再実装。3回NGならISSUEを分割して再設計</p>
+    </div>
+  </div>
+
+  <h3 style="margin: 0 0 1.5mm;">⑥ アンチパターン — やってはいけない運用</h3>
+  <div class="compare" style="margin: 0 0 2mm;">
+    <div class="compare-item compare-ng" style="padding: 2.5mm 3mm;">
+      <div class="compare-label">❌ 崩壊パターン</div>
+      <div class="compare-body" style="font-size: 7.5pt; line-height: 1.6;">
+        発見を後回しにする → 気づきが消え、ISSUEが生まれない<br>
+        AIへ曖昧な状況しか伝えない → 調査・ISSUE化の質が落ちる<br>
+        AIの優先度提案を確認せずBacklogへ → 重要ISSUEを見落とす<br>
+        「だいたいOK」でDONEにする → 問題が積み残される<br>
+        HOLDに理由を書かない → 再開できない
+      </div>
+    </div>
+    <div class="compare-item compare-ok" style="padding: 2.5mm 3mm;">
+      <div class="compare-label">✅ 健全パターン</div>
+      <div class="compare-body" style="font-size: 7.5pt; line-height: 1.6;">
+        気づいた瞬間に症状・状況を記録 → AIが正確に調査できる<br>
+        AIのISSUE内容を確認してから指示 → 実装のブレがなくなる<br>
+        どのISSUEを実装するか人間が選ぶ → 開発の方向性を保つ<br>
+        受け入れ条件が全部埋まったらDONE → 品質が担保される<br>
+        HOLDに再開条件を書く → 止まらず次へ進める
+      </div>
+    </div>
+  </div>
+
+  <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap: 2mm; margin: 0 0 2mm;">
+    <div class="checklist-section" style="padding: 2mm 3mm; margin: 0;">
+      <h4 style="font-size: 8.5pt; margin: 0 0 1.5mm; color: var(--slate-900);">⑦ 発見時（AIへ依頼前）</h4>
+      <div class="checklist-item"><div class="checklist-box"></div><span>症状・状況を記録したか？</span></div>
+      <div class="checklist-item"><div class="checklist-box"></div><span>どの画面・操作で起きるか？</span></div>
+      <div class="checklist-item"><div class="checklist-box"></div><span>エラーログ・スクショあるか？</span></div>
+      <div class="checklist-item"><div class="checklist-box"></div><span>AIに事実を伝えられるか？</span></div>
+    </div>
+    <div class="checklist-section" style="padding: 2mm 3mm; margin: 0;">
+      <h4 style="font-size: 8.5pt; margin: 0 0 1.5mm; color: var(--slate-900);">実装指示前（Step 4）</h4>
+      <div class="checklist-item"><div class="checklist-box"></div><span>AIのISSUE内容を確認したか？</span></div>
+      <div class="checklist-item"><div class="checklist-box"></div><span>どのISSUEを実装するか決めたか？</span></div>
+      <div class="checklist-item"><div class="checklist-box"></div><span>T-Cで指示を渡したか？</span></div>
+      <div class="checklist-item"><div class="checklist-box"></div><span>ステータスをDOINGにしたか？</span></div>
+    </div>
+    <div class="checklist-section" style="padding: 2mm 3mm; margin: 0;">
+      <h4 style="font-size: 8.5pt; margin: 0 0 1.5mm; color: var(--slate-900);">完了時（Step 7）</h4>
+      <div class="checklist-item"><div class="checklist-box"></div><span>全受け入れ条件OK？</span></div>
+      <div class="checklist-item"><div class="checklist-box"></div><span>コミット済み？</span></div>
+      <div class="checklist-item"><div class="checklist-box"></div><span>ステータスをDONEにしたか？</span></div>
+      <div class="checklist-item"><div class="checklist-box"></div><span>次に実装するISSUEを選んだか？</span></div>
+    </div>
+  </div>
+
+  <h3 style="margin: 0 0 1mm;">⑧ KPI指標（毎週確認）</h3>
+  <table style="margin: 0 0 12mm; font-size: 7.5pt;">
+    <tr><th style="padding: 1.5mm 2mm;">指標</th><th style="padding: 1.5mm 2mm;">健全ライン</th><th style="padding: 1.5mm 2mm;">警告ライン</th><th style="padding: 1.5mm 2mm;">対処</th></tr>
+    <tr><td style="padding: 1.5mm 2mm;">1日ISSUE消化数</td><td style="padding: 1.5mm 2mm;">10〜30本</td><td style="padding: 1.5mm 2mm;">5本以下</td><td style="padding: 1.5mm 2mm;">粒度が大きい → 分割する</td></tr>
+    <tr><td style="padding: 1.5mm 2mm;">1ISSUE所要時間</td><td style="padding: 1.5mm 2mm;">30〜40分</td><td style="padding: 1.5mm 2mm;">60分超</td><td style="padding: 1.5mm 2mm;">スコープが広い → 分割する</td></tr>
+    <tr><td style="padding: 1.5mm 2mm;">DONE率（週）</td><td style="padding: 1.5mm 2mm;">80%以上</td><td style="padding: 1.5mm 2mm;">60%以下</td><td style="padding: 1.5mm 2mm;">HOLDが多い → 依存関係を解消する</td></tr>
+    <tr><td style="padding: 1.5mm 2mm;">バックログ数</td><td style="padding: 1.5mm 2mm;">20〜30個</td><td style="padding: 1.5mm 2mm;">0個 or 50個超</td><td style="padding: 1.5mm 2mm;">0個→6軸評価でISSUE生成 / 50超→優先度整理</td></tr>
+  </table>
+
+  <div class="page-footer"><span>AI駆動開発 完全教科書 ver.4.0</span><span>11 / 42</span></div>
+</div>
+
+<!-- ========== PAGE 11.5: セキュリティ評価ISSUE運用 [NEW] ========== -->
+<div class="page">
+  <div class="page-stripe stripe-blue"></div>
+  <div style="padding-top: 4mm;">
+    <div class="chapter-header" style="border-left-color: #dc2626;">
+      <div class="ch-num" style="color: #dc2626;">Chapter 3.7 — NEW</div>
+      <div class="ch-title">セキュリティ評価とISSUE化</div>
+      <div class="ch-sub">OWASP Top10 / STRIDE / 6軸セキュリティ評価 → ISSUE化 → 修正 → 再評価のループ</div>
+    </div>
+  </div>
+
+  <p style="margin-bottom: 2mm;">セキュリティ評価は「最初から完璧にする」より、<strong>「スコア90台でやる専門フェーズ」</strong>として計画する。機能が安定してから集中的に評価すると、コードが固まっているため修正の影響範囲が読みやすく、安全に改善できる。OgoRouletteでは260+ ISSUEのうちISSUE-244〜265の22件がセキュリティ専用だった。</p>
+
+  <h3 style="margin: 0 0 1.5mm;">セキュリティ評価ISSUEの分類（OgoRoulette実績）</h3>
+  <table style="margin: 0 0 2mm; font-size: 8pt;">
+    <tr><th>軸</th><th>評価内容</th><th>配点</th><th>OgoRoulette実装例</th></tr>
+    <tr><td><strong>A. 認証・認可</strong></td><td>HMAC検証・JWT・未認証アクセス防止</td><td>30pt</td><td>HMAC <code>padEnd</code>削除・timingSafeEqual追加（ISSUE-244/245）</td></tr>
+    <tr><td><strong>B. 入力バリデーション</strong></td><td>制御文字・SQLi・URLパラメータ検証</td><td>20pt</td><td><code>lib/sanitize.ts</code>新設・URL上限バリデーション（ISSUE-248）</td></tr>
+    <tr><td><strong>C. 改ざん耐性</strong></td><td>サーバー側当選・結果整合性</td><td>15pt</td><td>サーバー側 crypto.randomInt 確認・resolvedWinnerName（ISSUE-255）</td></tr>
+    <tr><td><strong>D. ヘッダー・設定</strong></td><td>X-Frame-Options・CSP・レート制限</td><td>15pt</td><td>next.config.mjs セキュリティヘッダー追加（ISSUE-257）</td></tr>
+    <tr><td><strong>E. 情報漏洩防止</strong></td><td>スタックトレース・env変数漏洩</td><td>10pt</td><td>本番スタックトレース非出力・NODE_ENVガード（ISSUE-249/246）</td></tr>
+    <tr><td><strong>F. 設計・保守性</strong></td><td>middleware設計・OAuth フロー文書化</td><td>10pt</td><td>middleware JSDoc追加・await blocking化（ISSUE-258/260）</td></tr>
+  </table>
+
+  <h3 style="margin: 0 0 1.5mm;">セキュリティISSUEの優先度ルール</h3>
+  <div class="cards col2" style="gap: 2mm; margin: 0 0 2mm;">
+    <div class="card" style="background: #fff1f2; border: 1.5px solid #fecdd3; padding: 2.5mm 3mm;">
+      <h3 style="font-size: 9pt; margin: 0 0 1mm; color: #dc2626;">Critical / High — 最優先</h3>
+      <p style="font-size: 7.5pt; margin: 0; line-height: 1.55;">認証バイパス・データ改ざん・情報漏洩に直結するもの。<br>スコアへの影響: −5以上。<strong>他のすべての作業より優先して当日中に対処する。</strong><br>例: HMACの実装ミス・スタックトレース漏洩・未認証アクセス</p>
+    </div>
+    <div class="card" style="background: #fffbeb; border: 1.5px solid #fde68a; padding: 2.5mm 3mm;">
+      <h3 style="font-size: 9pt; margin: 0 0 1mm; color: #d97706;">Medium — 今スプリント内</h3>
+      <p style="font-size: 7.5pt; margin: 0; line-height: 1.55;">悪用には追加条件が必要なもの。スコア影響: −2〜−3。<br><strong>既存機能に影響しない修正を先行し、影響ありは慎重に対処。</strong><br>例: セキュリティヘッダー欠如・レート制限なし・OAuthのcookie設定</p>
+    </div>
+    <div class="card" style="background: #f0fdf4; border: 1.5px solid #bbf7d0; padding: 2.5mm 3mm;">
+      <h3 style="font-size: 9pt; margin: 0 0 1mm; color: #059669;">Low — バックログ管理</h3>
+      <p style="font-size: 7.5pt; margin: 0; line-height: 1.55;">将来のリスクや設計上の懸念。スコア影響: −1以下。<br><strong>機能開発と並行して計画的に対処。優先度は感情スコア改善より低い。</strong><br>例: CSP未設定・metadata更新失敗時の挙動・コメント文書化</p>
+    </div>
+    <div class="card" style="background: #f8fafc; border: 1.5px solid #e2e8f0; padding: 2.5mm 3mm;">
+      <h3 style="font-size: 9pt; margin: 0 0 1mm; color: #64748b;">修正の安全確認チェック</h3>
+      <p style="font-size: 7.5pt; margin: 0; line-height: 1.55;">セキュリティ修正は既存動作を壊すリスクが高い。<br>必ず <code>pnpm typecheck &amp;&amp; pnpm test &amp;&amp; pnpm build</code> を通してからコミット。修正前後でブラウザ動作を目視確認する。</p>
+    </div>
+  </div>
+
+  <div class="callout blue" style="margin-bottom: 12mm;">
+    <span class="callout-icon">🔑</span>
+    <div class="callout-body"><strong>セキュリティ評価を「いつやるか」の答え</strong><br>
+    スコア85〜90台に達したタイミングが最適。それより前は「動く・楽しい・広がる」を先に固める。それより後は評価コストが跳ね上がる（機能が増えるほど攻撃面が広がる）。OgoRouletteでは「感情20/20達成後にセキュリティ集中フェーズ」と設定した。この順序が重要だ。</div>
+  </div>
+
+  <div class="page-footer"><span>AI駆動開発 完全教科書 ver.4.0</span><span>11.5 / 42</span></div>
+</div>
+
+<!-- ========== PAGE 12: 第3.5章 Claudeテンプレート集（T-A, T-B）[NEW] ========== -->
+<div class="page">
+  <div class="page-stripe stripe-purple"></div>
+  <div style="padding-top: 4mm;">
+    <div class="chapter-header" style="border-left-color: #0891b2;">
+      <div class="ch-num" style="color: #0891b2;">Chapter 03.5 </div>
+      <div class="ch-title">コピペできるClaude指示テンプレート集</div>
+      <div class="ch-sub">T-A〜T-E の5テンプレート全文。オレンジ色の部分だけ書き換えて使う</div>
+    </div>
+  </div>
+
+  <span class="template-label">T-A: 要件定義テンプレート ★★★★★ — 開発開始前に必ず使う。スコープ爆発を防ぐ</span>
+  <div class="template-block">あなたは経験豊富なプロダクトマネージャーです。
+以下のアプリコンセプトをもとに、MVPとして必須の機能と
+「あったら良い」機能に分類し、最初に作るべき1機能を選んでください。
+
+【アプリコンセプト】
+<span class="template-var">{アプリの目的・ターゲットユーザー・解決する課題を書く}</span>
+
+【制約条件】
+- 開発期間: <span class="template-var">{2週間 / 1ヶ月 など}</span>　- 開発者: 1人
+- 技術スタック: <span class="template-var">{Next.js + Supabase / React Native / など}</span>
+
+【出力形式】
+## 必須機能（3つ以内）
+1. <span class="template-var">{機能名}</span>: <span class="template-var">{なぜMVPに必須か}</span>
+
+## あったら良い機能（5つ以内）
+1. <span class="template-var">{機能名}</span>: <span class="template-var">{ユーザー価値}</span>
+
+## 最初に作るべき1機能とその理由
+<span class="template-var">{機能名と、なぜこれから始めるかの理由}</span></div>
+
+  <span class="template-label">T-B: ISSUE化テンプレート ★★★★★ — 漠然とした問題をISSUE構造に変換する</span>
+  <div class="template-block">以下の問題・課題をISSUEフォーマットに変換してください。
+
+【発見した問題・課題】
+<span class="template-var">{ここに問題を書く。箇条書きでもメモでも走り書きでもOK}</span>
+
+【コンテキスト】
+- アプリ: <span class="template-var">{アプリ名と概要}</span>
+- 現在のスコア: <span class="template-var">{6軸スコアがあれば記載}</span>
+
+【出力形式（厳守）】
+# ISSUE-XXX: [動詞+対象+状態] のタイトル
+
+**背景（なぜ今やるか）:** <span class="template-var">{理由}</span>
+**問題（何が起きているか）:** <span class="template-var">{具体的な症状}</span>
+**原因仮説（なぜ起きているか）:** <span class="template-var">{仮説}</span>
+**解決方向（どう直すか）:** <span class="template-var">{方針}</span>
+**受け入れ条件:**
+- [ ] <span class="template-var">{検証可能な状態}</span>
+**対象スコア:** <span class="template-var">{軸名}</span>+<span class="template-var">{点数}</span></div>
+  <div style="margin-bottom: 12mm;"></div>
+
+  <div class="page-footer"><span>AI駆動開発 完全教科書 ver.4.0</span><span>12 / 42</span></div>
+</div>
+
+<!-- ========== PAGE 11: 第3.5章（後半） T-C, T-D, T-E ========== -->
+<div class="page">
+  <div class="page-stripe stripe-purple"></div>
+  <div style="padding-top: 4mm;">
+    <div class="sec-label" style="color: #0891b2;">Chapter 03.5 — continued</div>
+    <hr class="divider">
+  </div>
+
+  <span class="template-label">T-C: 実装指示テンプレート ★★★★☆ — ISSUEを受け取って実装させる</span>
+  <div class="template-block" style="line-height: 1.6;">以下のISSUEを実装してください。CLAUDE.mdのルールを必ず守ること。
+【ISSUE内容】
+<span class="template-var">{ISSUEをここに貼る（T-Bで作ったものをそのまま使える）}</span>
+【技術的制約】
+- 変更禁止ファイル: <span class="template-var">{ファイル名（なければ「なし」）}</span>
+- 使用禁止ライブラリ: <span class="template-var">{あれば記載}</span>
+【作業手順（必ず守る）】
+1. 関連ファイルをすべて読んでから実装する
+2. 破壊的変更の前に git status を確認する
+3. 実装後に npx tsc --noEmit で型チェックを実行する
+4. 受け入れ条件を一つずつ確認してから完了を報告する
+【完了時の報告形式】
+- 変更ファイル一覧と変更概要
+- 各受け入れ条件の充足状況（✅/❌）
+- 動作確認方法</div>
+
+  <span class="template-label">T-D: バグ調査テンプレート ★★★★★ — 再現性の特定から修正まで一気に依頼する</span>
+  <div class="template-block" style="line-height: 1.6;">以下のバグを調査・修正してください。
+【バグの症状】 <span class="template-var">{「〇〇のときに△△が起きる」形式で書く}</span>
+【再現手順】 1. <span class="template-var">{手順1}</span>　2. <span class="template-var">{手順2}</span>　3. <span class="template-var">{この状態で問題発生}</span>
+【環境】 ブラウザ: <span class="template-var">{Chrome 120 / iOS Safari 17.2}</span>　発生頻度: <span class="template-var">{常に / 稀に}</span>
+【エラーログ】 <span class="template-var">{コンソールエラーをそのまま貼る（なければ「なし」）}</span>
+【試したこと】 <span class="template-var">{試した内容と結果}</span>
+【調査方針】
+1. 原因の仮説を3つ挙げ、確認しやすい順に並べる
+2. 最も可能性の高い原因から修正する
+3. 修正後の動作確認方法を示す</div>
+
+  <div style="margin-bottom: 12mm;"></div>
+
+  <div class="page-footer"><span>AI駆動開発 完全教科書 ver.4.0</span><span>13 / 42</span></div>
+</div>
+
+<!-- ========== PAGE 13.5: 第3.5章（続き） T-E, T-F ========== -->
+<div class="page">
+  <div class="page-stripe stripe-purple"></div>
+  <div style="padding-top: 4mm;">
+    <div class="sec-label" style="color: #0891b2;">Chapter 03.5 — continued</div>
+    <hr class="divider">
+  </div>
+
+  <span class="template-label">T-E: 6軸評価テンプレート ★★★★★ — 品質を数値化してボトルネックを発見する</span>
+  <div class="template-block" style="line-height: 1.6;">以下のアプリを6軸100点満点で評価してください。
+【アプリ概要】 <span class="template-var">{CLAUDE.mdを添付するか、アプリの説明を書く}</span>
+【実装済み機能】 <span class="template-var">{箇条書き}</span>　【既知の問題】 <span class="template-var">{箇条書き}</span>
+【出力形式（各軸）】スコア（/最大値）・根拠2〜3個・+1点アクション
+G-STACK（戦略・構造・リスク）: /15　HEART（体験・採用・継続）: /20
+AARRR（獲得・活性化・継続・紹介・収益）: /20　Kano（基本・線形・魅力品質）: /10
+感情（演出・興奮・感動の設計）: /20　技術（品質・テスト・パフォーマンス）: /15
+【ルール】感情スコアが15未満の場合、他の軸より先に演出改善を優先すること</div>
+
+  <span class="template-label">T-F: セキュリティ評価テンプレート ★★★★ — スコア90台で使うOWASP/STRIDE評価</span>
+  <div class="template-block" style="line-height: 1.6; font-size: 7pt;">以下のアプリに対して、OWASP Top10 と STRIDE の観点で深いセキュリティ評価を実施してください。
+【技術スタック】 <span class="template-var">{Next.js App Router / Supabase / Prisma など}</span>
+【評価してほしいファイル】 <span class="template-var">{lib/, app/api/, middleware.ts など主要ファイルを列挙}</span>
+【評価軸と配点】
+A. 認証・認可（30pt）: HMAC検証・JWT・未認証アクセス防止・タイミング攻撃耐性
+B. 入力バリデーション（20pt）: 制御文字・XSS・SQLi・URLパラメータ検証
+C. 改ざん耐性（15pt）: サーバー側ロジック・結果整合性・クライアント値不使用
+D. ヘッダー・設定（15pt）: X-Frame-Options・CSP・レート制限・cookie secure
+E. 情報漏洩防止（10pt）: スタックトレース・env変数・エラーメッセージ
+F. 設計・保守性（10pt）: middleware設計・OAuth フロー・ドキュメント整備
+【出力形式】各軸: スコア(/満点)・PASS/FAILの根拠・Critical/High/Medium/Lowで分類したISSUE候補
+【重要】Critical/Highは実装を即時止めて対処するよう指摘すること</div>
+
+  <div class="callout blue" style="margin-top: 2mm; margin-bottom: 12mm; padding: 2.5mm 3mm;">
+    <span class="callout-icon">💡</span>
+    <div class="callout-body" style="font-size: 8.5pt;"><strong>テンプレート選択ガイド</strong>　開発開始前 → <b>T-A</b>　課題 → <b>T-B</b>　実装 → <b>T-C</b>　バグ → <b>T-D</b>　品質確認 → <b>T-E</b>　セキュリティ評価 → <b>T-F</b><br>T-B → T-C の連携が最も使用頻度が高い。セキュリティフェーズ（スコア85〜90台）でT-Fを使ってISSUE一括生成する。</div>
+  </div>
+
+  <div class="page-footer"><span>AI駆動開発 完全教科書 ver.4.0</span><span>13.5 / 42</span></div>
+</div>
+
+<!-- ========== PAGE 12: 第4章 開発ストーリー（前半） ========== -->
+<div class="page">
+  <div class="page-stripe stripe-amber"></div>
+  <div style="padding-top: 4mm;">
+    <div class="chapter-header" style="border-left-color: var(--amber);">
+      <div class="ch-num" style="color: var(--amber);">Chapter 04</div>
+      <div class="ch-title">開発ストーリー</div>
+      <div class="ch-sub">Day 0のアイデア誕生から6軸スコア99/100に至るまでのリアルな軌跡</div>
+    </div>
+  </div>
+
+  <div class="timeline">
+    <div class="timeline-item">
+      <div class="timeline-dot">Day 0</div>
+      <div class="timeline-content">
+        <h4>アイデアの誕生 — 「誰が奢るか」でもめた夜</h4>
+        <p>飲み会で「誰が奢るか」の決め方でもめた。「ルーレットで決めれば楽しいのに」という直感。その夜にT-Aで要件定義。MVP機能を3つに絞った：<strong>①参加者追加 ②ルーレット ③当選者表示</strong>。これだけでMVPが成立すると判断。「ルーム機能はMVP後」と意識的に外した。</p>
+      </div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-dot">Day 3</div>
+      <div class="timeline-content">
+        <h4>技術スタック選定 — 「全員が同じ画面を見る」が要件</h4>
+        <p>リアルタイム同期が必須。<strong>Next.js + Supabase Realtime</strong>を選択。当初はpolling案もあったが、Supabase RealtimeのWebSocketが「全員が同じ画面を見る体験」に最適と判断。技術的な差別化要因をDay 3に確定させた。</p>
+      </div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-dot green">Week 1</div>
+      <div class="timeline-content">
+        <h4>MVP完成 — 動くものがある喜び</h4>
+        <p>参加者追加・ルーレット・当選者表示の3機能が動いた。Lighthouse初回測定: 62点。初回6軸評価: <strong>感情スコア 11/20</strong>。この数字が衝撃だった。動いているが誰も笑わない。「演出優先ルール」を即日制定。以後、感情スコアが15未満の間は機能追加より演出改善を優先する。</p>
+      </div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-dot green">Week 2</div>
+      <div class="timeline-content">
+        <h4>演出強化フェーズ — 「盛り上がるか」を最優先に</h4>
+        <p>スローダウン演出・当選者リビール・Confetti爆発・絵文字リアクションを実装。感情スコア 11 → <strong>15.5/20</strong> に改善。会場で初めて笑い声が起きた。この体験が「感情設計がすべてに優先する」原則の根拠になった。この時点でISSUEが80個を超えた。</p>
+      </div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-dot purple">Week 3</div>
+      <div class="timeline-content">
+        <h4>深刻バグの発覚 — Race Condition との戦い</h4>
+        <p>本番で「2人同時当選」の報告。2つのタブで同時にスピンボタンを押すと両方が当選者になるバグ。T-Dでバグ調査 → AIが3仮説を提案 → <strong>ロックトークンパターン</strong>で解決。スピン時にDB側でWAITING→IN_SESSIONのアトミックな状態遷移を実装した。</p>
+      </div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-dot purple">Week 4</div>
+      <div class="timeline-content">
+        <h4>iOS Safariバグ + Phase管理の複雑化</h4>
+        <p>iOS Safari 17.2でルーレットが途中で止まるバグ。Safariのアニメーションフレーム処理の差異が原因。useAnimationFrameをsetIntervalに切り替えで解決。Phase管理（WAITING/SPINNING/RESULT）が複雑化し始め、状態マシン設計を導入。この期間で「バグは再現性から潰す」原則を体得。</p>
+      </div>
+    </div>
+  </div>
+  <div style="margin-bottom: 12mm;"></div>
+
+  <div class="page-footer"><span>AI駆動開発 完全教科書 ver.4.0</span><span>14 / 42</span></div>
+</div>
+
+<!-- ========== PAGE 13: 第4章 開発ストーリー（後半） ========== -->
+<div class="page">
+  <div class="page-stripe stripe-amber"></div>
+  <div style="padding-top: 4mm;">
+    <div class="sec-label" style="color: var(--amber);">Chapter 04 — continued</div>
+    <hr class="divider">
+  </div>
+
+  <div class="timeline">
+    <div class="timeline-item">
+      <div class="timeline-dot amber">Month 2</div>
+      <div class="timeline-content">
+        <h4>パフォーマンス革命 — Lighthouse 62 → 95</h4>
+        <p>3つの施策で達成。<strong>① next/font移行</strong>（Google CDN→self-host、LCP 4.2s→1.1s）<strong>② dynamic import</strong>（Framer Motion遅延ロード、バンドル32%削減）<strong>③ next/image</strong>（PNG→WebP、CLS 0.28→0.02）。ISSUE-208が特に大きかった。CDN依存ゼロで外部フェッチが消えた。</p>
+      </div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-dot amber">Month 2</div>
+      <div class="timeline-content">
+        <h4>AARRR-Referral強化 — シェアされるアプリへ</h4>
+        <p>動的OGP実装（当選者名・ルーム名をSNSプレビュー画像に組み込み）。シェアURL最適化（コピーボタン一発でルーム招待URLが取れる）。Broadcast最適化（ISSUE-221: postgres_changesからBroadcastに移行、遅延600ms短縮）。AARRR-Referralスコアが改善。</p>
+      </div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-dot" style="background: linear-gradient(135deg, #059669, #0891b2);">Month 3</div>
+      <div class="timeline-content">
+        <h4>セキュリティ強化フェーズ — スコア90→99/100</h4>
+        <p>ISSUE-221〜243で同期精度・UX改善・テスト整備を完了。続くISSUE-244〜265でセキュリティ評価を実施。HMAC強化・レート制限・セキュリティヘッダー・入力サニタイズを実装。感情スコア 17.5 → 20/20。6軸スコア: G-STACK:14 / HEART:20 / AARRR:20 / Kano:10 / 感情:20 / 技術:15 = 99/100。260+ ISSUE消化・193テスト。</p>
+      </div>
+    </div>
+  </div>
+
+  <h3 style="margin-top: 3mm;">4フェーズで見る開発全体像</h3>
+  <div class="phase-grid">
+    <div class="phase-item phase-1">
+      <div class="phase-num">Phase 1 — Day 0〜Week 2</div>
+      <h4>動かす</h4>
+      <p style="font-size: 7.5pt;">MVP機能を3つに絞り、とにかく動くものを作る。技術的な完璧さより「動くか」「楽しいか」を優先。感情スコアを週次で確認し15未満なら即演出改善。</p>
+    </div>
+    <div class="phase-item phase-2">
+      <div class="phase-num">Phase 2 — Week 3〜Month 1</div>
+      <h4>安定させる</h4>
+      <p style="font-size: 7.5pt;">バグを潰し、クロスブラウザ対応し、状態管理を整理する。Race Conditionのような本番障害を確実に解消。技術スコアを上げる時期。</p>
+    </div>
+    <div class="phase-item phase-3">
+      <div class="phase-num">Phase 3 — Month 2</div>
+      <h4>広げる</h4>
+      <p style="font-size: 7.5pt;">Lighthouse最適化、動的OGP、シェア機能でReferralを強化。「使われるアプリ」から「広がるアプリ」へ。AARRR全ファネルを整備。</p>
+    </div>
+    <div class="phase-item phase-4">
+      <div class="phase-num">Phase 4 — Month 3〜</div>
+      <h4>磨き込む + 守る</h4>
+      <p style="font-size: 7.5pt;">セキュリティ評価（OWASP Top10・STRIDE）、依存関係監査、セキュリティヘッダー実装。感情スコア 20/20・総合 99/100 達成。「信頼できるプロダクトか」が問いになる段階。</p>
+    </div>
+  </div>
+
+  <div class="callout blue" style="margin-top: 2mm; margin-bottom: 12mm;">
+    <span class="callout-icon">📈</span>
+    <div class="callout-body"><strong>スコアが上がるにつれて「問われること」が変わる</strong><br>
+    40点:「動くか」→ 60点:「楽しいか」→ 75点:「広がるか」→ 90点:「事業として成立するか」→ 99点:「信頼できるプロダクトか」。6軸評価は同じ枠組みを使うが、解像度が上がると問いが深くなる。セキュリティは最後の砦ではなく、99点台の差別化要素だ。</div>
+  </div>
+
+  <div class="page-footer"><span>AI駆動開発 完全教科書 ver.4.0</span><span>15 / 42</span></div>
+</div>
+
+<!-- ========== PAGE 14: 第4.5章-A 6軸評価システム 概要 ========== -->
+<div class="page">
+  <div class="page-stripe stripe-amber"></div>
+  <div style="padding-top: 4mm;">
+    <div class="chapter-header" style="border-left-color: var(--amber);">
+      <div class="ch-num" style="color: var(--amber);">Chapter 04.5-A</div>
+      <div class="ch-title">6軸評価システム</div>
+      <div class="ch-sub">G-STACK / HEART / AARRR / Kano / 感情 / 技術 — 100点満点で継続的に測る</div>
+    </div>
+  </div>
+
+  <p style="margin-bottom: 2mm;">「なんとなく動いている」では品質は上がらない。4軸では見えなかった死角があった。「動いている」「広がっている」だけでは「盛り上がるか」「技術的に健全か」が測れない。230回の改善を経て、<strong>6軸・100点満点の評価システム</strong>に進化した。</p>
+
+  <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 2mm; margin-bottom: 3mm;">
+    <div class="fw-card fw-card-gstack" style="padding: 2.5mm;">
+      <div class="fw-card-label">構造・設計 / 15pt</div>
+      <h4 style="font-size: 10pt;">G-STACK</h4>
+      <p style="font-size: 7.5pt;">Goal / Strategy / Tactics / Architecture / (ri)SK。「このアプリは成立しているか？」を問う。</p>
+    </div>
+    <div class="fw-card fw-card-heart" style="padding: 2.5mm;">
+      <div class="fw-card-label">UX体験 / 20pt</div>
+      <h4 style="font-size: 10pt;">HEART</h4>
+      <p style="font-size: 7.5pt;">Happiness / Engagement / Adoption / Retention / Task Success。「気持ちいいか？」</p>
+    </div>
+    <div class="fw-card fw-card-aarrr" style="padding: 2.5mm;">
+      <div class="fw-card-label">成長・拡散 / 20pt</div>
+      <h4 style="font-size: 10pt;">AARRR</h4>
+      <p style="font-size: 7.5pt;">Acquisition / Activation / Retention / Referral / Revenue。「広がるか？」</p>
+    </div>
+    <div class="fw-card fw-card-kano" style="padding: 2.5mm;">
+      <div class="fw-card-label">機能価値 / 10pt</div>
+      <h4 style="font-size: 10pt;">Kano</h4>
+      <p style="font-size: 7.5pt;">当たり前品質 / 線形品質 / 魅力品質。「感動する機能か？」を問う。</p>
+    </div>
+    <div style="background: linear-gradient(135deg, #4c1d95, #7c3aed); border-radius: 6px; padding: 2.5mm; color: white;">
+      <div style="font-size: 7pt; font-weight: 700; color: rgba(255,255,255,0.6); margin-bottom: 1mm;">感情設計 / 20pt ★重要</div>
+      <h4 style="font-size: 10pt; margin: 0 0 1mm; color: white;">感情</h4>
+      <p style="font-size: 7.5pt; color: rgba(255,255,255,0.85);">演出・ニアミス・ビルドアップ・リビール。「笑いが起きるか？」感情スコア15未満なら機能追加より演出改善を優先。</p>
+    </div>
+    <div style="background: linear-gradient(135deg, #1e3a5f, #1d4ed8); border-radius: 6px; padding: 2.5mm; color: white;">
+      <div style="font-size: 7pt; font-weight: 700; color: rgba(255,255,255,0.6); margin-bottom: 1mm;">技術品質 / 15pt</div>
+      <h4 style="font-size: 10pt; margin: 0 0 1mm; color: white;">技術</h4>
+      <p style="font-size: 7.5pt; color: rgba(255,255,255,0.85);">型安全・テスト・セキュリティ・エラー回復・パフォーマンス。土台が腐るとUXも崩れる。</p>
+    </div>
+  </div>
+
+  <div class="score-formula">
+    <div style="font-size: 8.5pt; color: rgba(255,255,255,0.6); margin-bottom: 1.5mm;">OgoRoulette 6軸複合スコア式（合計100点）</div>
+    <div class="formula" style="font-size: 8pt;">総合 = G-STACK(15) + HEART(20) + AARRR(20) + Kano(10) + 感情(20) + 技術(15)</div>
+    <div class="weights" style="flex-wrap: wrap; gap: 2mm; margin-top: 2mm;">
+      <div class="weight-item"><div class="weight-num" style="color: #60a5fa; font-size: 13pt;">14</div><div class="weight-lbl">G-STACK</div></div>
+      <div style="color: rgba(255,255,255,0.2); font-size: 14pt; line-height: 2.5;">+</div>
+      <div class="weight-item"><div class="weight-num" style="color: #f9a8d4; font-size: 13pt;">20</div><div class="weight-lbl">HEART</div></div>
+      <div style="color: rgba(255,255,255,0.2); font-size: 14pt; line-height: 2.5;">+</div>
+      <div class="weight-item"><div class="weight-num" style="color: #86efac; font-size: 13pt;">20</div><div class="weight-lbl">AARRR</div></div>
+      <div style="color: rgba(255,255,255,0.2); font-size: 14pt; line-height: 2.5;">+</div>
+      <div class="weight-item"><div class="weight-num" style="color: #fcd34d; font-size: 13pt;">10</div><div class="weight-lbl">Kano</div></div>
+      <div style="color: rgba(255,255,255,0.2); font-size: 14pt; line-height: 2.5;">+</div>
+      <div class="weight-item"><div class="weight-num" style="color: #c4b5fd; font-size: 13pt;">20</div><div class="weight-lbl">感情</div></div>
+      <div style="color: rgba(255,255,255,0.2); font-size: 14pt; line-height: 2.5;">+</div>
+      <div class="weight-item"><div class="weight-num" style="color: #93c5fd; font-size: 13pt;">15</div><div class="weight-lbl">技術</div></div>
+      <div style="color: rgba(255,255,255,0.2); font-size: 14pt; line-height: 2.5;">=</div>
+      <div class="weight-item"><div class="weight-num" style="color: #fbbf24; font-size: 16pt;">99</div><div class="weight-lbl">現在スコア</div></div>
+    </div>
+  </div>
+
+  <div class="callout amber" style="margin-top: 2mm; margin-bottom: 12mm; padding: 2mm 3mm;">
+    <span class="callout-icon">💡</span>
+    <div class="callout-body" style="font-size: 8pt;"><strong>OgoRoulette実績: 70/100 → 99/100（260+ ISSUE消化）</strong><br>感情軸は後から追加した。最初の4軸評価では「G-STACKが高くても誰も笑わない」問題が見えなかった。感情スコアが11/20まで落ちた夜、演出優先ルールを設けた。最終段階でセキュリティ評価（OWASP/STRIDE）を実施し、全脆弱性を解消して99点に到達。</div>
+  </div>
+
+  <div class="page-footer"><span>AI駆動開発 完全教科書 ver.4.0</span><span>16 / 42</span></div>
+</div>
+
+<!-- ========== PAGE 15: 第4.5章-B G-STACKフレームワーク ========== -->
+<div class="page">
+  <div class="page-stripe stripe-amber"></div>
+  <div style="padding-top: 4mm;">
+    <div class="chapter-header" style="border-left-color: var(--amber);">
+      <div class="ch-num" style="color: var(--amber);">Chapter 04.5-B</div>
+      <div class="ch-title">G-STACKフレームワーク</div>
+      <div class="ch-sub">「このアプリは成立しているか？」を問う構造・設計・リスク評価の基盤フレームワーク</div>
+    </div>
+  </div>
+
+  <p style="margin-bottom: 2mm;">G-STACKは「このアプリは成立しているか？」を問うフレームワークだ。動かす段階・安定させる段階で使う。技術的に正しくないアプリは、どれだけUXが良くても長期的に持続しない。</p>
+
+  <div class="gstack-axes">
+    <div class="gstack-axis">
+      <div class="letter">G</div>
+      <div class="word">Goal</div>
+      <div class="desc">誰のための何のアプリか明確か</div>
+    </div>
+    <div class="gstack-axis">
+      <div class="letter">S</div>
+      <div class="word">Strategy</div>
+      <div class="desc">差別化の方向性が決まっているか</div>
+    </div>
+    <div class="gstack-axis">
+      <div class="letter">T</div>
+      <div class="word">Tactics</div>
+      <div class="desc">実装がその方向に沿っているか</div>
+    </div>
+    <div class="gstack-axis">
+      <div class="letter">A</div>
+      <div class="word">Architecture</div>
+      <div class="desc">DB・API・コンポーネントが健全か</div>
+    </div>
+    <div class="gstack-axis">
+      <div class="letter" style="font-size: 13pt;">SK</div>
+      <div class="word">(ri)SK</div>
+      <div class="desc">バグ・セキュリティ・性能リスクが管理されているか</div>
+    </div>
+  </div>
+
+  <h3 style="margin-top: 3mm;">OgoRoulette G-STACK評価（Phase 1 → 2 の変化）</h3>
+  <table>
+    <tr><th>軸</th><th>Phase 1（MVP完成時）</th><th>Phase 2（安定後）</th></tr>
+    <tr><td><strong>Goal</strong></td><td>飲み会の奢り決め</td><td>グループでの公平な意思決定ツール</td></tr>
+    <tr><td><strong>Strategy</strong></td><td>リアルタイム同期で差別化</td><td>全員が同じ画面を見る体験に注力</td></tr>
+    <tr><td><strong>Tactics</strong></td><td>Supabase Realtime採用</td><td>ハイブリッド設計（DB + broadcast）</td></tr>
+    <tr><td><strong>Architecture</strong></td><td>コンポーネント分割済み</td><td>型定義集約、状態マシン設計</td></tr>
+    <tr><td><strong>(ri)SK</strong></td><td>Race Condition未対応</td><td>ロックトークンパターンで解決</td></tr>
+  </table>
+
+  <h3 style="margin-top: 3mm;">G-STACKチェックリスト（フェーズ別）</h3>
+  <div class="cards col2">
+    <div class="card" style="background: #eff6ff; border: 1px solid #bfdbfe; padding: 2.5mm 3mm;">
+      <h3 style="color: #1d4ed8; font-size: 9.5pt; margin: 0 0 1.5mm;">Phase 1 チェック（動かす段階）</h3>
+      <ul style="font-size: 8pt; margin: 0; line-height: 1.7;">
+        <li>Goal: 誰のための何のアプリか1行で言えるか</li>
+        <li>Strategy: 差別化の方向が1つ決まっているか</li>
+        <li>Tactics: 実装がその方向に沿っているか</li>
+        <li>Architecture: DB・API・コンポーネントの分割が妥当か</li>
+        <li>(ri)SK: 致命的バグ（データ消失・競合）が管理されているか</li>
+      </ul>
+    </div>
+    <div class="card" style="background: #f0fdf4; border: 1px solid #bbf7d0; padding: 2.5mm 3mm;">
+      <h3 style="color: #059669; font-size: 9.5pt; margin: 0 0 1.5mm;">Phase 2 チェック（安定させる段階）</h3>
+      <ul style="font-size: 8pt; margin: 0; line-height: 1.7;">
+        <li>クロスブラウザ: Safari/Chrome/Firefoxで同一挙動か</li>
+        <li>負荷耐性: 10人同時接続で壊れないか</li>
+        <li>エラー回復: ネットワーク切断後に復帰できるか</li>
+        <li>データ整合: 競合条件が正しく処理されているか</li>
+        <li>型安全: TypeScriptエラーゼロか</li>
+      </ul>
+    </div>
+  </div>
+  <div style="margin-bottom: 12mm;"></div>
+
+  <div class="page-footer"><span>AI駆動開発 完全教科書 ver.4.0</span><span>17 / 42</span></div>
+</div>
+
+<!-- ========== PAGE 16: 第4.5章-C HEART × AARRR ========== -->
+<div class="page">
+  <div class="page-stripe stripe-purple"></div>
+  <div style="padding-top: 4mm;">
+    <div class="chapter-header" style="border-left-color: var(--purple);">
+      <div class="ch-num" style="color: var(--purple);">Chapter 04.5-C</div>
+      <div class="ch-title">HEART × AARRR</div>
+      <div class="ch-sub">体験品質（HEART）と成長ループ（AARRR）— 合計40点で「使われるか広がるか」を測る</div>
+    </div>
+  </div>
+
+  <h3 style="margin-top: 0;">HEART フレームワーク（/20pt）— Googleが開発したUX測定指標</h3>
+  <div class="heart-axes">
+    <div class="heart-axis">
+      <span class="letter">H</span><span class="word">Happiness（満足度）</span>
+      <div class="desc">ユーザーがアプリを使った後に「楽しかった」「また使いたい」と感じるか。OgoRoulette: 当選演出・Confetti・絵文字リアクションで計測。</div>
+    </div>
+    <div class="heart-axis">
+      <span class="letter">E</span><span class="word">Engagement（継続使用）</span>
+      <div class="desc">1回使ったユーザーが2回目・3回目と使うか。OgoRoulette: グループ保存・履歴機能で再訪率を向上。</div>
+    </div>
+    <div class="heart-axis">
+      <span class="letter">A</span><span class="word">Adoption（新規獲得）</span>
+      <div class="desc">新しいユーザーが「使い始める」壁が低いか。OgoRoulette: ログイン不要・QRで即参加でAdoptionを最大化。</div>
+    </div>
+    <div class="heart-axis">
+      <span class="letter">R</span><span class="word">Retention（定着）</span>
+      <div class="desc">定期的に使い続けるユーザーがいるか。飲み会・合コン・ランチと複数の使用場面を設計。</div>
+    </div>
+    <div class="heart-axis" style="grid-column: span 2;">
+      <span class="letter">T</span><span class="word">Task Success（目的達成）</span>
+      <div class="desc">ユーザーがやりたいこと（「誰が奢るか決める」）をストレスなく完了できるか。OgoRoulette: 平均3タップでスピン完了。</div>
+    </div>
+  </div>
+
+  <h3 style="margin-top: 3mm;">AARRR フレームワーク（/20pt）— Dave McClureのPirate Metrics</h3>
+  <table>
+    <tr><th>軸</th><th>意味</th><th>OgoRoulette施策</th><th>現状</th></tr>
+    <tr><td><strong>Acquisition</strong></td><td>認知・流入</td><td>SEO・SNS・紹介</td><td>organic流入</td></tr>
+    <tr><td><strong>Activation</strong></td><td>初回体験</td><td>ログイン不要・3タップでスピン</td><td>離脱率低</td></tr>
+    <tr><td><strong>Retention</strong></td><td>再訪・定着</td><td>グループ保存・履歴</td><td>改善中</td></tr>
+    <tr><td><strong>Referral</strong></td><td>拡散・紹介</td><td>動的OGP・シェアURL</td><td>強化済み</td></tr>
+    <tr><td><strong>Revenue</strong></td><td>収益化</td><td>プレミアム機能（計画中）</td><td>未着手</td></tr>
+  </table>
+
+  <div class="callout purple" style="margin-top: 2mm; margin-bottom: 12mm;">
+    <span class="callout-icon">🔗</span>
+    <div class="callout-body"><strong>HEARTとAARRRの連携ポイント</strong><br>
+    HEART-Happiness ↔ AARRR-Referral：「楽しかった」体験がシェアにつながる。OgoRouletteでは当選演出を強化したことで、動的OGPのシェア率が上がった。感情設計がReferralを動かす。</div>
+  </div>
+
+  <div class="page-footer"><span>AI駆動開発 完全教科書 ver.4.0</span><span>18 / 42</span></div>
+</div>
+
+<!-- ========== PAGE 17: 第4.5章-D Kano + 感情設計 ========== -->
+<div class="page">
+  <div class="page-stripe stripe-gold"></div>
+  <div style="padding-top: 4mm;">
+    <div class="chapter-header" style="border-left-color: var(--amber);">
+      <div class="ch-num" style="color: var(--amber);">Chapter 04.5-D</div>
+      <div class="ch-title">Kanoモデル + 感情設計</div>
+      <div class="ch-sub">「当たり前」を超えた「魅力品質」と「感動の設計」</div>
+    </div>
+  </div>
+
+  <h3 style="margin-top: 0;">Kanoモデル（/10pt）— 機能の「質」を3種類に分類する</h3>
+  <div class="kano-row">
+    <div class="kano-card kano-basic">
+      <div class="kano-label">当たり前品質</div>
+      <h4>なければ不満</h4>
+      <p>あっても評価されないが、なければ致命的。OgoRoulette: ルーレットが止まる・当選者が表示される・全員が同じ画面を見られる。</p>
+    </div>
+    <div class="kano-card kano-linear">
+      <div class="kano-label">線形品質（一元的）</div>
+      <h4>多いほど嬉しい</h4>
+      <p>あればあるほど満足度が上がる。OgoRoulette: 参加者の上限数・ルーム作成の速さ・スピンの滑らかさ・音声演出の質。</p>
+    </div>
+    <div class="kano-card kano-delight">
+      <div class="kano-label">魅力品質</div>
+      <h4>あると感動する</h4>
+      <p>なくても不満ではないが、あると驚く。OgoRoulette: 当選者名入りOGP・絵文字リアクション・Confetti爆発・スローダウン演出。</p>
+    </div>
+  </div>
+
+  <h3 style="margin-top: 3mm;">感情設計（/20pt）— 「笑いが起きる体験」を意図的に設計する</h3>
+  <p style="margin-bottom: 2mm;">感情スコアが15/20未満のとき、他の軸より先に演出改善を優先する。OgoRouletteでは感情スコア11→17.5に改善した実績がある。</p>
+
+  <div class="cards col2" style="margin-bottom: 2mm;">
+    <div class="card" style="background: linear-gradient(135deg, #fdf2f8, #ede9fe); border-color: #e9d5ff; padding: 2.5mm;">
+      <h3 style="font-size: 9.5pt; margin: 0 0 1mm;">① ビルドアップ（緊張感の設計）</h3>
+      <p style="font-size: 8pt;">ルーレットのスローダウン。速い→遅い→止まる直前の緊張感。「もしかして自分か…」という心理が盛り上がりを作る。</p>
+    </div>
+    <div class="card" style="background: linear-gradient(135deg, #fdf2f8, #ede9fe); border-color: #e9d5ff; padding: 2.5mm;">
+      <h3 style="font-size: 9.5pt; margin: 0 0 1mm;">② リビール（公開の設計）</h3>
+      <p style="font-size: 8pt;">当選者名を段階的に表示する（クラウン0.3s→名前0.65s→歓声1.15s）。一気に表示するより驚きが大きい。</p>
+    </div>
+    <div class="card" style="background: linear-gradient(135deg, #fdf2f8, #ede9fe); border-color: #e9d5ff; padding: 2.5mm;">
+      <h3 style="font-size: 9.5pt; margin: 0 0 1mm;">③ ニアミス感（惜しい設計）</h3>
+      <p style="font-size: 8pt;">当選者が自分の隣の名前で止まる瞬間の「惜しい！」という体験。全員が画面に注目する状態を演出。</p>
+    </div>
+    <div class="card" style="background: linear-gradient(135deg, #fdf2f8, #ede9fe); border-color: #e9d5ff; padding: 2.5mm;">
+      <h3 style="font-size: 9.5pt; margin: 0 0 1mm;">④ 余韻（拡散の設計）</h3>
+      <p style="font-size: 8pt;">Confetti・絵文字リアクション・シェアボタンを感情最高潮のタイミングに配置。「写真を撮りたい」「シェアしたい」衝動を設計する。</p>
+    </div>
+  </div>
+
+  <div class="callout red" style="margin-bottom: 12mm;">
+    <span class="callout-icon">🚨</span>
+    <div class="callout-body" style="font-size: 8.5pt;"><strong>感情スコア15未満は演出優先ルール発動</strong><br>
+    感情スコアが15を下回っている場合、<strong>他の軸の改善より先に演出改善を優先する。</strong>機能をどれだけ増やしても、盛り上がらないアプリは使われない。OgoRouletteで検証済み。</div>
+  </div>
+
+  <div class="page-footer"><span>AI駆動開発 完全教科書 ver.4.0</span><span>19 / 42</span></div>
+</div>
+
+<!-- ========== PAGE 18: 第4.5章-E フェーズ別評価戦略 ========== -->
+<div class="page">
+  <div class="page-stripe stripe-purple"></div>
+  <div style="padding-top: 4mm;">
+    <div class="chapter-header" style="border-left-color: var(--purple);">
+      <div class="ch-num" style="color: var(--purple);">Chapter 04.5-E</div>
+      <div class="ch-title">フェーズ別評価戦略 + ISSUE判断フロー</div>
+      <div class="ch-sub">「今どのフェーズか」で評価の優先軸が変わる</div>
+    </div>
+  </div>
+
+  <p style="margin-bottom: 2mm;">6軸全部を毎回最大化しようとすると力が分散する。フェーズによって<strong>「今何を最大化すべきか」</strong>が変わる。</p>
+
+  <div class="phase-grid">
+    <div class="phase-item phase-1">
+      <div class="phase-num">Phase 1 — MVP完成まで</div>
+      <h4>最優先: G-STACK + 感情</h4>
+      <p style="font-size: 7.5pt;">「動くか」「楽しいか」だけに集中。G-STACKで設計方針を固め、感情スコアで「盛り上がるか」を週次確認。技術的な完璧さは後回し。感情スコア15未満なら即演出改善。</p>
+    </div>
+    <div class="phase-item phase-2">
+      <div class="phase-num">Phase 2 — 安定化まで</div>
+      <h4>最優先: 技術 + HEART</h4>
+      <p style="font-size: 7.5pt;">バグを潰し、クロスブラウザ対応し、技術スコアを上げる。HEART-Task Successで「使い切れるか」を確認。Race Conditionのような致命的バグはこのフェーズで完全解消。</p>
+    </div>
+    <div class="phase-item phase-3">
+      <div class="phase-num">Phase 3 — 成長フェーズ</div>
+      <h4>最優先: AARRR + Kano</h4>
+      <p style="font-size: 7.5pt;">シェア・拡散・継続利用のループを作る。AARRR-Referralを強化（動的OGP・シェアURL）。Kano魅力品質で他サービスとの差別化を強める。</p>
+    </div>
+    <div class="phase-item phase-4">
+      <div class="phase-num">Phase 4 — 成熟フェーズ</div>
+      <h4>最優先: セキュリティ評価 + 全軸バランス</h4>
+      <p style="font-size: 7.5pt;">T-Fでセキュリティ評価を実施し技術スコアを最大化。感情 20/20 達成で総合スコア 99/100 を目指すフェーズ。Revenue設計・Analytics・A/Bテストは並行して進める。</p>
+    </div>
+  </div>
+
+  <h3 style="margin-top: 3mm;">ISSUE追加・保留の判断フロー</h3>
+  <div style="margin: 1mm 0 2mm;">
+    <!-- START -->
+    <div style="text-align:center; margin-bottom:1.5mm;">
+      <div style="display:inline-block; background:#1e293b; border:2px solid #60a5fa; border-radius:6px; padding:1.5mm 5mm; font-weight:800; font-size:9pt; color:#93c5fd;">新しいISSUEを思いついた</div>
+    </div>
+    <!-- Q1 -->
+    <div style="display:flex; align-items:stretch; gap:2mm; margin-bottom:1mm;">
+      <div style="display:flex; flex-direction:column; align-items:center; width:14px; flex-shrink:0;">
+        <div style="width:2px; height:100%; background:#475569;"></div>
+      </div>
+      <div style="flex:1; background:#292524; border:1.5px solid #f97316; border-radius:6px; padding:2mm 3mm; display:flex; align-items:center; justify-content:space-between; gap:2mm;">
+        <div>
+          <div style="font-size:7pt; color:#f97316; font-weight:700; margin-bottom:0.3mm;">チェック①</div>
+          <div style="font-size:8.5pt; font-weight:800; color:#fff;">感情スコアが 15 未満か？</div>
+        </div>
+        <div style="text-align:right; flex-shrink:0;">
+          <div style="background:#dc2626; color:#fff; font-weight:800; font-size:7.5pt; border-radius:4px; padding:1mm 2.5mm; white-space:nowrap;">YES → 演出ISSUEとして最優先追加</div>
+          <div style="color:#64748b; font-size:7pt; margin-top:0.5mm;">NO → 次へ</div>
+        </div>
+      </div>
+    </div>
+    <!-- Q2 -->
+    <div style="display:flex; align-items:stretch; gap:2mm; margin-bottom:1mm;">
+      <div style="display:flex; flex-direction:column; align-items:center; width:14px; flex-shrink:0;">
+        <div style="width:2px; height:100%; background:#475569;"></div>
+      </div>
+      <div style="flex:1; background:#1e1b4b; border:1.5px solid #818cf8; border-radius:6px; padding:2mm 3mm; display:flex; align-items:center; justify-content:space-between; gap:2mm;">
+        <div>
+          <div style="font-size:7pt; color:#818cf8; font-weight:700; margin-bottom:0.3mm;">チェック②</div>
+          <div style="font-size:8.5pt; font-weight:800; color:#fff;">技術的負債 or セキュリティ問題か？</div>
+        </div>
+        <div style="text-align:right; flex-shrink:0;">
+          <div style="background:#4f46e5; color:#fff; font-weight:800; font-size:7.5pt; border-radius:4px; padding:1mm 2.5mm; white-space:nowrap;">YES → Priority: High で今すぐ追加</div>
+          <div style="color:#64748b; font-size:7pt; margin-top:0.5mm;">NO → 次へ</div>
+        </div>
+      </div>
+    </div>
+    <!-- Q3 -->
+    <div style="display:flex; align-items:stretch; gap:2mm; margin-bottom:1mm;">
+      <div style="display:flex; flex-direction:column; align-items:center; width:14px; flex-shrink:0;">
+        <div style="width:2px; height:100%; background:#475569;"></div>
+      </div>
+      <div style="flex:1; background:#052e16; border:1.5px solid #22c55e; border-radius:6px; padding:2mm 3mm; display:flex; align-items:center; justify-content:space-between; gap:2mm;">
+        <div>
+          <div style="font-size:7pt; color:#4ade80; font-weight:700; margin-bottom:0.3mm;">チェック③</div>
+          <div style="font-size:8.5pt; font-weight:800; color:#fff;">今のフェーズの重要軸に関係するか？</div>
+        </div>
+        <div style="text-align:right; flex-shrink:0;">
+          <div style="background:#15803d; color:#fff; font-weight:800; font-size:7.5pt; border-radius:4px; padding:1mm 2.5mm; white-space:nowrap;">YES → Priority: Medium で追加</div>
+          <div style="background:#334155; color:#94a3b8; font-weight:700; font-size:7.5pt; border-radius:4px; padding:1mm 2.5mm; white-space:nowrap; margin-top:0.5mm;">NO → 保留（理由と条件を記録）</div>
+        </div>
+      </div>
+    </div>
+    <!-- 保留の書き方 -->
+    <div style="background:#1e293b; border-left:3px solid #475569; border-radius:0 5px 5px 0; padding:1.5mm 3mm; margin-top:0.5mm; margin-bottom:12mm;">
+      <div style="font-size:7.5pt; font-weight:800; color:#94a3b8; margin-bottom:0.5mm;">保留ISSUEの書き方</div>
+      <div style="font-size:7.5pt; color:#cbd5e1;"><strong style="color:#e2e8f0;">保留理由:</strong> 「Phase 3以降で検討」「スコア85超えたら着手」</div>
+      <div style="font-size:7.5pt; color:#cbd5e1;"><strong style="color:#e2e8f0;">再検討条件:</strong> 具体的な数値か状態変化を書く（例: スコア90達成時）</div>
+    </div>
+  </div>
+
+  <div class="page-footer"><span>AI駆動開発 完全教科書 ver.4.0</span><span>20 / 42</span></div>
+</div>
+
+<!-- ========== PAGE 19: 第4.5章-E2 定期評価サイクル ========== -->
+<div class="page">
+  <div class="page-stripe stripe-purple"></div>
+  <div style="padding-top: 4mm;">
+    <div class="chapter-header" style="border-left-color: var(--purple);">
+      <div class="ch-num" style="color: var(--purple);">Chapter 04.5-E2</div>
+      <div class="ch-title">定期評価サイクル + CLAUDE.md更新ルール</div>
+      <div class="ch-sub">「測る→更新する→次の改善を決める」を習慣にする</div>
+    </div>
+  </div>
+
+  <h3 style="margin-top: 0;">定期評価サイクル</h3>
+  <table style="margin-bottom: 3mm;">
+    <tr><th>頻度</th><th>評価内容</th><th>使うツール</th><th>アウトプット</th></tr>
+    <tr><td><strong>毎ループ後</strong></td><td>受け入れ条件の充足確認</td><td>ISSUEのチェックボックス</td><td>ISSUE完了 or 再ISSUEへ</td></tr>
+    <tr><td><strong>週1回</strong></td><td>感情スコアの確認（15超えているか）</td><td>T-E（感情軸のみ）</td><td>演出優先ルールの発動/解除</td></tr>
+    <tr><td><strong>月1回</strong></td><td>全6軸フルスコア評価</td><td>T-E（全軸）+ Lighthouse</td><td>CLAUDE.mdのスコア更新 + 次フェーズの方針決定</td></tr>
+    <tr><td><strong>マイルストーン時</strong></td><td>フェーズ移行の判断</td><td>T-E + Phase判断フロー</td><td>フェーズ移行 or 現フェーズ継続</td></tr>
+  </table>
+
+  <h3>CLAUDE.md スコア更新ルール</h3>
+  <div class="compare">
+    <div class="compare-item compare-ng">
+      <div class="compare-label">❌ NG — スコアを更新しない</div>
+      <div class="compare-body" style="font-size: 8pt;">
+        CLAUDE.mdに「現スコア: 75/100（2026-01-15）」と書いたまま放置。<br>
+        AIが古いスコアをベースに提案し続ける。改善の積み上がりが見えない。
+      </div>
+    </div>
+    <div class="compare-item compare-ok">
+      <div class="compare-label">✅ OK — 毎月スコアを更新する</div>
+      <div class="compare-body" style="font-size: 8pt;">
+        月次評価のたびにCLAUDE.mdの「現スコア」行を更新。<br>
+        日付も更新する。AIが常に最新状態をベースに提案できる。<br>
+        スコアの推移がCLAUDE.mdのgit履歴に残る。
+      </div>
+    </div>
+  </div>
+
+  <h3 style="margin-top: 3mm;">スコア帯別 次の改善優先度マトリクス</h3>
+  <table>
+    <tr><th>スコア帯</th><th>最優先軸</th><th>理由</th></tr>
+    <tr><td>0〜40点</td><td>G-STACK + 感情</td><td>MVPが成立していない。設計と演出を先に固める</td></tr>
+    <tr><td>40〜60点</td><td>感情 + HEART</td><td>動くが使われない。盛り上がらないと広がらない</td></tr>
+    <tr><td>60〜75点</td><td>AARRR（Referral）</td><td>使われているが広がらない。シェアループを作る</td></tr>
+    <tr><td>75〜85点</td><td>Kano + Retention</td><td>広がり始めた。魅力品質でリテンションを強化</td></tr>
+    <tr><td>85〜95点</td><td>Revenue + 技術</td><td>成熟フェーズ。収益化とCI/テスト整備</td></tr>
+    <tr><td>95〜100点</td><td>全軸バランス</td><td>差別化の深化。Analytics・A/B・競合優位性</td></tr>
+  </table>
+
+  <div class="callout teal" style="margin-top: 2mm; margin-bottom: 12mm; padding: 2mm 3mm;">
+    <span class="callout-icon">🔄</span>
+    <div class="callout-body" style="font-size: 8.5pt;"><strong>評価サイクルが「次のISSUEを自動生成」する</strong><br>T-Eで評価すると「次のアクション（+1点にするには何をするか）」が各軸から出てくる。それをそのままISSUEにすれば次のループが回り始める。バックログが空になることがなくなる。</div>
+  </div>
+
+  <div class="page-footer"><span>AI駆動開発 完全教科書 ver.4.0</span><span>21 / 42</span></div>
+</div>
+
+<!-- ========== PAGE 20: 第4.7章 スコア別処方箋 ========== -->
+<div class="page">
+  <div class="page-stripe stripe-amber"></div>
+  <div style="padding-top: 4mm;">
+    <div class="chapter-header" style="border-left-color: var(--amber);">
+      <div class="ch-num" style="color: var(--amber);">Chapter 04.7 </div>
+      <div class="ch-title">スコア別処方箋</div>
+      <div class="ch-sub">T-Eで評価 → スコアを確認 → 対応行の①②③を実行するだけ</div>
+    </div>
+  </div>
+  <div class="callout amber" style="margin-bottom: 2mm; padding: 2mm 3mm;">
+    <span class="callout-icon">🩺</span>
+    <div class="callout-body" style="font-size: 8.5pt;"><strong>使い方：T-Eで6軸評価 → 合計スコアを確認 → 該当行を見る → 処方箋の①②③をISSUEにして実行</strong><br>感情スコアが15未満の場合は、どのスコア帯でも演出改善を最優先にする。</div>
+  </div>
+  <div class="prescription-row">
+    <div class="prescription-score" style="background: #dc2626;">0〜40</div>
+    <div class="prescription-diag">MVP未完成<br>基本機能なし</div>
+    <div class="prescription-action"><ol><li>T-Aで機能を必須3つに絞り込む（スコープを固める）</li><li>第2章のループを1日1回回す習慣をつける</li><li>感情設計を「後回し」にしない（HEARTを先に考える）</li></ol></div>
+  </div>
+  <div class="prescription-row">
+    <div class="prescription-score" style="background: #b45309;">40〜60</div>
+    <div class="prescription-diag">動くが使われない<br>感情が弱い</div>
+    <div class="prescription-action"><ol><li>感情スコアを最優先で確認（15未満なら演出改善）</li><li>WinnerCard/当選演出/Confettiを実装する</li><li>SNSシェアボタンを感情最高潮のタイミングに配置</li></ol></div>
+  </div>
+  <div class="prescription-row">
+    <div class="prescription-score" style="background: #1d4ed8;">60〜75</div>
+    <div class="prescription-diag">使われるが広がらない<br>Referral弱い</div>
+    <div class="prescription-action"><ol><li>AARRR-Referralを強化（シェアURLに当選者名を入れる）</li><li>動的OGP実装（SNSプレビューに固有情報を出す）</li><li>グループ再利用機能で継続利用を促す</li></ol></div>
+  </div>
+  <div class="prescription-row">
+    <div class="prescription-score" style="background: #7c3aed;">75〜85</div>
+    <div class="prescription-diag">広がり始めた<br>リテンション弱い</div>
+    <div class="prescription-action"><ol><li>Kano魅力品質を追加（驚き・感動のある機能1つ）</li><li>履歴・グループ保存でリテンション設計</li><li>感情スコア15超えを確認・維持</li></ol></div>
+  </div>
+  <div class="prescription-row">
+    <div class="prescription-score" style="background: #059669;">85〜95</div>
+    <div class="prescription-diag">成熟フェーズ<br>セキュリティ評価が鍵</div>
+    <div class="prescription-action"><ol><li><strong>T-Fでセキュリティ評価を実施（OWASP/STRIDE）し Critical ISSUEを全解消</strong></li><li>CI/テスト整備・技術スコア最大化（pnpm typecheck + vitest + build）</li><li>感情スコア 20/20 達成のための演出最終調整</li></ol></div>
+  </div>
+  <div class="prescription-row" style="margin-bottom: 12mm;">
+    <div class="prescription-score" style="background: linear-gradient(135deg, #0891b2, #7c3aed);">95〜100</div>
+    <div class="prescription-diag">磨き込みフェーズ<br>信頼性が差別化</div>
+    <div class="prescription-action"><ol><li>セキュリティ再評価でゼロ脆弱性を維持（定期的なT-F実施）</li><li>Analytics深掘りでユーザー行動を追跡・改善</li><li>Revenue設計（フリーミアム・Stripe）+ 競合差別化強化</li></ol></div>
+  </div>
+  <div class="page-footer"><span>AI駆動開発 完全教科書 ver.4.0</span><span>22 / 42</span></div>
+</div>
+
+<!-- ========== PAGE 21: 第5章 ケーススタディ（前半） ========== -->
+<div class="page">
+  <div class="page-stripe stripe-blue"></div>
+  <div style="padding-top: 4mm;">
+    <div class="chapter-header">
+      <div class="ch-num">Chapter 05</div>
+      <div class="ch-title">ケーススタディ</div>
+      <div class="ch-sub">実際のISSUEを追って、思考プロセスを完全再現する</div>
+    </div>
+  </div>
+  <div class="case-header">
+    <h2>Case 1: ISSUE-001 — Race Condition × AI診断</h2>
+    <p>2人が同時にスピンボタンを押すと当選者が2人出るバグ。AIが3パターンの解決策を提案した事例。</p>
+  </div>
+  <div class="timeline" style="margin-top: 1mm;">
+    <div class="timeline-item">
+      <div class="timeline-dot" style="font-size: 7pt;">発見</div>
+      <div class="timeline-content"><h4>症状の特定</h4><p>本番で「2人当選」の報告。再現手順：2つのタブで同時にスピンボタンを押す → 両方が勝者になる。ローカルでは再現しない（シングルプロセス）。</p></div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-dot purple" style="font-size: 7pt;">診断</div>
+      <div class="timeline-content"><h4>T-Dでバグ調査 → AIが3仮説を提案</h4><p>① DBロックなし ② 楽観的ロックの欠如 ③ Supabase Realtimeの競合。AIが「サーバー側でロックトークンパターンを使うのが最善」と判断。</p></div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-dot green" style="font-size: 7pt;">修正</div>
+      <div class="timeline-content"><h4>ロックトークンパターンで解決</h4><p>スピン時にDBでWAITING→IN_SESSIONのアトミックな状態遷移。2人が同時にリクエストしても1人だけ成功。409エラーで2人目は弾かれる。</p></div>
+    </div>
+  </div>
+  <div class="callout blue" style="margin-top: 1mm;">
+    <span class="callout-icon">💡</span>
+    <div class="callout-body"><strong>教訓: Race Conditionは本番でしか出ない</strong>
+    ローカル開発はシングルプロセスなので競合が起きない。Serverless環境では多インスタンスで同時リクエストが来る。DBレベルの排他制御が唯一の確実な解。AIは「WAITING→IN_SESSIONのアトミック遷移」という実装方針を5分で提案した。</div>
+  </div>
+  <div class="case-header" style="background: linear-gradient(135deg, #1a2a1a, #059669); margin-top: 1.5mm;">
+    <h2>Case 2: ISSUE-207 — 感情設計 × ピーク演出強化</h2>
+    <p>感情スコア11/20 → 17.5/20。「誰も笑わなかった夜」から学んだ演出設計の哲学。</p>
+  </div>
+  <div class="compare" style="margin-top: 1mm;">
+    <div class="compare-item compare-ng">
+      <div class="compare-label">Before（感情スコア 11/20）</div>
+      <div class="compare-body">ルーレット停止 → 当選者名テキスト表示<br>演出なし。会場が静まり返った。<br>「ルーレットが止まっただけ」の体験。<br><em style="color: #dc2626;">→ 使われなくなった。</em></div>
+    </div>
+    <div class="compare-item compare-ok">
+      <div class="compare-label">After（感情スコア 17.5/20）</div>
+      <div class="compare-body">スローダウン → 緊張感ビルドアップ → 当選者名リビール（0.3〜1.8秒段階的演出）→ Confetti → 絵文字リアクション。<br><em style="color: #059669;">→ 会場が湧き、SNSでシェアされた。</em></div>
+    </div>
+  </div>
+  <h3 style="margin-top: 0; margin-bottom: 0.5mm;">演出タイムライン（実装値）</h3>
+  <table style="margin: 0 0 12mm;">
+    <tr><th style="padding: 1.5mm 2mm;">時刻</th><th style="padding: 1.5mm 2mm;">演出要素</th><th style="padding: 1.5mm 2mm;">実装</th></tr>
+    <tr><td style="padding: 1.5mm 2mm;">0ms</td><td style="padding: 1.5mm 2mm;">ルーレット停止</td><td style="padding: 1.5mm 2mm;">スピンアニメーション終了</td></tr>
+    <tr><td style="padding: 1.5mm 2mm;">+300ms</td><td style="padding: 1.5mm 2mm;">クラウン絵文字リビール</td><td style="padding: 1.5mm 2mm;">Framer Motion scale 0→1</td></tr>
+    <tr><td style="padding: 1.5mm 2mm;">+650ms</td><td style="padding: 1.5mm 2mm;">当選者名フェードイン</td><td style="padding: 1.5mm 2mm;">opacity 0→1 + translateY</td></tr>
+    <tr><td style="padding: 1.5mm 2mm;">+1150ms</td><td style="padding: 1.5mm 2mm;">歓声テキスト表示</td><td style="padding: 1.5mm 2mm;">「〇〇さんが奢ります！」</td></tr>
+    <tr><td style="padding: 1.5mm 2mm;">+1500ms</td><td style="padding: 1.5mm 2mm;">Confetti + シェアボタン</td><td style="padding: 1.5mm 2mm;">感情最高潮でCTA表示</td></tr>
+  </table>
+  <div class="page-footer"><span>AI駆動開発 完全教科書 ver.4.0</span><span>23 / 42</span></div>
+</div>
+
+<!-- ========== PAGE 22: 第5章（後半） ========== -->
+<div class="page">
+  <div class="page-stripe stripe-blue"></div>
+  <div style="padding-top: 4mm;">
+    <div class="sec-label">Chapter 05 — continued</div>
+    <hr class="divider">
+  </div>
+  <div class="case-header" style="background: linear-gradient(135deg, #2a1a0a, #d97706); margin-top: 2mm;">
+    <h2>Case 3: パフォーマンス Lighthouse 62 → 95</h2>
+    <p>3つの独立ISSUEで段階的に達成。LCP: 4.2s→1.1s、CLS: 0.28→0.02。</p>
+  </div>
+  <table style="margin-top: 1mm;">
+    <tr><th>ISSUE</th><th>Before</th><th>After</th><th>効果</th></tr>
+    <tr><td>ISSUE-208<br>next/font移行</td><td>Google CDN外部フェッチ</td><td>self-host、CDNリクエスト0件</td><td>LCP 4.2s→2.3s<br>技術+1</td></tr>
+    <tr><td>dynamic import<br>バンドル分割</td><td>Framer Motion全量読込</td><td>使用時だけロード</td><td>LCP 2.3s→1.5s</td></tr>
+    <tr><td>next/image<br>画像最適化</td><td>未最適化PNG</td><td>WebP+lazy loading</td><td>LCP 1.5s→1.1s<br>CLS解消</td></tr>
+  </table>
+  <div class="case-header" style="background: linear-gradient(135deg, #0c2a33, #0891b2); margin-top: 2mm;">
+    <h2>Case 4 : ISSUE-221 — スピン同期 Broadcast化</h2>
+    <p>PCオーナーとスマホメンバーの同期遅延（300〜800ms）を 20〜100ms に短縮した事例。</p>
+  </div>
+  <div class="compare" style="margin-top: 1mm;">
+    <div class="compare-item compare-ng">
+      <div class="compare-label">Before: postgres_changes（遅延 300〜800ms）</div>
+      <div class="compare-body">T=0 SPIN → DB保存<br>T+300〜800ms メンバーがDBの変更を検知<br>→ 3000ms窓に入れない場合、演出が遅れる</div>
+    </div>
+    <div class="compare-item compare-ok">
+      <div class="compare-label">After: Broadcast（遅延 20〜100ms）</div>
+      <div class="compare-body">T=0 SPIN → DB保存<br>T+100ms APIレスポンス後 Broadcast送信<br>T+120〜200ms メンバーが即受信 → fetchRoom()</div>
+    </div>
+  </div>
+  <div style="margin-bottom: 12mm;"></div>
+
+  <div class="page-footer"><span>AI駆動開発 完全教科書 ver.4.0</span><span>24 / 42</span></div>
+</div>
+
+<!-- ========== PAGE 24.5: 第5章（続き） まとめ ========== -->
+<div class="page">
+  <div class="page-stripe stripe-blue"></div>
+  <div style="padding-top: 4mm;">
+    <div class="sec-label">Chapter 05 — continued</div>
+    <hr class="divider">
+  </div>
+
+  <div class="callout blue" style="margin-top: 1mm;">
+    <span class="callout-icon">💡</span>
+    <div class="callout-body"><strong>postgres_changes vs Broadcast 使い分け</strong>
+    <b>postgres_changes</b>: DBの変更を確実に届ける。状態の最終確認に使う。<br>
+    <b>Broadcast</b>: リアルタイムイベントを高速に届ける。同期トリガーに使う。<br>
+    <em>両方の組み合わせで「速さ × 確実性」を実現する。</em></div>
+  </div>
+  <h3 style="margin-top: 1.5mm;">4ケーススタディ まとめ</h3>
+  <table style="margin-bottom: 12mm;">
+    <tr><th>ケース</th><th>課題</th><th>解法</th><th>スコア変化</th></tr>
+    <tr><td>Case 1<br>ISSUE-001</td><td>Race Condition<br>2人当選バグ</td><td>DBアトミック遷移<br>ロックトークンパターン</td><td>技術: +0.5<br>Kano基本: 充足</td></tr>
+    <tr><td>Case 2<br>ISSUE-207</td><td>演出なし<br>感情スコア低下</td><td>0.3〜1.8秒<br>段階的演出設計</td><td>感情: 11→17.5<br>総合: +6.5</td></tr>
+    <tr><td>Case 3<br>ISSUE-208等</td><td>LCP 4.2s<br>Lighthouse 62</td><td>next/font・dynamic<br>import・next/image</td><td>技術: +1<br>総合: +3</td></tr>
+    <tr><td>Case 4<br>ISSUE-221</td><td>同期遅延<br>300〜800ms</td><td>Broadcast化<br>3層冗長化</td><td>HEART: +0.5<br>Kano基本: 充足</td></tr>
+    <tr style="background: #fff1f2;"><td><strong>Case 5</strong><br>ISSUE-244〜260</td><td>セキュリティ<br>複数脆弱性</td><td>HMAC強化・サニタイズ<br>ヘッダー・レート制限</td><td>技術: 14→15<br>総合: +9（90→99）</td></tr>
+  </table>
+  <div class="page-footer"><span>AI駆動開発 完全教科書 ver.4.0</span><span>24.5 / 42</span></div>
+</div>
+
+<!-- ========== PAGE 23: 第6章 テンプレート集 ========== -->
+<div class="page">
+  <div class="page-stripe stripe-slate"></div>
+  <div style="padding-top: 4mm;">
+    <div class="chapter-header" style="border-left-color: var(--slate-500);">
+      <div class="ch-num" style="color: var(--slate-500);">Chapter 06</div>
+      <div class="ch-title">テンプレート集（全8種）</div>
+      <div class="ch-sub">T-A〜T-Fの6種 + UI・LP生成テンプレート。セキュリティ評価T-F新規追加</div>
+    </div>
+  </div>
+  <table>
+    <tr><th>ID</th><th>テンプレート名</th><th>重要度</th><th>使うタイミング</th><th>収録</th></tr>
+    <tr><td><strong>T-A</strong></td><td>要件定義テンプレート</td><td><span class="badge badge-red">★★★★★</span></td><td>開発開始前</td><td>p.10</td></tr>
+    <tr><td><strong>T-B</strong></td><td>ISSUE化テンプレート</td><td><span class="badge badge-red">★★★★★</span></td><td>課題発見時</td><td>p.10</td></tr>
+    <tr><td><strong>T-C</strong></td><td>実装指示テンプレート</td><td><span class="badge badge-blue">★★★★☆</span></td><td>ISSUE実装時</td><td>p.11</td></tr>
+    <tr><td><strong>T-D</strong></td><td>バグ調査テンプレート</td><td><span class="badge badge-red">★★★★★</span></td><td>バグ発生時</td><td>p.11</td></tr>
+    <tr><td><strong>T-E</strong></td><td>6軸評価テンプレート</td><td><span class="badge badge-red">★★★★★</span></td><td>定期評価時</td><td>p.11</td></tr>
+    <tr><td><strong>T-F</strong></td><td>セキュリティ評価テンプレート <span class="badge badge-green">NEW</span></td><td><span class="badge badge-blue">★★★★☆</span></td><td>スコア85〜90台</td><td>p.11</td></tr>
+    <tr><td><strong>T-06</strong></td><td>UI生成テンプレート</td><td><span class="badge badge-blue">★★★★☆</span></td><td>コンポーネント実装時</td><td>p.23</td></tr>
+    <tr><td><strong>T-07</strong></td><td>LP生成テンプレート</td><td><span class="badge badge-blue">★★★★☆</span></td><td>LP作成時</td><td>templates/</td></tr>
+  </table>
+  <h3 style="margin-top: 3mm;">テンプレート選択フロー</h3>
+  <div style="margin: 1mm 0 1.5mm;">
+    <!-- 起点 -->
+    <div style="text-align:center; margin-bottom:1.5mm;">
+      <div style="display:inline-block; background:#1e3a5f; border:2px solid #60a5fa; border-radius:6px; padding:1.5mm 5mm; font-weight:800; font-size:9pt; color:#93c5fd;">今、何をしようとしているか？</div>
+    </div>
+    <!-- 3分岐 -->
+    <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:1.5mm;">
+      <!-- 開発を始める -->
+      <div style="background:#f0fdf4; border:2px solid #22c55e; border-radius:6px; padding:2mm 2.5mm; text-align:center;">
+        <div style="font-weight:800; font-size:8.5pt; color:#16a34a; margin-bottom:0.8mm;">開発を始める</div>
+        <div style="background:#22c55e; color:#fff; font-weight:800; font-size:10pt; border-radius:4px; padding:0.5mm 3mm; display:inline-block;">T-A</div>
+        <div style="font-size:7pt; color:#4b5563; margin-top:0.8mm;">要件定義・MVP設計</div>
+      </div>
+      <!-- 課題がある（2分岐） -->
+      <div style="background:#fff7ed; border:2px solid #f97316; border-radius:6px; padding:2mm 2.5mm; text-align:center;">
+        <div style="font-weight:800; font-size:8.5pt; color:#c2410c; margin-bottom:0.8mm;">課題がある</div>
+        <div style="display:flex; gap:1mm; justify-content:center; margin-bottom:0.8mm;">
+          <div style="flex:1; background:#1e293b; border:1px solid #475569; border-radius:4px; padding:1mm 1.5mm; text-align:center;">
+            <div style="font-size:6.5pt; color:#94a3b8;">バグ修正</div>
+            <div style="background:#f97316; color:#fff; font-weight:800; font-size:9pt; border-radius:3px; padding:0.3mm 1.5mm;">T-D</div>
+          </div>
+          <div style="flex:1; background:#1e293b; border:1px solid #475569; border-radius:4px; padding:1mm 1.5mm; text-align:center;">
+            <div style="font-size:6.5pt; color:#94a3b8;">機能追加</div>
+            <div style="display:flex; gap:0.3mm; justify-content:center;">
+              <div style="background:#f97316; color:#fff; font-weight:800; font-size:8.5pt; border-radius:3px; padding:0.3mm 1.5mm;">T-B</div>
+              <span style="color:#94a3b8; font-size:8pt; line-height:1.6;">→</span>
+              <div style="background:#f97316; color:#fff; font-weight:800; font-size:8.5pt; border-radius:3px; padding:0.3mm 1.5mm;">T-C</div>
+            </div>
+          </div>
+        </div>
+        <div style="font-size:6.5pt; color:#9a3412;">T-B でISSUE化 → T-C で実装指示</div>
+      </div>
+      <!-- 評価したい -->
+      <div style="background:#faf5ff; border:2px solid #a855f7; border-radius:6px; padding:2mm 2.5mm; text-align:center;">
+        <div style="font-weight:800; font-size:8.5pt; color:#7e22ce; margin-bottom:0.8mm;">評価したい</div>
+        <div style="display:flex; gap:1mm; justify-content:center; margin-bottom:0.8mm;">
+          <div style="flex:1; background:#1e293b; border:1px solid #475569; border-radius:4px; padding:1mm 1.5mm; text-align:center;">
+            <div style="font-size:6.5pt; color:#94a3b8;">品質評価</div>
+            <div style="background:#a855f7; color:#fff; font-weight:800; font-size:9pt; border-radius:3px; padding:0.3mm 1.5mm;">T-E</div>
+          </div>
+          <div style="flex:1; background:#1e293b; border:1px solid #475569; border-radius:4px; padding:1mm 1.5mm; text-align:center;">
+            <div style="font-size:6.5pt; color:#94a3b8;">セキュリティ</div>
+            <div style="background:#dc2626; color:#fff; font-weight:800; font-size:9pt; border-radius:3px; padding:0.3mm 1.5mm;">T-F</div>
+          </div>
+        </div>
+        <div style="font-size:6.5pt; color:#9a3412;">T-E:6軸スコア / T-F:OWASP評価</div>
+      </div>
+    </div>
+  </div>
+  <div style="margin-bottom: 12mm;"></div>
+  <div class="page-footer"><span>AI駆動開発 完全教科書 ver.4.0</span><span>25 / 42</span></div>
+</div>
+
+<!-- ========== PAGE 25.5: 第6章（続き） T-06 UI生成テンプレート ========== -->
+<div class="page">
+  <div class="page-stripe stripe-slate"></div>
+  <div style="padding-top: 4mm;">
+    <div class="sec-label" style="color: var(--slate-500);">Chapter 06 — continued</div>
+    <hr class="divider">
+  </div>
+
+  <div class="callout blue" style="margin-top: 1.5mm;">
+    <span class="callout-icon">💡</span>
+    <div class="callout-body"><strong>テンプレートの使い方のコツ</strong>
+    テンプレートは「完璧に埋めなくていい」。<code>{}</code> の部分のうち、<strong>わかる部分だけ埋めてAIに渡す</strong>。AIが残りを埋める候補を提案してくれる。完璧なISSUEが書けなくても、テンプレートの型があればAIは動ける。</div>
+  </div>
+  <h3 style="margin-top: 1mm; margin-bottom: 0.5mm;">T-06: UI生成テンプレート（骨格）</h3>
+  <div class="template-block" style="margin: 0.5mm 0; padding: 2mm 4mm; line-height: 1.6;">以下のUI要件を実装してください。
+【コンポーネント名】 <span class="template-var">{ComponentName}</span>
+【役割】 <span class="template-var">{このコンポーネントが果たす機能1行}</span>
+【デザイン要件】
+- モバイルファースト（max-w-[420px]）
+- ダークテーマ（background: #0B1B2B）
+- アニメーション: Framer Motion使用
+【Props】 <span class="template-var">{props名: 型 // 説明}</span>
+【受け入れ条件】
+- [ ] モバイルで表示崩れなし
+- [ ] TypeScriptエラーなし</div>
+  <div style="margin-bottom: 12mm;"></div>
+  <div class="page-footer"><span>AI駆動開発 完全教科書 ver.4.0</span><span>25.5 / 42</span></div>
+</div>
+
+<!-- ========== PAGE 24: 第7章 プロンプト集 ========== -->
+<div class="page">
+  <div class="page-stripe stripe-slate"></div>
+  <div style="padding-top: 4mm;">
+    <div class="chapter-header" style="border-left-color: var(--slate-500);">
+      <div class="ch-num" style="color: var(--slate-500);">Chapter 07</div>
+      <div class="ch-title">プロンプト集（21種）</div>
+      <div class="ch-sub">5カテゴリ。「何をしたいか」で選んですぐ使える</div>
+    </div>
+  </div>
+  <h3 style="margin-top: 0;">場面別クイックリファレンス</h3>
+  <table style="margin-bottom: 2mm;">
+    <tr><th>状況</th><th>使うプロンプト</th></tr>
+    <tr><td>何を作るか決まっていない</td><td>企画-01「MVP優先度決定」</td></tr>
+    <tr><td>UIコンポーネントを作りたい</td><td>実装-02「コンポーネント生成」</td></tr>
+    <tr><td>バグの原因が分からない</td><td>デバッグ-01「原因仮説3つ出して」</td></tr>
+    <tr><td>パフォーマンスを改善したい</td><td>最適化-01「Lighthouse改善プラン」</td></tr>
+    <tr><td>ユーザーに届けたい</td><td>コンテンツ-01「LP文章生成」</td></tr>
+    <tr><td>コードの品質が気になる</td><td>最適化-03「リファクタ候補提案」</td></tr>
+    <tr><td>テストを書きたい</td><td>実装-04「テストケース生成」</td></tr>
+  </table>
+  <h3 style="margin-top: 2mm;">良いプロンプトの5要素</h3>
+  <div class="cards col2">
+    <div class="card"><div class="card-icon" style="font-size:11pt;">①</div><h3>役割設定</h3><p>「あなたは経験豊富な〇〇です」で始める。役割が明確なほど回答が専門的になる。</p></div>
+    <div class="card"><div class="card-icon" style="font-size:11pt;">②</div><h3>文脈提供</h3><p>技術スタック・現在の状態・制約を明記する。CLAUDE.mdがあればそれを添付するだけでいい。</p></div>
+    <div class="card"><div class="card-icon" style="font-size:11pt;">③</div><h3>タスク明確化</h3><p>「〇〇してください」を1つだけ書く。複数のタスクを混ぜると品質が下がる。</p></div>
+    <div class="card"><div class="card-icon" style="font-size:11pt;">④⑤</div><h3>制約 + 出力形式</h3><p>「〇〇はしないで」「Markdown形式で」「3つに絞って」のような制約と形式指定。</p></div>
+  </div>
+  <div class="compare" style="margin-top: 2mm; margin-bottom: 12mm;">
+    <div class="compare-item compare-ng">
+      <div class="compare-label">❌ NG — 文脈なしプロンプト</div>
+      <div class="compare-body">「ルーレットを改善して」<br><br>AIは何を改善すればいいかわからない。何か作るが、意図と全然違うものが出てくる。</div>
+    </div>
+    <div class="compare-item compare-ok">
+      <div class="compare-label">✅ OK — 文脈ありプロンプト</div>
+      <div class="compare-body">「OgoRouletteのWinnerCardに、Framer Motionを使って0.3秒でクラウン、0.65秒で名前、1.15秒で歓声テキストが段階的に表示される演出を追加してください」</div>
+    </div>
+  </div>
+  <div class="page-footer"><span>AI駆動開発 完全教科書 ver.4.0</span><span>26 / 42</span></div>
+</div>
+
+<!-- ========== PAGE 25: 第8章 AI活用戦略（前半） ========== -->
+<div class="page">
+  <div class="page-stripe stripe-blue"></div>
+  <div style="padding-top: 4mm;">
+    <div class="chapter-header">
+      <div class="ch-num">Chapter 08</div>
+      <div class="ch-title">AI活用戦略</div>
+      <div class="ch-sub">AIに任せる領域と人間が握る領域を明確に分ける</div>
+    </div>
+  </div>
+  <div class="cards col2" style="margin-top: 0;">
+    <div class="card" style="background: #f0fdf4; border-color: #bbf7d0;">
+      <div class="card-icon">🤖</div>
+      <h3 style="color: #059669;">AIに任せる領域</h3>
+      <ul>
+        <li>ボイラープレートコードの生成</li>
+        <li>テストの初期実装</li>
+        <li>ドキュメント・コメント生成</li>
+        <li>コンテンツ・コピー生成</li>
+        <li>原因仮説の列挙</li>
+        <li>リファクタ候補の提案</li>
+        <li>型定義の自動化</li>
+      </ul>
+    </div>
+    <div class="card" style="background: #fff1f2; border-color: #fecdd3;">
+      <div class="card-icon">🧠</div>
+      <h3 style="color: #dc2626;">人間が握る領域</h3>
+      <ul>
+        <li><strong>アーキテクチャの最終決定</strong></li>
+        <li><strong>状態管理の設計</strong></li>
+        <li><strong>UX/感情体験の評価</strong></li>
+        <li><strong>採用・却下の判断</strong></li>
+        <li><strong>セキュリティの確認</strong></li>
+        <li>ビジネス判断（何を作るか）</li>
+        <li>ユーザーインタビューの解釈</li>
+      </ul>
+    </div>
+  </div>
+  <div class="callout red" style="margin-top: 2mm;">
+    <span class="callout-icon">⛔</span>
+    <div class="callout-body"><strong>AIに絶対に任せてはいけないこと</strong>
+    ① 認証・認可の設計（セキュリティバグは致命的）<br>
+    ② 状態管理の全設計（非同期の競合状態はAIが見落とす）<br>
+    ③ 本番DBへの直接操作（データ消失リスク）<br>
+    ④ 「これでいいですか？」への盲目的なYes（AI提案は叩き台）</div>
+  </div>
+  <h3 style="margin-top: 2mm;">AIと人間の分業が進化するサイクル</h3>
+  <div style="display:flex; flex-direction:column; gap:0; margin: 1mm 0;">
+    <!-- Stage 1 -->
+    <div style="background:#1e3a5f; border:2px solid #3b82f6; border-radius:7px; padding:2mm 3.5mm;">
+      <div style="display:flex; align-items:center; gap:2mm; margin-bottom:0.5mm;">
+        <span style="font-weight:800; font-size:9pt; color:#93c5fd;">① 初期フェーズ</span>
+        <span style="background:#1d4ed8; color:#fff; font-size:7.5pt; font-weight:700; padding:0.3mm 2mm; border-radius:4px;">人間 70%</span>
+        <span style="background:#334155; color:#94a3b8; font-size:7.5pt; font-weight:700; padding:0.3mm 2mm; border-radius:4px;">AI 30%</span>
+      </div>
+      <div style="font-size:7.5pt; color:#cbd5e1;">AIに慣れていない段階。テンプレートを見ながら自分で書く部分が多い</div>
+    </div>
+    <!-- Arrow -->
+    <div style="display:flex; align-items:center; gap:2mm; padding:0.8mm 0 0.8mm 4mm;">
+      <div style="width:2px; height:6mm; background:#475569;"></div>
+      <div style="background:#1e293b; border:1px solid #475569; border-radius:4px; padding:0.5mm 2.5mm; font-size:7pt; color:#94a3b8; white-space:nowrap;">ISSUEを10個消化する</div>
+    </div>
+    <!-- Stage 2 -->
+    <div style="background:#14532d; border:2px solid #22c55e; border-radius:7px; padding:2mm 3.5mm;">
+      <div style="display:flex; align-items:center; gap:2mm; margin-bottom:0.5mm;">
+        <span style="font-weight:800; font-size:9pt; color:#86efac;">② 中期フェーズ</span>
+        <span style="background:#15803d; color:#fff; font-size:7.5pt; font-weight:700; padding:0.3mm 2mm; border-radius:4px;">人間 50%</span>
+        <span style="background:#166534; color:#bbf7d0; font-size:7.5pt; font-weight:700; padding:0.3mm 2mm; border-radius:4px;">AI 50%</span>
+      </div>
+      <div style="font-size:7.5pt; color:#d1fae5;">AIの強み・弱みを把握し、任せるタスクが明確になってきた段階</div>
+    </div>
+    <!-- Arrow -->
+    <div style="display:flex; align-items:center; gap:2mm; padding:0.8mm 0 0.8mm 4mm;">
+      <div style="width:2px; height:6mm; background:#475569;"></div>
+      <div style="background:#1e293b; border:1px solid #475569; border-radius:4px; padding:0.5mm 2.5mm; font-size:7pt; color:#94a3b8; white-space:nowrap;">テンプレートを整備して型を固める</div>
+    </div>
+    <!-- Stage 3 -->
+    <div style="background:#4a1d96; border:2px solid #a855f7; border-radius:7px; padding:2mm 3.5mm;">
+      <div style="display:flex; align-items:center; gap:2mm; margin-bottom:0.5mm;">
+        <span style="font-weight:800; font-size:9pt; color:#d8b4fe;">③ 成熟フェーズ</span>
+        <span style="background:#6d28d9; color:#fff; font-size:7.5pt; font-weight:700; padding:0.3mm 2mm; border-radius:4px;">人間 30%</span>
+        <span style="background:#7c3aed; color:#ede9fe; font-size:7.5pt; font-weight:700; padding:0.3mm 2mm; border-radius:4px;">AI 70%</span>
+      </div>
+      <div style="font-size:7.5pt; color:#ede9fe;">人間はAIの出力を設計・採用するディレクターになる。手を動かすより考える時間が増える</div>
+    </div>
+  </div>
+  <div class="callout blue" style="margin-top: 2mm; margin-bottom: 12mm;">
+    <span class="callout-icon">💡</span>
+    <div class="callout-body"><strong>「AIを使う量」より「AIをどう使うか」が重要</strong>
+    コード生成量を増やすことが目標ではない。<strong>「考える量を増やして、手を動かす量を減らす」</strong>が正しい方向性。AIは手を動かすパートナー。人間は考えるディレクター。</div>
+  </div>
+  <div class="page-footer"><span>AI駆動開発 完全教科書 ver.4.0</span><span>27 / 42</span></div>
+</div>
+
+<!-- ========== PAGE 26: 第8章（後半） ========== -->
+<div class="page">
+  <div class="page-stripe stripe-blue"></div>
+  <div style="padding-top: 4mm;">
+    <div class="sec-label">Chapter 08 — continued</div>
+    <hr class="divider">
+  </div>
+  <h3 style="margin-top: 2mm;">役割分担マトリクス（主要タスク）</h3>
+  <table>
+    <tr><th>タスク</th><th>AI主導</th><th>人間確認必須</th></tr>
+    <tr><td>CRUDのAPIルート</td><td>✅ 生成可</td><td>認証ロジックのみ確認</td></tr>
+    <tr><td>UIコンポーネント</td><td>✅ 生成可</td><td>UX評価は人間</td></tr>
+    <tr><td>テスト作成</td><td>✅ 生成可</td><td>ケースの抜け漏れを確認</td></tr>
+    <tr><td>バグ修正</td><td>⚠️ 仮説提案</td><td>採用判断・実装確認</td></tr>
+    <tr><td>DB設計</td><td>⚠️ 案提案</td><td><strong>最終決定は必ず人間</strong></td></tr>
+    <tr><td>状態管理設計</td><td>❌ 提案のみ参考</td><td><strong>設計は人間</strong></td></tr>
+    <tr><td>セキュリティ設計</td><td>❌ 参考程度</td><td><strong>必ず人間がレビュー</strong></td></tr>
+  </table>
+  <h3 style="margin-top: 3mm;">AIツール選択指南（2026年版）</h3>
+  <table>
+    <tr><th>ツール</th><th>得意なこと</th><th>使いどころ</th></tr>
+    <tr><td>Claude Code（CLI）</td><td>コードベース全体の把握・複数ファイル編集</td><td>大きなリファクタ・機能追加</td></tr>
+    <tr><td>Claude（Web）</td><td>概念設計・ドキュメント生成・ISSUE立案</td><td>設計フェーズ・思考整理</td></tr>
+    <tr><td>GitHub Copilot</td><td>IDE内でのコード補完・小さな修正</td><td>日常的なコーディング</td></tr>
+    <tr><td>v0 by Vercel</td><td>UIコンポーネント生成（ビジュアル）</td><td>UIプロトタイプ・T-06の代替</td></tr>
+  </table>
+  <div class="callout green" style="margin-top: 3mm; margin-bottom: 12mm;">
+    <span class="callout-icon">✅</span>
+    <div class="callout-body"><strong>OgoRoulette での実際の使い分け</strong>
+    <strong>ISSUE化・設計→</strong> Claude Web でT-Bを使ってISSUEを作成。<br>
+    <strong>実装→</strong> Claude Code（CLI）でT-Cを使って実装指示。コードベース全体を参照して実装。<br>
+    <strong>評価→</strong> Claude Web でT-Eを使って6軸スコアを更新。</div>
+  </div>
+  <div class="page-footer"><span>AI駆動開発 完全教科書 ver.4.0</span><span>28 / 42</span></div>
+</div>
+
+<!-- ========== PAGE 27: 第9章 プロの実践原則（01〜04） ========== -->
+<div class="page">
+  <div class="page-stripe stripe-purple"></div>
+  <div style="padding-top: 4mm;">
+    <div class="chapter-header" style="border-left-color: var(--purple);">
+      <div class="ch-num" style="color: var(--purple);">Chapter 09</div>
+      <div class="ch-title">プロの実践原則 18選</div>
+      <div class="ch-sub">OgoRoulette開発で体得した原則。NGパターンと実践方法をセットで収録</div>
+    </div>
+  </div>
+  <div class="principle">
+    <div class="principle-num">原則 01</div>
+    <div class="principle-title">ISSUEは「30分完結」で切れ</div>
+    <div class="principle-body">AI駆動開発は「速く作る」ではなく「<strong>速く回す</strong>」だ。1ループの目標は30分以内、上限は60分。なぜ短くするのか。①&thinsp;<strong>AI精度</strong>：スコープが広いほどAIのコンテキストが拡散し実装がブレる。②&thinsp;<strong>デバッグ速度</strong>：変更が1箇所なら原因も1箇所だ。③&thinsp;<strong>仮説検証数</strong>：30分サイクルは1日10〜20回の検証を可能にする。「今日中に終わるか？」ではなく「<strong>30分で終わるか？</strong>」が正しい問いだ。OgoRouletteでは平均30〜40分/ISSUEのサイクルを維持し、1日10〜30本を消化した。</div>
+    <div class="principle-ng">❌ NG: 「認証まわりを全部リファクタリングする（数日）」→ 変更が散在。AIの提案がブレ、バグ発生時の原因箇所が特定できなくなる</div>
+    <div class="principle-example">✅ OK: 「ゲストログイン後のリダイレクト先を /room に変更する（20分）」→ 変更1箇所・動作1つ・テスト1パターン。　<strong>分割チェック3問:</strong> ①変更ファイル1〜2本か？ ②1動作で説明できるか？ ③30分完結するか？ → 1つでもNOなら分割</div>
+  </div>
+  <div class="principle">
+    <div class="principle-num">原則 02</div>
+    <div class="principle-title">AIに設計を任せるな</div>
+    <div class="principle-body">「どう実装するか」はAIに任せていい。しかし「何を実装するか」「なぜこの設計か」は人間が判断する。AIの提案は常に「叩き台」であり、最終決定は人間が行う。「AIに任せていいこと」と「人間が決めること」の境界線を最初に明確にする。この境界が曖昧だと、AIが提案した設計をそのまま採用して後から大幅修正が必要になる。</div>
+    <div class="principle-ng">❌ NG: 「最適なアーキテクチャを考えてください」（判断を丸投げ）</div>
+    <div class="principle-example">✅ OK: 「このアーキテクチャ案で問題点を3つ挙げてください」（判断材料を求める）</div>
+  </div>
+  <div class="principle">
+    <div class="principle-num">原則 03</div>
+    <div class="principle-title">バグは再現性から潰せ</div>
+    <div class="principle-body">「たまに起きる」バグは再現手順を先に確立する。再現できないバグはT-Dを使って再現条件を絞り込む。再現できれば、AIが原因を特定できる確率が劇的に上がる。「再現できるバグは解決できる。再現できないバグは追いかけるな」が鉄則。再現手順を書く行為自体が、問題の本質を明確にする効果もある。</div>
+    <div class="principle-ng">❌ NG: 「なんかおかしいのでコードを見て」（再現条件なし・AIも診断不能）</div>
+    <div class="principle-example">✅ OK: T-Dを使って「再現手順・エラーログ・試したこと」の3点セットを渡す</div>
+  </div>
+  <div class="principle" style="margin-bottom: 0;">
+    <div class="principle-num">原則 04</div>
+    <div class="principle-title">感情設計を入れろ</div>
+    <div class="principle-body">「動く」より「楽しい」を先に設計する。Kano魅力品質（驚き・感動）がなければユーザーは戻ってこない。感情スコア15未満なら演出改善が最優先。演出設計の手順: ①最も感情が高まる瞬間を特定 ②ユーザーの感情を言語化 ③アニメーションタイムラインを設計 ④「声に出して盛り上がれるか」でテスト。</div>
+    <div class="principle-ng">❌ NG: 機能が動いたら終わり（演出なし）→ ユーザーが盛り上がらない</div>
+    <div class="principle-example">✅ OK: 当選発表の瞬間に0.3〜1.8秒の段階的演出とConfettiを設計する</div>
+  </div>
+  <div class="callout purple" style="margin-top: 0; margin-bottom: 12mm;">
+    <span class="callout-icon">🎯</span>
+    <div class="callout-body"><strong>原則01〜04の共通テーマ: 「考えてから動く」</strong>
+    ISSUEを切る前に考える。AIに任せる前に考える。バグを潰す前に考える。感情を設計してから実装する。すべての原則は「手を動かす前に思考を整理する」という一点に集約される。焦って実装を始めると、後から大きなコストを払うことになる。</div>
+  </div>
+  <div class="page-footer"><span>AI駆動開発 完全教科書 ver.4.0</span><span>29 / 42</span></div>
+</div>
+
+<!-- ========== PAGE 28: 第9章（05〜09） ========== -->
+<div class="page">
+  <div class="page-stripe stripe-purple"></div>
+  <div style="padding-top: 4mm;">
+    <div class="sec-label" style="color: var(--purple);">Chapter 09 — 原則 05〜09</div>
+    <hr class="divider">
+  </div>
+  <div class="principle">
+    <div class="principle-num">原則 05</div>
+    <div class="principle-title">gstackで数値化しろ</div>
+    <div class="principle-body">「なんとなく良くなった」では改善が続かない。6軸評価で数値化すると、どの軸が弱いかが一目でわかる。月1回はフルスコア評価を実施する。スコアが上がった事実が記録として残ることで、次の改善のモチベーションにもなる。</div>
+    <div class="principle-example">✅ 実例: 感情スコア11を発見 → 演出追加 → 17.5に改善 → 演出優先ルール解除</div>
+  </div>
+  <div class="principle">
+    <div class="principle-num">原則 06</div>
+    <div class="principle-title">本番でしか発生しないバグがある</div>
+    <div class="principle-body">ローカルで動いても本番で壊れるバグは必ず存在する。Serverless多インスタンス問題・CDN設定・ENV変数不足など。デプロイ後は必ず本番で全機能を確認する。</div>
+    <div class="principle-ng">❌ NG: 「ローカルで動いたからOK」でそのままリリース</div>
+    <div class="principle-example">✅ OK: デプロイ直後に本番でルーム作成・スピン・シェアの全フローを確認する</div>
+  </div>
+  <div class="principle">
+    <div class="principle-num">原則 07</div>
+    <div class="principle-title">小さく作って小さく壊せ</div>
+    <div class="principle-body">1ループで変更するファイルは3個以内を目安にする。変更が多いほど、バグの原因特定が困難になる。git commitは機能単位で細かく分ける。</div>
+    <div class="principle-ng">❌ NG: 10ファイルを一括変更 → バグ発生時に原因特定に1時間かかる</div>
+    <div class="principle-example">✅ OK: 1ISSUE = 3ファイル以内 = 1コミット = 1検証。積み上げる。</div>
+  </div>
+  <div class="principle">
+    <div class="principle-num">原則 08</div>
+    <div class="principle-title">シェア導線を設計しろ</div>
+    <div class="principle-body">シェアボタンは「感情が最高潮の瞬間」に配置する。OgoRouletteは当選発表直後（1.5秒後）にシェアボタンを表示した。この位置でシェア率が3倍になった。</div>
+    <div class="principle-ng">❌ NG: フッターやメニューにシェアボタン → 誰も気づかない、押さない</div>
+    <div class="principle-example">✅ OK: Confetti終了1.5秒後に「X/LINEでシェア」ボタンをフェードイン表示</div>
+  </div>
+  <div class="principle">
+    <div class="principle-num">原則 09</div>
+    <div class="principle-title">CLAUDE.mdを書け</div>
+    <div class="principle-body">AIへの「常駐指示書」だ。これがないとAIは毎回文脈ゼロで答える。技術スタック・設計思想・絶対ルール・現在のスコアを書く。第2.5章のテンプレートをそのまま使う。</div>
+    <div class="principle-ng">❌ NG: CLAUDE.mdなし → AIが毎回「どのような技術を使いますか？」と聞く</div>
+    <div class="principle-example">✅ OK: CLAUDE.mdで常駐文脈を渡す → AIが即座に適切な実装を出す</div>
+  </div>
+  <div class="callout purple" style="margin-top: 2mm; margin-bottom: 12mm;">
+    <span class="callout-icon">🎯</span>
+    <div class="callout-body"><strong>原則05〜09の共通テーマ: 「測って、守って、仕組み化する」</strong>
+    数値で測り（05）、本番で確認し（06）、変更を小さく保ち（07）、タイミングを設計し（08）、AIに文脈を渡す（09）。これら5原則は「再現性のある開発プロセス」を作るための土台だ。</div>
+  </div>
+  <div class="page-footer"><span>AI駆動開発 完全教科書 ver.4.0</span><span>30 / 42</span></div>
+</div>
+
+<!-- ========== PAGE 29: 第9章（10〜14） ========== -->
+<div class="page">
+  <div class="page-stripe stripe-purple"></div>
+  <div style="padding-top: 4mm;">
+    <div class="sec-label" style="color: var(--purple);">Chapter 09 — 原則 10〜14</div>
+    <hr class="divider">
+  </div>
+  <div class="principle">
+    <div class="principle-num">原則 10</div>
+    <div class="principle-title">ポーリングを軽視するな</div>
+    <div class="principle-body">Supabase Realtimeが使える環境でも、バックグラウンドタブではWebSocketが切れる場合がある。visibilitychangeイベントで復帰時に即フェッチするロジックを必ず入れる。「WebSocketがあればポーリング不要」という思い込みが、スマホユーザーの体験を壊す。</div>
+    <div class="principle-ng">❌ NG: WebSocket接続だけを信頼する → スマホでタブを切り替えると演出を見逃す</div>
+    <div class="principle-example">✅ OK: visibilitychange + Broadcast + postgres_changesの3層冗長化（ISSUE-221で実証）</div>
+  </div>
+  <div class="principle">
+    <div class="principle-num">原則 11</div>
+    <div class="principle-title">型は先に決めろ</div>
+    <div class="principle-body">APIのレスポンス型・コンポーネントのProps型・DBのスキーマ型を先に定義する。後から型を入れると、実装全体の修正が必要になる。TypeScriptのstrictモードは最初からONにする。</div>
+    <div class="principle-ng">❌ NG: any型で実装 → 後から型を入れる → 全ファイル修正が発生（経験談）</div>
+    <div class="principle-example">✅ OK: Prismaスキーマ → 型定義 → APIルート → コンポーネントの順に型を伝播させる</div>
+  </div>
+  <div class="principle">
+    <div class="principle-num">原則 12</div>
+    <div class="principle-title">AIのコードを「自分のコード」にする</div>
+    <div class="principle-body">AIが生成したコードをレビューせずにマージしない。「なぜこの実装にしたか」を理解した上で採用する。理解できないコードは修正してもらうか、別の方法を選ぶ。AIは速く、自分は理解する。これが最強の組み合わせだ。</div>
+    <div class="principle-ng">❌ NG: 「AIが作ったから正しいはず」でそのままマージ → セキュリティバグを見落とす</div>
+    <div class="principle-example">✅ OK: AIに「この実装の問題点を3つ挙げて」と聞いてからマージする</div>
+  </div>
+  <div class="principle">
+    <div class="principle-num">原則 13</div>
+    <div class="principle-title">Race Conditionを最初から想定する</div>
+    <div class="principle-body">2人以上が同時操作する場面を設計段階で洗い出す。「まさかそんな使い方はしないだろう」という思い込みが本番バグを生む。DBの状態遷移はアトミックに設計する。設計フェーズで「同時に2人が操作したら？」という問いを必ず立てる。</div>
+    <div class="principle-ng">❌ NG: 「2人が同時押しするケースは考慮しない」→ 本番で2人当選（ISSUE-001）</div>
+    <div class="principle-example">✅ OK: WAITING→IN_SESSION のアトミック遷移。同時リクエストは409で弾く設計</div>
+  </div>
+  <div class="principle">
+    <div class="principle-num">原則 14</div>
+    <div class="principle-title">ログを渡せ</div>
+    <div class="principle-body">バグ調査時はコンソールエラー・スタックトレース・ネットワークログをそのままAIに渡す。「なんかエラーが出た」という情報はゼロと同じ。ログが具体的なほどAIの診断精度が上がる。</div>
+    <div class="principle-ng">❌ NG: 「エラーが出てます。どこが悪いですか？」（ログなし・AIも診断不能）</div>
+    <div class="principle-example">✅ OK: T-Dに「エラーメッセージ全文 + 再現手順 + 試したこと」を添付してAIに渡す</div>
+  </div>
+  <div class="callout purple" style="margin-top: 0; margin-bottom: 12mm;">
+    <span class="callout-icon">🎯</span>
+    <div class="callout-body"><strong>原則10〜14の共通テーマ: 「信頼しすぎない」</strong>
+    WebSocketを信頼しすぎない（10）。型なし実装を信頼しすぎない（11）。AIのコードを信頼しすぎない（12）。「同時操作は起きない」という思い込みを信頼しない（13）。自分の言語化力を信頼しない（14）。健全な「疑い」が品質を作る。</div>
+  </div>
+  <div class="page-footer"><span>AI駆動開発 完全教科書 ver.4.0</span><span>31 / 42</span></div>
+</div>
+
+<!-- ========== PAGE 30: 第9章（15〜18） ========== -->
+<div class="page">
+  <div class="page-stripe stripe-purple"></div>
+  <div style="padding-top: 4mm;">
+    <div class="sec-label" style="color: var(--purple);">Chapter 09 — 原則 15〜18</div>
+    <hr class="divider">
+  </div>
+  <div class="principle">
+    <div class="principle-num">原則 15</div>
+    <div class="principle-title">レート制限はKVで実装する</div>
+    <div class="principle-body">メモリ実装（Mapオブジェクトなど）はServerless多インスタンス環境では機能しない。インスタンスをまたいで状態を共有できる KV（Redis / Supabase）でレート制限を実装する。「ローカルで動いた」では信用できない。Serverlessは常に複数インスタンスで動くと想定して設計する。</div>
+    <div class="principle-ng">❌ NG: const rateMap = new Map() → 多インスタンスで状態がリセット、レート制限が機能しない</div>
+    <div class="principle-example">✅ OK: Supabase/Prismaのrate_limitsテーブル または Upstash Redis で共有状態を管理</div>
+  </div>
+  <div class="principle">
+    <div class="principle-num">原則 16</div>
+    <div class="principle-title">ISSUEストックを常に20〜30個維持する</div>
+    <div class="principle-body">バックログが空になると「今日何をやるか」の判断から始まる。この判断コストが積み上がって開発が止まる。月1回の評価時に新しいISSUEを10〜20個まとめてバックログに追加する習慣をつける。「次のISSUEを考える時間」をゼロにすることが、開発の継続率を劇的に上げる秘訣だ。</div>
+    <div class="principle-ng">❌ NG: ISSUE完了のたびに次を考える → 1日5分の判断コストが年間30時間のロスになる</div>
+    <div class="principle-example">✅ OK: 月1回評価後に「改善候補ISSUEを20個出して」とAIに依頼してバックログを補充</div>
+  </div>
+  <div class="principle">
+    <div class="principle-num">原則 17</div>
+    <div class="principle-title">UXは最初から設計する</div>
+    <div class="principle-body">「機能が完成してからUXを考える」という発想が最も危険。後からUXを入れると、状態管理・コンポーネント設計が複雑化する。T-BのISSUEに「感情設計」の項目を最初から含める。「動く」を目標にするか「楽しい」を目標にするかで、設計の全てが変わる。最初から「楽しい」を目指す。</div>
+    <div class="principle-ng">❌ NG: 機能実装完了後に「もっとかっこよくしたい」→ 設計の大幅修正が発生</div>
+    <div class="principle-example">✅ OK: ISSUE化時点で「この機能でユーザーはどんな感情になるか」を書く習慣をつける</div>
+  </div>
+  <div class="principle">
+    <div class="principle-num">原則 18</div>
+    <div class="principle-title">CIを早めに整備する</div>
+    <div class="principle-body">手動テストだけでは見落としが必ず起きる。GitHub Actionsで「npx tsc --noEmit」と「npm run build」の自動チェックを最初のデプロイ前に整備する。CIは「AIのコードレビューアー」でもある。AIが生成したコードの型エラーをCIが自動で検出する仕組みを作れば、レビューコストが激減する。</div>
+    <div class="principle-ng">❌ NG: CI整備を後回し → 本番に型エラーが混入。「後でやろう」は永遠に来ない</div>
+    <div class="principle-example">✅ OK: 最初のPRからCIが走る。AIにGitHub Actionsのyamlを生成させれば5分で整備できる</div>
+  </div>
+  <div class="callout purple" style="margin-top: 4mm; margin-bottom: 12mm;">
+    <span class="callout-icon">🎯</span>
+    <div class="callout-body"><strong>原則15〜18の共通テーマ: 「仕組みで守る」</strong>
+    KVで状態共有（15）。ISSUEストックで判断をなくす（16）。UXを設計に組み込む（17）。CIで自動検証（18）。「頑張って守る」ではなく「仕組みが守ってくれる」状態を作る。これが成熟した開発プロセスだ。<br><strong>+ 原則19（補遺）: セキュリティはスコア85〜90台で専門フェーズとして集中実施する。</strong>T-Fで評価→ISSUE化→修正→再評価の1サイクル。OgoRouletteはこれで+9点（90→99）を達成した。</div>
+  </div>
+  <div class="page-footer"><span>AI駆動開発 完全教科書 ver.4.0</span><span>32 / 42</span></div>
+</div>
+
+<!-- ========== PAGE 31: 第10章 よくある失敗 ========== -->
+<div class="page">
+  <div class="page-stripe stripe-amber"></div>
+  <div style="padding-top: 4mm;">
+    <div class="chapter-header" style="border-left-color: var(--amber);">
+      <div class="ch-num" style="color: var(--amber);">Chapter 10</div>
+      <div class="ch-title">よくある失敗 5パターン</div>
+      <div class="ch-sub">Before/After形式で処方箋付き。これを知るだけで同じ轍を踏まずに済む</div>
+    </div>
+  </div>
+  <div class="compare">
+    <div class="compare-item compare-ng">
+      <div class="compare-label">❌ 失敗01: ISSUEが雑</div>
+      <div class="compare-body"><strong>症状:</strong> 「ルーレット直す」1行だけ。<br><strong>結果:</strong> AIが「何を直しますか？」と聞き返す。永遠に完了しない。<br><strong>処方箋:</strong> T-Bを使う。5分でISSUEフォーマットを埋める。</div>
+    </div>
+    <div class="compare-item compare-ok">
+      <div class="compare-label">✅ After</div>
+      <div class="compare-body"><strong>背景・問題・原因仮説・解決方向・受け入れ条件</strong>の5要素が揃ったISSUE。AIへの指示書として即使える。所要時間は5〜10分。</div>
+    </div>
+  </div>
+  <div class="compare" style="margin-top: 1.5mm;">
+    <div class="compare-item compare-ng">
+      <div class="compare-label">❌ 失敗02: AI丸投げ</div>
+      <div class="compare-body"><strong>症状:</strong> AIのコードをそのまま本番デプロイ。<br><strong>結果:</strong> 認証バイパス・SQLインジェクション・状態競合が発生。<br><strong>処方箋:</strong> 認証・DB操作・状態管理は必ず人間がレビュー。</div>
+    </div>
+    <div class="compare-item compare-ok">
+      <div class="compare-label">✅ After</div>
+      <div class="compare-body">AIが生成 → 人間がレビュー → 採用・修正・却下を判断 → 理解した上でマージ。AIは「叩き台製造機」。最終判断は常に人間。</div>
+    </div>
+  </div>
+  <div class="compare" style="margin-top: 1.5mm;">
+    <div class="compare-item compare-ng">
+      <div class="compare-label">❌ 失敗03: 検証なし</div>
+      <div class="compare-body"><strong>症状:</strong> 実装 → 完了で次のISSUEへ。<br><strong>結果:</strong> スコアが全然上がらない。何が改善したかわからない。<br><strong>処方箋:</strong> 実装後に必ずT-E（またはLighthouse）で数値確認。</div>
+    </div>
+    <div class="compare-item compare-ok">
+      <div class="compare-label">✅ After</div>
+      <div class="compare-body">実装 → 検証（6軸スコア確認）→ 「感情スコアが11→14に改善した」という事実が積み上がる。数値が改善の証拠になる。</div>
+    </div>
+  </div>
+  <div class="compare" style="margin-top: 1.5mm;">
+    <div class="compare-item compare-ng">
+      <div class="compare-label">❌ 失敗04: MVP未絞り</div>
+      <div class="compare-body"><strong>症状:</strong> 「これも入れたい、あれも入れたい」で機能が増え続ける。<br><strong>結果:</strong> 3ヶ月経っても完成しない。<br><strong>処方箋:</strong> T-Aで「アプリ成立に必須か」で篩にかける。</div>
+    </div>
+    <div class="compare-item compare-ok">
+      <div class="compare-label">✅ After</div>
+      <div class="compare-body">必須機能3つのみでリリース。残りはISSUEとして後回し。「動くものを早く出す」ことでユーザーフィードバックが早く得られる。</div>
+    </div>
+  </div>
+  <div class="callout red" style="margin-top: 2mm; margin-bottom: 12mm;">
+    <span class="callout-icon">🔴</span>
+    <div class="callout-body"><strong>失敗05: 感情設計を後回しにする</strong>
+    「機能が全部完成してから演出を考える」という発想が最も危険だ。機能が揃っても誰も盛り上がらないアプリは使われない。感情スコアは開発初期から測り続け、<strong>15未満なら即座に演出優先に切り替える</strong>。</div>
+  </div>
+  <div class="page-footer"><span>AI駆動開発 完全教科書 ver.4.0</span><span>33 / 42</span></div>
+</div>
+
+<!-- ========== PAGE 32: 第11章 成功パターン ========== -->
+<div class="page">
+  <div class="page-stripe stripe-green"></div>
+  <div style="padding-top: 4mm;">
+    <div class="chapter-header" style="border-left-color: var(--green);">
+      <div class="ch-num" style="color: var(--green);">Chapter 11</div>
+      <div class="ch-title">成功パターン</div>
+      <div class="ch-sub">再現可能な成功の型。4パターンをOKとNGで対比する</div>
+    </div>
+  </div>
+  <div class="compare">
+    <div class="compare-item compare-ok">
+      <div class="compare-label">✅ 成功01: 小さく回す</div>
+      <div class="compare-body"><strong>1ループ = 1〜2改善。毎日1〜3 ISSUE。</strong><br>OgoRouletteでは150回ループを回した結果が260+ ISSUEになった。「1日1個」が積み上がる。</div>
+    </div>
+    <div class="compare-item compare-ng">
+      <div class="compare-label">❌ 失敗: 大きく回す</div>
+      <div class="compare-body">「週1回大きな変更」をしようとすると、何が原因で何が改善したかわからなくなる。バグ発生時の特定も困難。</div>
+    </div>
+  </div>
+  <div class="compare" style="margin-top: 2mm;">
+    <div class="compare-item compare-ok">
+      <div class="compare-label">✅ 成功02: 検証を必ず入れる</div>
+      <div class="compare-body">実装後は必ずT-Eまたは数値確認。「なんとなく改善した」ではなく「感情スコアが11→14になった」という事実を記録する。</div>
+    </div>
+    <div class="compare-item compare-ng">
+      <div class="compare-label">❌ 失敗: 実装で終わる</div>
+      <div class="compare-body">実装が完了したら次のISSUEへ。スコアを確認しないため、改善の方向性が正しいか分からない。同じ失敗を繰り返す。</div>
+    </div>
+  </div>
+  <div class="compare" style="margin-top: 2mm;">
+    <div class="compare-item compare-ok">
+      <div class="compare-label">✅ 成功03: 感情を設計に入れる</div>
+      <div class="compare-body">「この機能で、ユーザーはどんな感情になるか」を設計段階で考える。演出・驚き・感動が最初から設計される。</div>
+    </div>
+    <div class="compare-item compare-ng">
+      <div class="compare-label">❌ 失敗: 機能だけを考える</div>
+      <div class="compare-body">感情設計がないと、機能は動くが誰も盛り上がらない。後から演出を入れようとすると、設計の複雑化を招く。</div>
+    </div>
+  </div>
+  <div class="compare" style="margin-top: 2mm;">
+    <div class="compare-item compare-ok">
+      <div class="compare-label">✅ 成功04: ISSUEをストックする</div>
+      <div class="compare-body">常に20〜30個のISSUEをバックログに持つ。「次に何をやるか迷う」という状態がゼロになる。毎日の最初の判断コストがなくなる。</div>
+    </div>
+    <div class="compare-item compare-ng">
+      <div class="compare-label">❌ 失敗: その場でISSUEを作る</div>
+      <div class="compare-body">ISSUEがないと「今日何をやるか」の判断から始まる。この判断コストが積み上がり、開発が止まる。</div>
+    </div>
+  </div>
+  <h3 style="margin-top: 3mm;">成功パターンの共通構造</h3>
+  <table>
+    <tr><th>成功パターン</th><th>なぜ機能するか</th><th>OgoRouletteでの実績</th></tr>
+    <tr><td>小さく回す</td><td>原因と結果が明確になる</td><td>260+ ISSUE、150+ ループ</td></tr>
+    <tr><td>検証を入れる</td><td>改善の方向性が確認できる</td><td>感情スコア 11→20/20</td></tr>
+    <tr><td>感情を設計に入れる</td><td>ユーザーが戻ってくる</td><td>SNSシェア率 3倍</td></tr>
+    <tr><td>ISSUEをストック</td><td>判断コストがゼロになる</td><td>集中期は1日10〜30本を維持</td></tr>
+  </table>
+  <div class="callout green" style="margin-top: 3mm; margin-bottom: 12mm;">
+    <span class="callout-icon">✅</span>
+    <div class="callout-body"><strong>成功パターンの本質: 「小さな習慣の積み重ね」</strong>
+    4つの成功パターンはすべて「毎日続けられる小さな習慣」だ。1回の検証、1つの感情設計、1回のストック補充。このサイクルを止めずに回し続けることで品質は確実に積み上がる。OgoRouletteでは集中的に5週間・260本を消化してこの品質に到達した。ペースは状況に合わせていい。</div>
+  </div>
+  <div class="page-footer"><span>AI駆動開発 完全教科書 ver.4.0</span><span>34 / 42</span></div>
+</div>
+
+<!-- ========== PAGE 33: 第12章 バズるアプリ設計 ========== -->
+<div class="page">
+  <div class="page-stripe stripe-purple"></div>
+  <div style="padding-top: 4mm;">
+    <div class="chapter-header" style="border-left-color: var(--purple);">
+      <div class="ch-num" style="color: var(--purple);">Chapter 12</div>
+      <div class="ch-title">バズるアプリ設計</div>
+      <div class="ch-sub">バズは偶然ではなく設計の結果。体験設計・感情設計・SNS設計の3層構造</div>
+    </div>
+  </div>
+  <div class="cards col2">
+    <div class="card"><div class="card-icon">📖</div><h3>①ストーリー化</h3><p>アプリの体験をストーリーにする。「誰が → 何を → どうなる」の3幕構成で設計する。OgoRoulette: 「参加者が → ルーレットを回すと → 奢る人が決まる」</p></div>
+    <div class="card"><div class="card-icon">⭐</div><h3>②最高の瞬間を特定する</h3><p>体験の中で「最も感情が高まる瞬間」はどこか。その瞬間に全力の演出を集中させる。OgoRoulette: 当選者発表の瞬間（ルーレット停止→リビール）</p></div>
+    <div class="card"><div class="card-icon">✨</div><h3>③演出設計</h3><p>最高の瞬間を段階的な演出で盛り上げる。「スローダウン→クラウン→名前リビール→Confetti」の0.3〜1.8秒タイムライン。</p></div>
+    <div class="card"><div class="card-icon">🔗</div><h3>④シェア設計</h3><p>シェアボタンは感情最高潮（演出終了1.5秒後）に表示。シェアURLには当選者名を入れて動的OGP。SNSプレビューに「田中さんが奢ります！」が出る。</p></div>
+  </div>
+  <h3 style="margin-top: 1.5mm;">OgoRouletteの体験設計図</h3>
+  <div class="flow-chart-box">LP → ルーム作成 → QRコードシェア → メンバー参加
+  ↓
+ルーレット回転 → スローダウン → 【★最高峰★ 当選者発表】
+  ↓
+WinnerCard表示 → Confetti → 絵文字リアクション → シェアボタン
+  ↓
+X/LINEシェア → 「田中さんが奢ります！」OGP → 友人がリンクをタップ
+  ↓
+参加CTA「このグループに参加する」→ バイラルループ</div>
+  <div class="callout purple" style="margin-top: 1mm;">
+    <span class="callout-icon">💡</span>
+    <div class="callout-body"><strong>プロダクト自体がマーケティングになる設計</strong>
+    当選者名入りのOGP画像が「広告」になる。「田中さんが今日の奢り神様！」というSNS投稿が無限に生成される。費用ゼロで拡散するバイラルループを設計する。</div>
+  </div>
+  <h3 style="margin: 1mm 0 0.5mm;">バズ設計 vs 普通の設計 — 何が違うか</h3>
+  <table style="margin: 0.5mm 0;">
+    <tr><th style="padding: 1.5mm 2mm;">設計観点</th><th style="padding: 1.5mm 2mm;">普通の設計</th><th style="padding: 1.5mm 2mm;">バズ設計</th></tr>
+    <tr><td style="padding: 1.5mm 2mm;">目標</td><td style="padding: 1.5mm 2mm;">機能が動く</td><td style="padding: 1.5mm 2mm;">ユーザーが感動してシェアする</td></tr>
+    <tr><td style="padding: 1.5mm 2mm;">ピーク設計</td><td style="padding: 1.5mm 2mm;">特になし</td><td style="padding: 1.5mm 2mm;">最高の瞬間に全力の演出を集中</td></tr>
+    <tr><td style="padding: 1.5mm 2mm;">シェアCTA</td><td style="padding: 1.5mm 2mm;">固定位置（フッター等）</td><td style="padding: 1.5mm 2mm;">感情最高潮の1.5秒後に出現</td></tr>
+    <tr><td style="padding: 1.5mm 2mm;">OGP設計</td><td style="padding: 1.5mm 2mm;">全ページ同じ静的画像</td><td style="padding: 1.5mm 2mm;">当選者名入りの動的OGP</td></tr>
+    <tr><td style="padding: 1.5mm 2mm;">バイラルCTA</td><td style="padding: 1.5mm 2mm;">なし</td><td style="padding: 1.5mm 2mm;">シェアURL先に「参加する」CTA</td></tr>
+  </table>
+  <div class="callout blue" style="margin-top: 0; margin-bottom: 12mm;">
+    <span class="callout-icon">🔑</span>
+    <div class="callout-body"><strong>バズは「機能追加」ではなく「設計観点の変更」</strong>
+    バズるアプリを作るために必要なのは、新しい機能ではない。既存の機能を「感情設計」「シェア設計」「バイラル設計」の観点で再設計することだ。OgoRouletteは機能追加なしに、設計観点の変更だけでシェア率を3倍にした。</div>
+  </div>
+  <div class="page-footer"><span>AI駆動開発 完全教科書 ver.4.0</span><span>35 / 42</span></div>
+</div>
+
+<!-- ========== PAGE 34: 第12.5章 1サイクル完全再現（前半）[NEW] ========== -->
+<div class="page">
+  <div class="page-stripe stripe-teal"></div>
+  <div style="padding-top: 4mm;">
+    <div class="chapter-header" style="border-left-color: #0891b2;">
+      <div class="ch-num" style="color: #0891b2;">Chapter 12.5 </div>
+      <div class="ch-title">1サイクル完全再現</div>
+      <div class="ch-sub">実際のOgoRoulette ISSUEを使って、発見→ISSUE→実装→再評価の1サイクルをリアルタイムで見せる</div>
+    </div>
+  </div>
+  <div class="case-header" style="background: linear-gradient(135deg, #0c2a33, #0891b2);">
+    <h2>サイクル A: ISSUE-208 — next/font移行（所要時間: 30分）</h2>
+    <p>Google Fonts CDNの外部フェッチをゼロにして技術スコアを +1 改善した事例</p>
+  </div>
+  <div class="cycle-step">
+    <div class="cycle-num">1</div>
+    <div class="cycle-content"><h4>発見（5分）</h4><p>Lighthouse レポートを確認。「Eliminate render-blocking resources」に <code>fonts.googleapis.com</code> が含まれていた。layout.tsxのコメントに「next/font の Turbopack バグを回避」とあるが、Next.js 16では解消済みのはず。</p></div>
+  </div>
+  <div class="cycle-step">
+    <div class="cycle-num">2</div>
+    <div class="cycle-content"><h4>ISSUE化（5分）— T-Bを使用</h4><p><strong>背景:</strong> 技術スコア14/15。CDNフェッチがLCPに影響。プライバシー（IP送信）の問題もある。<br><strong>解決方向:</strong> next/font/googleに移行してself-hostにする<br><strong>受け入れ条件:</strong> [ ] fonts.googleapis.comへのリクエスト0件 [ ] npx tsc --noEmitが通る</p></div>
+  </div>
+  <div class="cycle-step">
+    <div class="cycle-num">3</div>
+    <div class="cycle-content"><h4>実装指示（5分）— T-Cを使用</h4><p>上のISSUEをT-Cに貼ってClaudeに渡した。制約として「CLAUDE.mdのルールを守ること」「関連ファイルを読んでから実装すること」を追記。</p></div>
+  </div>
+  <div class="compare" style="margin-top: 1mm;">
+    <div class="compare-item compare-ng"><div class="compare-label">Before（layout.tsx）</div><div class="compare-body">&lt;link rel="preconnect" href="https://fonts.googleapis.com" /&gt;<br>&lt;link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" /&gt;<br>&lt;link href="https://fonts.googleapis.com/css2?family=Inter..." /&gt;</div></div>
+    <div class="compare-item compare-ok"><div class="compare-label">After（layout.tsx）</div><div class="compare-body">import { Inter, Noto_Sans_JP } from 'next/font/google'<br>const inter = Inter({ variable: '--font-inter', ... })<br>&lt;html className={inter.variable} ...&gt;</div></div>
+  </div>
+  <div class="cycle-step" style="margin-top: 1mm;">
+    <div class="cycle-num">4</div>
+    <div class="cycle-content"><h4>再評価（5分）— ChromeのNetworkタブで確認</h4><p>fonts.googleapis.comへのリクエスト: <strong>0件</strong>。技術スコア: 14 → 15（+1）。G-STACKアーキテクチャ: +0.5。合計スコア: 87 → 88.5点。</p></div>
+  </div>
+  <div class="callout green" style="margin-top: 1mm; margin-bottom: 12mm;">
+    <span class="callout-icon">✅</span>
+    <div class="callout-body"><strong>このサイクルのポイント</strong>
+    コード変更は3ファイル（layout.tsx, globals.css, issue doc）のみ。所要時間30分。改善の証拠は数値（CDNフェッチ0、スコア+1）で残した。「コメントの理由がまだ有効か確かめる」という習慣がこの改善を生んだ。</div>
+  </div>
+  <div class="page-footer"><span>AI駆動開発 完全教科書 ver.4.0</span><span>36 / 42</span></div>
+</div>
+
+<!-- ========== PAGE 35: 第12.5章（後半） ========== -->
+<div class="page">
+  <div class="page-stripe stripe-teal"></div>
+  <div style="padding-top: 4mm;">
+    <div class="sec-label" style="color: #0891b2;">Chapter 12.5 — continued</div>
+    <hr class="divider">
+  </div>
+  <div class="case-header" style="background: linear-gradient(135deg, #0c1a2a, #1d4ed8);">
+    <h2>サイクル B: ISSUE-214 — 動的OGPシェアURL（所要時間: 45分）</h2>
+    <p>SNSシェアに当選者名入りOGP画像を表示してAAR RR-Referralを改善した事例</p>
+  </div>
+  <div class="cycle-step">
+    <div class="cycle-num">1</div>
+    <div class="cycle-content"><h4>発見（10分）</h4><p>XでシェアするとOGP画像がアプリロゴ（毎回同じ）。「田中さんが奢ります！」という情報が全くSNSプレビューに出ない。AARRR-Referralのボトルネック。</p></div>
+  </div>
+  <div class="cycle-step">
+    <div class="cycle-num">2</div>
+    <div class="cycle-content"><h4>原因調査（10分）</h4><p>lib/share-service.ts を読むと、roomCodeがある場合は <code>/join?room=...</code>（静的OGP）を使っていた。roomCodeなしの場合は <code>/result?winner=...</code>（動的OGP）。<strong>条件分岐が問題だった。</strong></p></div>
+  </div>
+  <div class="cycle-step">
+    <div class="cycle-num">3</div>
+    <div class="cycle-content"><h4>発見（気づき）</h4><p>/resultページはすでにroomパラメータを読んで「このグループに参加する」CTAを表示する機能があった（ISSUE-094）。<strong>両立できる。</strong></p></div>
+  </div>
+  <div class="compare" style="margin-top: 1mm;">
+    <div class="compare-item compare-ng"><div class="compare-label">Before: roomCodeあり → /join（静的OGP）</div><div class="compare-body">if (payload.roomCode) {<br>  return `/join?room=${code}&ref=share`<br>}<br>// → SNSに「アプリロゴ」が表示される</div></div>
+    <div class="compare-item compare-ok"><div class="compare-label">After: 常に /result（動的OGP + バイラルCTA）</div><div class="compare-body">// roomCodeも room=CODE として result に渡す<br>if (payload.roomCode) params.set("room", payload.roomCode)<br>return `/result?winner=...&room=CODE`<br>// → SNSに「田中さんが奢ります！」が表示</div></div>
+  </div>
+  <div class="cycle-step" style="margin-top: 1mm;">
+    <div class="cycle-num">4</div>
+    <div class="cycle-content"><h4>テストで保護（10分）</h4><p>「/joinに戻っていないこと」を明示的にテストに追加。<code>expect(url).not.toContain('/join')</code>。リグレッション防止。</p></div>
+  </div>
+  <div class="cycle-step">
+    <div class="cycle-num">5</div>
+    <div class="cycle-content"><h4>再評価（5分）</h4><p>AARRR-Referral: 3.5/4 → 4/4。総合スコア: AARRR 17.5 → 18.5（+1）。SNSシェア時のOGP画像が当選者名入りに変わった。</p></div>
+  </div>
+  <div class="callout blue" style="margin-top: 1mm; margin-bottom: 12mm;">
+    <span class="callout-icon">💡</span>
+    <div class="callout-body"><strong>このサイクルの教訓</strong>
+    「バイラルループか動的OGPか」という誤った二項対立があった。<strong>既存の機能（ISSUE-094のCTA）を組み合わせることで両立できた。</strong>コードを読んでから設計する。既存の機能を活かす発想が品質を上げる。</div>
+  </div>
+  <div class="page-footer"><span>AI駆動開発 完全教科書 ver.4.0</span><span>37 / 42</span></div>
+</div>
+
+<!-- ========== PAGE 35.5: 第12.5章 サイクルC セキュリティ評価ループ [NEW] ========== -->
+<div class="page">
+  <div class="page-stripe stripe-teal"></div>
+  <div style="padding-top: 4mm;">
+    <div class="sec-label" style="color: #0891b2;">Chapter 12.5 — continued</div>
+    <hr class="divider">
+  </div>
+  <div class="case-header" style="background: linear-gradient(135deg, #0c1a33, #0891b2);">
+    <h2>サイクル C: ISSUE-244〜260 — セキュリティ強化（所要時間: 約6時間）</h2>
+    <p>OWASPとSTRIDEで評価→17項目をISSUE化→全件解消→再評価で技術スコア満点を達成した事例</p>
+  </div>
+
+  <div class="cycle-step">
+    <div class="cycle-num">1</div>
+    <div class="cycle-content"><h4>評価依頼（15分）— セキュリティ評価テンプレートを使用</h4><p>「このアプリに対して、OWASP Top10 と STRIDE の観点で深いセキュリティ評価を実施してください」という一文をAIに渡した。技術スタック（Next.js/Supabase/Prisma）と主要ファイル一覧を添付。AIが自律的にコードを読み、A〜Fの6軸・100点満点で採点。初回スコアは<strong>技術85/100</strong>（複合スコアに反映すると89点台相当）。</p></div>
+  </div>
+  <div class="cycle-step">
+    <div class="cycle-num">2</div>
+    <div class="cycle-content"><h4>ISSUE化（30分）— 17件を一括整理</h4><p>AIが返した評価レポートを元に、Critical/High/Medium/Lowに分類。ISSUE-244〜260を作成。各ISSUEには「脅威モデル」「影響範囲」「修正方針」「受け入れ条件」を記載。<strong>クリティカルから潰す原則</strong>に従い、HMAC強化（A-1）とスタックトレース漏洩防止（E-1）を最初に着手した。</p></div>
+  </div>
+
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2.5mm; margin: 1.5mm 0;">
+    <div style="background: #fff1f2; border: 1px solid #fecdd3; border-radius: 6px; padding: 2.5mm 3mm;">
+      <div style="font-size: 7.5pt; font-weight: 700; color: #dc2626; margin-bottom: 1mm;">Critical / High（最優先）</div>
+      <ul style="margin: 0; padding-left: 4mm; font-size: 8pt; line-height: 1.6;">
+        <li>ISSUE-244: HMAC <code>padEnd</code> 脆弱性</li>
+        <li>ISSUE-245: ゲストトークン早期チェック欠落</li>
+        <li>ISSUE-249: 本番でスタックトレース露出</li>
+        <li>ISSUE-255: 当選者名のクライアント信頼</li>
+      </ul>
+    </div>
+    <div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 2.5mm 3mm;">
+      <div style="font-size: 7.5pt; font-weight: 700; color: #d97706; margin-bottom: 1mm;">Medium / Low（次フェーズ）</div>
+      <ul style="margin: 0; padding-left: 4mm; font-size: 8pt; line-height: 1.6;">
+        <li>ISSUE-247: x-forwarded-forスプーフィング</li>
+        <li>ISSUE-253: LINE OAuth secure cookie</li>
+        <li>ISSUE-257: セキュリティヘッダー未設定</li>
+        <li>ISSUE-260: middleware設計文書化</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="cycle-step">
+    <div class="cycle-num">3</div>
+    <div class="cycle-content"><h4>実装（4時間）— クリティカルから順に安全に修正</h4><p>各修正は「アプリ動作への影響を最優先」で実施。HMAC <code>padEnd</code> 削除・<code>timingSafeEqual</code>追加（A-1）。入力サニタイズ関数 <code>lib/sanitize.ts</code> 新設（B-1）。セキュリティヘッダー <code>next.config.mjs</code> 追加（D-1: X-Frame-Options/X-Content-Type-Options/Referrer-Policy）。<code>crypto.randomInt()</code>によるサーバー側当選決定の確認（C-1）。修正のたびに <code>pnpm typecheck &amp;&amp; pnpm test &amp;&amp; pnpm build</code> で回帰確認。</p></div>
+  </div>
+
+  <div class="cycle-step">
+    <div class="cycle-num">4</div>
+    <div class="cycle-content"><h4>再評価（30分）</h4><p>同じセキュリティ評価テンプレートを再実行。A.認証認可:30/30、B.入力バリデーション:20/20、C.改ざん耐性:15/15、D.ヘッダー:15/15、E.情報漏洩:10/10、F.設計:10/10 = <strong>100/100</strong>。技術スコア: 14 → 15（+1）。複合スコア: 95 → 99/100（+4）。</p></div>
+  </div>
+
+  <div class="callout green" style="margin-top: 1mm; margin-bottom: 12mm;">
+    <span class="callout-icon">✅</span>
+    <div class="callout-body" style="font-size: 8.5pt;"><strong>セキュリティ評価ループの3つの原則</strong><br>
+    <strong>① 評価はAIに任せ、判断は人間が行う</strong>: AIは漏れなく脅威を列挙するが、「修正する/しない/後回し」は開発者が決める。<strong>② クリティカルから潰す</strong>: Mediumを10個直すより、Criticalを1個潰す方が価値が高い。<strong>③ 修正後は必ず再評価する</strong>: 修正が新たな問題を生む可能性がある。テスト+再評価のセットで1サイクルとする。</div>
+  </div>
+
+  <div class="page-footer"><span>AI駆動開発 完全教科書 ver.4.0</span><span>37.5 / 42</span></div>
+</div>
+
+<!-- ========== PAGE 36: 第13章 まとめ（前半） ========== -->
+<div class="page">
+  <div class="page-stripe stripe-blue"></div>
+  <div style="padding-top: 2mm;">
+    <div class="chapter-header">
+      <div class="ch-num">Chapter 13</div>
+      <div class="ch-title">まとめ + 今日からの5ステップ</div>
+      <div class="ch-sub">AI駆動開発の本質・再現5ステップ・今日〜3ヶ月の行動計画</div>
+    </div>
+  </div>
+  <div class="blockquote">
+    AI駆動開発は「AIを使う」技術ではない。「思考を言語化して、AIと協働して、自分が判断する」という、一生使えるスキルだ。
+  </div>
+  <h3 style="margin-top: 2mm;">AI駆動開発の3つの本質</h3>
+  <div class="cards col3" style="margin-bottom: 3mm;">
+    <div class="card" style="border-left: 3px solid var(--blue);">
+      <div class="card-icon">✍️</div>
+      <h3>思考の言語化</h3>
+      <p>「なんかおかしい」をISSUEに変換する。これが最も重要なスキル。</p>
+    </div>
+    <div class="card" style="border-left: 3px solid var(--green);">
+      <div class="card-icon">🤝</div>
+      <h3>AIとの協働</h3>
+      <p>テンプレートで文脈を渡す。AIの提案を叩き台として使う。</p>
+    </div>
+    <div class="card" style="border-left: 3px solid var(--purple);">
+      <div class="card-icon">🧠</div>
+      <h3>人間が判断</h3>
+      <p>採用・却下・修正は人間が決める。AIに丸投げしない。</p>
+    </div>
+  </div>
+  <h3 style="margin-top: 1mm;">今日からの5ステップ行動計画</h3>
+  <div class="action-card">
+    <div class="ac-step">Step 1 — 今日 / 15分</div>
+    <h4>CLAUDE.md を作る + 最初のISSUEをAIに作らせる</h4>
+    <p>第2.5章のテンプレートをコピーしてCLAUDE.mdを作る。今日気づいた「なんかおかしい」をAIに伝え、T-BフォーマットでISSUEを作ってもらう。完璧なISSUEは不要。型があればAIは動ける。</p>
+  </div>
+  <div class="action-card">
+    <div class="ac-step">Step 2 — 今日 / 30分</div>
+    <h4>T-Eでアプリを6軸評価する</h4>
+    <p>現在のスコアを把握する。感情スコアが15未満なら、Step 3以降は演出改善を最優先にする。第4.7章の処方箋を確認する。スコアを知ることで「どこを直すべきか」が明確になる。</p>
+  </div>
+  <div class="action-card" style="margin-bottom: 12mm;">
+    <div class="ac-step">Step 3 — 今週</div>
+    <h4>スコア別処方箋の最優先アクションを1つ実行する</h4>
+    <p>第4.7章の自分のスコア帯を見て、処方箋の①を今週中に実行する。1つで良い。完璧にやろうとしない。「1つ完了して数値が変わった」という体験が次のループへの推進力になる。</p>
+  </div>
+  <div class="page-footer"><span>AI駆動開発 完全教科書 ver.4.0</span><span>38 / 42</span></div>
+</div>
+
+<!-- ========== PAGE 37: 第13章（後半） ========== -->
+<div class="page">
+  <div class="page-stripe stripe-blue"></div>
+  <div style="padding-top: 4mm;">
+    <div class="sec-label">Chapter 13 — continued</div>
+    <hr class="divider">
+  </div>
+  <h3 style="margin-top: 1mm; margin-bottom: 1mm;">5ステップのタイムライン</h3>
+  <table style="margin-bottom: 2mm;">
+    <tr><th>ステップ</th><th>期間</th><th>達成状態</th></tr>
+    <tr><td>Step 1</td><td>今日 15分</td><td>CLAUDE.md作成 + AIに最初のISSUEを作らせた</td></tr>
+    <tr><td>Step 2</td><td>今日 30分</td><td>T-Eで6軸評価 + 処方箋確認済み</td></tr>
+    <tr><td>Step 3</td><td>今週</td><td>処方箋①を1つ実行 + スコア変化を確認</td></tr>
+    <tr><td>Step 4</td><td>今月</td><td>ループ10周完走 + スコア変化を記録</td></tr>
+    <tr><td>Step 5</td><td>3ヶ月後</td><td>スコア+20点 + 自走できる状態</td></tr>
+  </table>
+  <div class="action-card" style="margin-top: 0;">
+    <div class="ac-step">Step 4 — 今月</div>
+    <h4>ループを10周回す（週3〜5 ISSUE）</h4>
+    <p>1ループ1〜2改善。週3〜5個のISSUEを消化するペースを作る。月末に再度T-Eで評価してスコアの変化を確認する。「先月から何点上がったか」を記録することが最大のモチベーションになる。</p>
+  </div>
+  <div class="action-card">
+    <div class="ac-step">Step 5 — 3ヶ月後</div>
+    <h4>スコア+20点を目指す</h4>
+    <p>3ヶ月で20点アップは現実的だ（OgoRouletteは集中開発5週間で6軸スコアを70点→99点 / 約30点改善した）。スコアが目標を超えたら、次の軸に集中する。「次は何を改善するか」をAIに聞けば、20個のISSUEが即座に出てくる。</p>
+  </div>
+  <h3 style="margin-top: 3mm;">この教科書で手に入れたもの</h3>
+  <div class="cards col3" style="margin-bottom: 3mm;">
+    <div class="card">
+      <div class="card-icon">📋</div>
+      <h3>即使えるテンプレート</h3>
+      <p>T-A〜T-F + T-06・T-07。ゼロから考えなくていい。型に文脈を入れるだけ。セキュリティ評価もT-F一枚で完結する。</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">📊</div>
+      <h3>数値で測る習慣</h3>
+      <p>6軸+セキュリティ評価で数値化。「感情スコアが上がった」「技術100/100」という事実を積み上げる。感覚ではなく数値で改善する。</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">♻️</div>
+      <h3>再現可能なサイクル</h3>
+      <p>発見→ISSUE→実装→評価の1サイクル。OgoRouletteはこれを260回回して99/100を達成した。このループを回し続ければ、どんなアプリも改善できる。</p>
+    </div>
+  </div>
+  <div class="blockquote" style="margin-top: 0mm;">
+    この教科書を読み終えた今、あなたには「思考を言語化する力」と「AIを使いこなす型」がある。あとは1サイクル回すだけだ。最初の1ISSUEを今日中に書こう。
+  </div>
+  <div class="callout green" style="margin-top: 3mm; margin-bottom: 12mm;">
+    <span class="callout-icon">🎯</span>
+    <div class="callout-body"><strong>次のアクションは1つだけ</strong>
+    今日の15分で「CLAUDE.mdを作る + AIに最初のISSUEを作らせる」。それだけでAI駆動開発のサイクルが始まる。完璧なISSUEは必要ない。型があればAIが動いてくれる。</div>
+  </div>
+  <div class="page-footer"><span>AI駆動開発 完全教科書 ver.4.0</span><span>39 / 42</span></div>
+</div>
+
+<!-- ========== PAGE 38: 付録B 実践チェックリスト ========== -->
+<div class="page">
+  <div class="page-stripe stripe-gold"></div>
+  <div style="padding-top: 4mm;">
+    <div class="chapter-header" style="border-left-color: var(--amber);">
+      <div class="ch-num" style="color: var(--amber);">付録B </div>
+      <div class="ch-title">実践チェックリスト</div>
+      <div class="ch-sub">4フェーズ。印刷して手元に置く。各フェーズで全チェックが入ったら次へ進む</div>
+    </div>
+  </div>
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 3mm;">
+    <div class="checklist-section" style="border-left: 3px solid #2563eb;">
+      <h4>📋 Phase 1: 開発開始チェック</h4>
+      <div class="checklist-item"><div class="checklist-box"></div>CLAUDE.md を作成した</div>
+      <div class="checklist-item"><div class="checklist-box"></div>T-Aで必須機能を3つに絞った</div>
+      <div class="checklist-item"><div class="checklist-box"></div>技術スタックを決定した</div>
+      <div class="checklist-item"><div class="checklist-box"></div>最初のISSUEを書いた（T-B使用）</div>
+      <div class="checklist-item"><div class="checklist-box"></div>T-Eで初期スコアを測った</div>
+      <div class="checklist-item"><div class="checklist-box"></div>感情設計を最初から考えた</div>
+    </div>
+    <div class="checklist-section" style="border-left: 3px solid #059669;">
+      <h4>🔄 Phase 2: 開発中チェック（週次）</h4>
+      <div class="checklist-item"><div class="checklist-box"></div>今週のISSUEを3〜5個消化した</div>
+      <div class="checklist-item"><div class="checklist-box"></div>1ループが2時間以内に収まっている</div>
+      <div class="checklist-item"><div class="checklist-box"></div>感情スコアを確認した（15未満→演出優先）</div>
+      <div class="checklist-item"><div class="checklist-box"></div>バグはT-Dで調査した</div>
+      <div class="checklist-item"><div class="checklist-box"></div>AIのコードをレビューしてから採用した</div>
+      <div class="checklist-item"><div class="checklist-box"></div>バックログに20個以上のISSUEがある</div>
+    </div>
+    <div class="checklist-section" style="border-left: 3px solid #7c3aed;">
+      <h4>🚀 Phase 3: リリース前チェック</h4>
+      <div class="checklist-item"><div class="checklist-box"></div>Lighthouse 80点以上を確認</div>
+      <div class="checklist-item"><div class="checklist-box"></div>モバイルで全機能を動作確認した</div>
+      <div class="checklist-item"><div class="checklist-box"></div>シェア機能が動作する</div>
+      <div class="checklist-item"><div class="checklist-box"></div>OGP画像が正しく表示される</div>
+      <div class="checklist-item"><div class="checklist-box"></div>認証・認可を人間がレビューした</div>
+      <div class="checklist-item"><div class="checklist-box"></div>npx tsc --noEmit でエラーなし</div>
+    </div>
+    <div class="checklist-section" style="border-left: 3px solid #d97706;">
+      <h4>📊 Phase 4: 継続改善チェック（月次）</h4>
+      <div class="checklist-item"><div class="checklist-box"></div>T-Eで全6軸フルスコア評価をした</div>
+      <div class="checklist-item"><div class="checklist-box"></div>第4.7章で処方箋を確認した</div>
+      <div class="checklist-item"><div class="checklist-box"></div>最重要ISSUEを特定した</div>
+      <div class="checklist-item"><div class="checklist-box"></div>先月から何点上がったか記録した</div>
+      <div class="checklist-item"><div class="checklist-box"></div>次月の目標スコアを設定した</div>
+      <div class="checklist-item"><div class="checklist-box"></div>CLAUDE.mdのスコアを更新した</div>
+    </div>
+    <div class="checklist-section" style="border-left: 3px solid #dc2626; grid-column: 1 / -1;">
+      <h4>🔐 Phase 5: セキュリティ評価チェック（スコア85〜90台で実施）</h4>
+      <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0 4mm;">
+        <div>
+          <div class="checklist-item"><div class="checklist-box"></div>T-Fでセキュリティ評価を依頼した</div>
+          <div class="checklist-item"><div class="checklist-box"></div>Critical/High ISSUEを全件ISSUE化した</div>
+        </div>
+        <div>
+          <div class="checklist-item"><div class="checklist-box"></div>Criticalから順に修正した</div>
+          <div class="checklist-item"><div class="checklist-box"></div>修正後にpnpm typecheck + test + buildを通した</div>
+        </div>
+        <div>
+          <div class="checklist-item"><div class="checklist-box"></div>T-Fで再評価して全軸PASSを確認した</div>
+          <div class="checklist-item"><div class="checklist-box"></div>CLAUDE.mdにセキュリティスコアを記録した</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="callout green" style="margin-top: 3mm; margin-bottom: 12mm;">
+    <span class="callout-icon">🎯</span>
+    <div class="callout-body"><strong>最終チェック — この教科書を活用できているか</strong>
+    ① 読者が迷わない（手順が明確）<br>
+    ② そのまま実践できる（テンプレートがコピペできる）<br>
+    ③ 情報ではなく「スキル」が手に入る（1サイクル完走後は自走できる）<br>
+    ④ 他人に勧めたくなる（「これは保存する価値がある」と思える）</div>
+  </div>
+  <div class="page-footer"><span>AI駆動開発 完全教科書 ver.4.0</span><span>40 / 42</span></div>
+</div>
+
+<!-- ========== PAGE 39: 付録A クイックリファレンス ========== -->
+<div class="page">
+  <div class="page-stripe stripe-slate"></div>
+  <div style="padding-top: 4mm;">
+    <div class="chapter-header" style="border-left-color: var(--slate-500);">
+      <div class="ch-num" style="color: var(--slate-500);">付録A</div>
+      <div class="ch-title">クイックリファレンス</div>
+      <div class="ch-sub">テンプレート選択 / 評価FW / 原則サマリー / ファイル構成</div>
+    </div>
+  </div>
+  <h3 style="margin-top: 0;">テンプレート選択早見表</h3>
+  <table style="margin-bottom: 2mm;">
+    <tr><th>状況</th><th>テンプレート</th><th>収録ページ</th></tr>
+    <tr><td>開発を始める前</td><td>T-A（要件定義）</td><td>第3.5章（p.10）</td></tr>
+    <tr><td>課題を見つけた</td><td>T-B（ISSUE化）</td><td>第3.5章（p.10）</td></tr>
+    <tr><td>ISSUEを実装する</td><td>T-C（実装指示）</td><td>第3.5章（p.11）</td></tr>
+    <tr><td>バグが出た</td><td>T-D（バグ調査）</td><td>第3.5章（p.11）</td></tr>
+    <tr><td>品質を確認したい</td><td>T-E（6軸評価）</td><td>第3.5章（p.11）</td></tr>
+    <tr><td>セキュリティ評価をしたい</td><td>T-F（セキュリティ評価）</td><td>第3.5章（p.11）</td></tr>
+    <tr><td>UIを作りたい</td><td>T-06（UI生成）</td><td>第6章（p.23）</td></tr>
+  </table>
+  <h3 style="margin-top: 2mm;">6軸評価 早見表</h3>
+  <table style="margin-bottom: 12mm;">
+    <tr><th>軸</th><th>満点</th><th>測るもの</th><th>改善のヒント</th></tr>
+    <tr><td>G-STACK</td><td>15</td><td>戦略・成長・アーキテクチャ</td><td>CI整備・KPI設定・設計改善</td></tr>
+    <tr><td>HEART</td><td>20</td><td>5つのUX指標</td><td>Task Successから順に改善</td></tr>
+    <tr><td>AARRR</td><td>20</td><td>成長ループ5段階</td><td>ファネルのボトルネックを特定</td></tr>
+    <tr><td>Kano</td><td>10</td><td>品質充足度3層</td><td>基本→線形→魅力の順に対応</td></tr>
+    <tr><td>感情</td><td>20</td><td>演出・興奮・感動</td><td>15未満なら最優先で改善</td></tr>
+    <tr><td>技術</td><td>15</td><td>品質・テスト・パフォーマンス</td><td>CI→型安全→Lighthouse</td></tr>
+  </table>
+  <div class="page-footer"><span>AI駆動開発 完全教科書 ver.4.0</span><span>41 / 42</span></div>
+</div>
+
+<!-- ========== PAGE 40: 付録A クイックリファレンス（続き） ========== -->
+<div class="page">
+  <div class="page-stripe stripe-slate"></div>
+  <div style="padding-top: 4mm;">
+    <div class="sec-label" style="color: var(--slate-500);">付録A — continued</div>
+    <hr class="divider">
+  </div>
+  <h3 style="margin-top: 2mm;">原則サマリー（18選）</h3>
+  <div class="code">01. ISSUEは思考単位で切れ（1セッションで完了できるサイズ）
+02. AIに設計を任せるな（提案は叩き台・採用は人間）
+03. バグは再現性から潰せ（T-D使用）
+04. 感情設計を入れろ（感情スコア15未満は演出優先）
+05. gstackで数値化しろ（月1回フルスコア評価）
+06. 本番でしか発生しないバグがある（デプロイ後に必ず確認）
+07. 小さく作って小さく壊せ（1ループで変更3ファイル以内）
+08. シェア導線を設計しろ（感情最高潮の瞬間に配置）
+09. CLAUDE.mdを書け（AIへの常駐指示書）
+10. ポーリングを軽視するな（visibilitychange対応）
+11. 型は先に決めろ（strictモードは最初からON）
+12. AIのコードを「自分のコード」にする（理解して採用）
+13. Race Condition想定（同時操作シーンを設計段階で洗い出す）
+14. ログを渡せ（エラーメッセージ+スタックトレース+再現手順）
+15. レート制限はKVで実装（メモリ実装は多インスタンスで機能しない）
+16. ISSUEストック20〜30個維持（判断コストをゼロに）
+17. UXは最初から設計（後から入れると設計が複雑化）
+18. CIを早めに整備（手動テストだけでは見落としが起きる）</div>
+  <h3 style="margin-top: 3mm;">ファイル構成（ver.3.0）</h3>
+  <div class="code">docs/ai-driven-development/
+├── guide-v3.html     ← 本ファイル（完全版・テンプレート全収録）
+├── templates/
+│   ├── T-06-ui.md    ← UIコンポーネント生成
+│   └── T-07-lp.md    ← LP生成
+├── prompts/          ← 21プロンプト（5カテゴリ）
+└── cases/            ← ケーススタディ詳細版</div>
+  <div class="callout blue" style="margin-top: 3mm; margin-bottom: 12mm;">
+    <span class="callout-icon">💡</span>
+    <div class="callout-body"><strong>ver.3.0 での主な追加・改善点</strong>
+    • 全体を26ページ → <strong>40ページ</strong>に拡充（14ページ追加）<br>
+    • 6軸評価フレームワークを6ページで詳解（PART3新規）<br>
+    • スコア別処方箋（第4.7章）を新規追加<br>
+    • ケーススタディにISSUE-221（Broadcast同期改善）を追加<br>
+    • 原則18選を全18原則フル詳解（4ページ）に拡充<br>
+    • クイックスタート（第2.5章）を新規追加</div>
+  </div>
+  <div class="page-footer"><span>AI駆動開発 完全教科書 ver.4.0</span><span>42 / 42</span></div>
+</div>
+
+</body>
+</html>
