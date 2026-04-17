@@ -1,7 +1,10 @@
-# ISSUE-260: Security(Low) — middleware が認可を担わず、ページルートの保護がクライアント依存
+# ISSUE-260: Security(Low) — middleware が認可を担わず、ページルートの保護がクライアント依存（✅ 設計方針として文書化済み）
 
 ## ステータス
-🔲 TODO
+✅ 設計方針として文書化済み（2026-04-17）
+- `middleware.ts` に設計方針コメントを記録済み（`393fc69`）
+- ISSUE-264 で CLAUDE.md に Server Components 認可規約を追記済み
+- 現時点では API 側の保護が十分であることが確認・文書化された
 
 ## 優先度
 **Low / 設計懸念**

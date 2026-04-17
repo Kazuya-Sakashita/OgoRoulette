@@ -1,7 +1,11 @@
-# ISSUE-265: Security(Low) — LINE OAuth metadata 更新エラー時のプロフィール不一致リスク
+# ISSUE-265: Security(Low) — LINE OAuth metadata 更新エラー時のプロフィール不一致リスク（✅ 実装済み）
 
 ## ステータス
-🔲 TODO（許容範囲内・改善余地あり）
+✅ 実装済み（2026-04-17）— 案A が既に実装されていることをコード確認で確認
+- `app/api/auth/line/callback/route.ts` の Prisma upsert（step 6）が
+  `lineProfile.displayName` / `lineProfile.pictureUrl` を直接使用している
+- `updateUserById` の成否に関わらず、Prisma profile は常に最新 LINE データで更新される
+- ISSUE で懸念した「古い user_metadata 経由での更新」は発生しない
 
 ## 優先度
 **Low / セキュリティ（データ整合性）**
