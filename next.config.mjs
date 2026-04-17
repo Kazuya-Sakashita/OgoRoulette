@@ -49,9 +49,15 @@ const nextConfig = {
           },
           // XSS 最終防衛ライン
           // script-src: Next.js hydration が unsafe-inline / unsafe-eval を必要とする
+          //             Vercel Analytics スクリプト（va.vercel-scripts.com）を許可
           // style-src: Framer Motion がインライン style を生成するため unsafe-inline が必要
+          // font-src: next/font/google はビルド時にセルフホスト（/_next/static/media/）
+          //           Noto_Sans_JP 等の CJK フォントは unicode-range ごとに複数ファイルに分割されており
+          //           Next.js が fonts.gstatic.com から追加サブセットを読み込む場合があるため許可
+          //           data: は Next.js がフォントを data: URI として埋め込む場合のため追加
           // img-src: Next.js Image が data: URI を使用。OAuth アバター（Google/LINE）の外部ドメイン
           // connect-src: Supabase REST API + Realtime WebSocket
+          //              Vercel Analytics データ送信先（vitals.vercel-insights.com）
           // media-src: MediaRecorder 録画動画の blob: playback
           // worker-src: blob: は Web Worker 用の保険
           // frame-ancestors: X-Frame-Options DENY と冗長防御
@@ -61,10 +67,11 @@ const nextConfig = {
             key: "Content-Security-Policy",
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://va.vercel-scripts.com",
               "style-src 'self' 'unsafe-inline'",
+              "font-src 'self' data: https://fonts.gstatic.com",
               "img-src 'self' data: blob: https://lh3.googleusercontent.com https://profile.line-sc.com https://obs.line-apps.com https://*.line-scdn.net",
-              "connect-src 'self' https://*.supabase.co wss://*.supabase.co",
+              "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://vitals.vercel-insights.com",
               "media-src 'self' blob:",
               "worker-src 'self' blob:",
               "frame-ancestors 'none'",
