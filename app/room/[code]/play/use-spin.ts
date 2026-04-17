@@ -63,14 +63,19 @@ export function useSpin({
   const [clockOffsetMs, setClockOffsetMs] = useState<number>(0)
   const [countdownValue, setCountdownValue] = useState<number | null>(null)
 
-  const spinScheduledRef = useRef(false)
+  // ISSUE-282: session ID ベースのガード（同一セッションの二重スケジュール防止）
+  const spinScheduledRef = useRef<string | null>(null)
   // ISSUE-223: 連打防止 — React の非同期 state 更新より先に同期フラグでロックする
   const isSpinningRef = useRef(false)
   const pendingMemberWinnerRef = useRef<WinnerData | null>(null)
+  // ISSUE-278: scheduleSpin が予約したセッション ID（showResult フォールバック検証用）
+  const scheduledSessionIdRef = useRef<string | null>(null)
   // ISSUE-276: spin API レスポンスの sessionId / resultToken を保持（オーナー用）
   const resultTokenRef = useRef<string | null>(null)
   const resultSessionIdRef = useRef<string | null>(null)
-  const prevSessionIdRef = useRef<string | null | undefined>(undefined)
+  // ISSUE-279: 初回 fetchRoom 検出を明示的に管理（undefined の implicit 依存を排除）
+  const prevSessionIdRef = useRef<string | null>(null)
+  const hasInitializedRef = useRef(false)
   const confettiTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const clockOffsetMsRef = useRef<number>(0)
 
@@ -147,7 +152,7 @@ export function useSpin({
     setSpinError(null)
     setPhase("preparing")
     setWinner(null)
-    spinScheduledRef.current = false
+    spinScheduledRef.current = null
 
     try {
       const res = await fetch(`/api/rooms/${code}/spin`, {
@@ -197,9 +202,11 @@ export function useSpin({
       setSpinStartedAtMs(data.spinStartedAt)
       setPendingWinnerIndex(data.winnerIndex)
       setSpinRemainingMs(4500)
+      // ISSUE-282: null チェックで未スケジュールを判定し、session ID を記録
+      const ownerSessionId = data.sessionId ?? "__scheduled__"
       setTimeout(() => {
-        if (!spinScheduledRef.current) {
-          spinScheduledRef.current = true
+        if (spinScheduledRef.current === null) {
+          spinScheduledRef.current = ownerSessionId
           setPhase("spinning")
         }
       }, delay)
@@ -224,8 +231,10 @@ export function useSpin({
     setSpinError(null)
     setSpinStartedAtMs(null)
     setSpinRemainingMs(4500)
-    spinScheduledRef.current = false
+    spinScheduledRef.current = null
     prevSessionIdRef.current = null
+    hasInitializedRef.current = false
+    scheduledSessionIdRef.current = null
     pendingMemberWinnerRef.current = null
     resetRecording()
     trackEvent(AnalyticsEvent.RESPIN_CLICKED)
@@ -234,9 +243,14 @@ export function useSpin({
     // 呼び出し元の page.tsx の setRoom を使う必要があるため、別途 onRespin callback で対応。
   }
 
-  const showResult = (currentRoom: Room | null) => {
+  // ISSUE-278: expectedSessionId を渡すと古いセッションへのフォールバックを防ぐ
+  const showResult = (currentRoom: Room | null, expectedSessionId?: string | null) => {
     const latestSession = currentRoom?.sessions?.[0]
     if (!latestSession) return
+    if (expectedSessionId != null && latestSession.id !== expectedSessionId) {
+      console.warn("[OgoRoulette] showResult: session ID mismatch, skipping stale fallback")
+      return
+    }
     const wp = latestSession.participants?.find((p) => p.isWinner)
     if (wp) {
       setWinner({
@@ -255,7 +269,7 @@ export function useSpin({
   const handleSpinComplete = (winnerName: string, winnerIndex: number) => {
     setPhase("result")
     setIsSlowingDown(false) // ISSUE-207: スロービルドアップ解除
-    spinScheduledRef.current = false
+    spinScheduledRef.current = null
     setPendingWinnerIndex(undefined)
     stopRecordingAfterReveal()
     trackEvent(AnalyticsEvent.SPIN_ANIMATION_COMPLETE)
@@ -322,7 +336,7 @@ export function useSpin({
         clearTimeout(confettiTimerRef.current ?? undefined)
         confettiTimerRef.current = setTimeout(() => setShowConfetti(false), 6000)
       } else {
-        showResult(room)
+        showResult(room, scheduledSessionIdRef.current)
       }
     }
   }
@@ -338,7 +352,7 @@ export function useSpin({
       trackEvent(AnalyticsEvent.PHASE_TIMEOUT, { phase: "spinning" })
       setPhase("waiting")
       setSpinError("アニメーションがタイムアウトしました。再試行してください")
-      spinScheduledRef.current = false
+      spinScheduledRef.current = null
       setPendingWinnerIndex(undefined)
     }, SPIN_TIMEOUT_MS)
     return () => clearTimeout(id)
@@ -353,7 +367,7 @@ export function useSpin({
       trackEvent(AnalyticsEvent.PHASE_TIMEOUT, { phase: "preparing" })
       setPhase("waiting")
       setSpinError("準備がタイムアウトしました。再試行してください")
-      spinScheduledRef.current = false
+      spinScheduledRef.current = null
     }, PREPARING_TIMEOUT_MS)
     return () => clearTimeout(id)
   }, [phase])
@@ -395,7 +409,8 @@ export function useSpin({
     const latestId = latestSession?.id ?? null
 
     const scheduleSpin = (session: Session) => {
-      if (spinScheduledRef.current) return
+      // ISSUE-282: 同一セッション ID なら既にスケジュール済み → スキップ
+      if (spinScheduledRef.current === session.id) return
       const wp = session.participants?.find((p) => p.isWinner)
       if (!wp) return
 
@@ -408,13 +423,16 @@ export function useSpin({
         sessionId: session.id,
         resultToken: session.resultToken,
       }
+      // ISSUE-278: showResult フォールバック検証用にセッション ID を保存
+      scheduledSessionIdRef.current = session.id
       setPendingWinnerIndex(wp.orderIndex)
 
       const startMs = session.startedAt ? new Date(session.startedAt).getTime() : Date.now()
       const MAX_SPIN_DELAY_MS = SPIN_COUNTDOWN_MS + 2000
       const delay = Math.max(0, Math.min(startMs - Date.now(), MAX_SPIN_DELAY_MS))
       setSpinStartedAtMs(startMs)
-      spinScheduledRef.current = true
+      // ISSUE-282: セッション ID を格納してどのセッションがスケジュール済みかを記録
+      spinScheduledRef.current = session.id
       setPhase("preparing")
 
       setTimeout(() => {
@@ -433,7 +451,9 @@ export function useSpin({
       }, delay)
     }
 
-    if (prevSessionIdRef.current === undefined) {
+    // ISSUE-279: undefined の implicit 依存を排除し、hasInitializedRef で初回を明示管理
+    if (!hasInitializedRef.current) {
+      hasInitializedRef.current = true
       prevSessionIdRef.current = latestId
 
       if (latestSession) {

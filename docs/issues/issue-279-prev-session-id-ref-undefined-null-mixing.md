@@ -1,7 +1,7 @@
 # ISSUE-279: Critical — prevSessionIdRef の undefined/null 混在で二重 scheduleSpin リスク
 
 ## ステータス
-🔲 TODO
+✅ 修正済み（2026-04-18）— hasInitializedRef 追加、prevSessionIdRef 型を string | null に統一
 
 ## 優先度
 **Critical / バグ / State Management**

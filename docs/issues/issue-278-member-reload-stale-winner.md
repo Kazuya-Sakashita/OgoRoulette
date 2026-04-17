@@ -1,7 +1,7 @@
 # ISSUE-278: Critical — メンバーリロード時に前回当選者が表示されるリスク
 
 ## ステータス
-🔲 TODO
+✅ 修正済み（2026-04-18）— scheduledSessionIdRef 追加、showResult に expectedSessionId 検証を追加
 
 ## 優先度
 **Critical / データ整合性 / UX**

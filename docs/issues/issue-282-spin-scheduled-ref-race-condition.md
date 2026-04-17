@@ -1,7 +1,7 @@
 # ISSUE-282: High — spinScheduledRef の競合条件でアニメーションが二重起動する
 
 ## ステータス
-🔲 TODO
+✅ 修正済み（2026-04-18）— spinScheduledRef を boolean から string | null（session ID）に変更
 
 ## 優先度
 **High / バグ / Race Condition**
