@@ -46,8 +46,22 @@ export async function POST(request: Request) {
     const body = await request.json()
     const { name, participants } = body
 
-    if (typeof name !== "string" || !name.trim() || !Array.isArray(participants)) {
+    // ISSUE-272: グループ名・配列長・要素の個別バリデーション
+    if (typeof name !== "string" || !name.trim() || name.length > 100) {
       return NextResponse.json({ error: "Invalid request" }, { status: 400 })
+    }
+    if (!Array.isArray(participants) || participants.length > 200) {
+      return NextResponse.json({ error: "Invalid request" }, { status: 400 })
+    }
+    for (const p of participants) {
+      if (
+        typeof p !== "object" || p === null ||
+        typeof p.name !== "string" ||
+        !p.name.trim() ||
+        p.name.length > 100
+      ) {
+        return NextResponse.json({ error: "参加者名が不正です" }, { status: 400 })
+      }
     }
 
     const group = await prisma.userGroup.upsert({
