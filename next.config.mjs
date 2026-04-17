@@ -20,7 +20,7 @@ const nextConfig = {
     ]
   },
   // ISSUE-257: セキュリティヘッダを全レスポンスに付与
-  // CSP は Next.js の動的スクリプト（runtime / Framer Motion）と競合するため別途対応
+  // ISSUE-263: CSP を追加（Next.js runtime / Framer Motion の要件に合わせたディレクティブ）
   async headers() {
     return [
       {
@@ -46,6 +46,31 @@ const nextConfig = {
           {
             key: "Permissions-Policy",
             value: "microphone=(), geolocation=()",
+          },
+          // XSS 最終防衛ライン
+          // script-src: Next.js hydration が unsafe-inline / unsafe-eval を必要とする
+          // style-src: Framer Motion がインライン style を生成するため unsafe-inline が必要
+          // img-src: Next.js Image が data: URI を使用。OAuth アバター（Google/LINE）の外部ドメイン
+          // connect-src: Supabase REST API + Realtime WebSocket
+          // media-src: MediaRecorder 録画動画の blob: playback
+          // worker-src: blob: は Web Worker 用の保険
+          // frame-ancestors: X-Frame-Options DENY と冗長防御
+          // object-src: Flash / object タグを完全禁止
+          // base-uri: <base> タグによる相対URL書き換えを防止
+          {
+            key: "Content-Security-Policy",
+            value: [
+              "default-src 'self'",
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+              "style-src 'self' 'unsafe-inline'",
+              "img-src 'self' data: blob: https://lh3.googleusercontent.com https://profile.line-sc.com https://obs.line-apps.com https://*.line-scdn.net",
+              "connect-src 'self' https://*.supabase.co wss://*.supabase.co",
+              "media-src 'self' blob:",
+              "worker-src 'self' blob:",
+              "frame-ancestors 'none'",
+              "object-src 'none'",
+              "base-uri 'self'",
+            ].join("; "),
           },
         ],
       },

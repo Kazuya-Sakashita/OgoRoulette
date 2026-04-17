@@ -1,7 +1,7 @@
-# ISSUE-263: Security(Medium) — CSP（Content Security Policy）未設定
+# ISSUE-263: Security(Medium) — CSP（Content Security Policy）未設定（✅ 修正済み）
 
 ## ステータス
-🔲 TODO
+✅ 修正済み（2026-04-17）— next.config.mjs に Content-Security-Policy ヘッダを追加
 
 ## 優先度
 **Medium / セキュリティ（将来対応）**
