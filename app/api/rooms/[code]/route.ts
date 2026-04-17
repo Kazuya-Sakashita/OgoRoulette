@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { getDisplayName } from "@/lib/display-name"
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
+import { signResultToken } from "@/lib/result-token"
 
 // GET /api/rooms/[code] - Get room by invite code
 export async function GET(
@@ -79,7 +80,22 @@ export async function GET(
         : m.nickname,
     }))
 
-    return NextResponse.json({ ...room, members: sanitizedMembers })
+    // ISSUE-276: 各セッションの当選者に対して resultToken を計算して付与する。
+    // メンバーはこれを share URL に含めることで正式抽選結果として検証可能になる。
+    // signResultToken は RESULT_TOKEN_SECRET 未設定時に例外を投げるため、
+    // 未設定環境（dev 等）では token なしで続行する。
+    const sessionsWithToken = room.sessions.map((session) => {
+      const winner = session.participants.find((p) => p.isWinner)
+      let resultToken: string | undefined
+      try {
+        resultToken = winner ? signResultToken(session.id, winner.name) : undefined
+      } catch {
+        resultToken = undefined
+      }
+      return { ...session, resultToken }
+    })
+
+    return NextResponse.json({ ...room, members: sanitizedMembers, sessions: sessionsWithToken })
   } catch (error) {
     console.error("Error fetching room:", error)
     return NextResponse.json({ error: "Failed to fetch room" }, { status: 500 })

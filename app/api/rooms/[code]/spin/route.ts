@@ -6,6 +6,7 @@ import { randomInt } from "crypto"
 import { SPIN_COUNTDOWN_MS } from "@/lib/constants"
 import { verifyGuestToken } from "@/lib/guest-token"
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
+import { signResultToken } from "@/lib/result-token"
 
 // POST /api/rooms/[code]/spin
 // WHAT: オーナー専用。サーバーが当選者を決定し、全クライアントが使う spinStartedAt を返す。
@@ -216,11 +217,21 @@ export async function POST(
       }).catch(() => {})
     }
 
+    // ISSUE-276: HMAC 署名トークンで正式抽選結果を証明する
+    // RESULT_TOKEN_SECRET 未設定時（dev 環境等）は token なしで続行
+    let resultToken: string | undefined
+    try {
+      resultToken = signResultToken(session.id, winnerName)
+    } catch {
+      resultToken = undefined
+    }
+
     const responseTime = Date.now()
     return NextResponse.json({
       winnerIndex,
       winnerName,
       sessionId: session.id,
+      resultToken,
       spinStartedAt: spinStartedAt.getTime(), // Unix ms — 全クライアントが基準にする
     }, { headers: { "X-Server-Time": String(responseTime) } })
   } catch (error) {

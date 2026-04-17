@@ -28,6 +28,8 @@ export interface Session {
   treatAmount: number | null
   perPersonAmount: number | null
   participants: SessionWinner[]
+  // ISSUE-276: 正式抽選結果の検証トークン（room GET API が計算して付与）
+  resultToken?: string
 }
 
 export interface Room {
@@ -48,4 +50,7 @@ export interface WinnerData {
   totalAmount?: number
   treatAmount?: number
   perPersonAmount?: number
+  // ISSUE-276: 結果URL検証用（spin API または room GET から取得）
+  sessionId?: string
+  resultToken?: string
 }

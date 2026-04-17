@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button"
 import { Confetti } from "@/components/confetti"
-import { ArrowLeft, Share2, Crown, Sparkles, Copy, Check, Users } from "lucide-react"
+import { ArrowLeft, Share2, Crown, Sparkles, Copy, Check, Users, ShieldCheck, AlertTriangle } from "lucide-react"
 import { useState, useEffect, Suspense } from "react"
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
@@ -14,6 +14,8 @@ function ResultInner() {
   const [copied, setCopied] = useState(false)
   // ISSUE-094: room join CTA — check if the source room is still active
   const [roomActive, setRoomActive] = useState<"loading" | "active" | "inactive">("loading")
+  // ISSUE-276: 正式抽選結果の検証バッジ
+  const [verification, setVerification] = useState<"pending" | "valid" | "invalid" | "none">("none")
 
   // ISSUE-259: URL パラメータの長さ・型・範囲バリデーション
   // React の自動エスケープで XSS は発生しないが、超長入力によるレイアウト崩れ・計算誤差を防ぐ
@@ -31,6 +33,9 @@ function ResultInner() {
   const roomCode = searchParams.get("room") || ""
   // ISSUE-241: シェアリンク経由の流入を検出
   const isShareRef = searchParams.get("ref") === "share"
+  // ISSUE-276: 検証パラメータ
+  const tokenParam = searchParams.get("token") ?? ""
+  const sessionParam = searchParams.get("session") ?? ""
 
   const remainingAmount = Math.max(0, totalBill - treatAmount)
   const nonTreaters = participantNames.filter((name) => name !== treaterName)
@@ -47,6 +52,21 @@ function ResultInner() {
     const timer = setTimeout(() => setShowConfetti(false), 4000)
     return () => clearTimeout(timer)
   }, [])
+
+  // ISSUE-276: 結果URLの正当性を検証する
+  // token と session が両方ある場合のみ検証を試みる。
+  // token がない場合（ローカルモード・旧URL）はバッジを表示しない。
+  useEffect(() => {
+    if (!tokenParam || !sessionParam) {
+      setVerification("none")
+      return
+    }
+    setVerification("pending")
+    fetch(`/api/result-verify?token=${encodeURIComponent(tokenParam)}&session=${encodeURIComponent(sessionParam)}&winner=${encodeURIComponent(treaterName)}`)
+      .then((res) => res.json())
+      .then((data) => setVerification(data.valid ? "valid" : "invalid"))
+      .catch(() => setVerification("invalid"))
+  }, [tokenParam, sessionParam, treaterName]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ISSUE-241: シェアリンク経由の流入を計測
   useEffect(() => {
@@ -147,6 +167,20 @@ function ResultInner() {
             <p className="text-white/80 text-lg">ごちそうさまです!</p>
           </div>
         </div>
+
+        {/* ISSUE-276: 正式抽選結果の検証バッジ */}
+        {verification === "valid" && (
+          <div className="flex items-center justify-center gap-1.5 text-xs text-green-400">
+            <ShieldCheck className="w-3.5 h-3.5 shrink-0" />
+            OgoRoulette で正式に抽選された結果です
+          </div>
+        )}
+        {verification === "invalid" && (
+          <div className="flex items-center justify-center gap-1.5 text-xs text-yellow-400">
+            <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+            この結果は正式に抽選されたものか確認できません
+          </div>
+        )}
 
         {/* ソーシャルプルーフ */}
         <p className="text-center text-xs text-muted-foreground px-2">

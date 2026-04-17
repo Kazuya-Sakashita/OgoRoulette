@@ -67,6 +67,9 @@ export function useSpin({
   // ISSUE-223: 連打防止 — React の非同期 state 更新より先に同期フラグでロックする
   const isSpinningRef = useRef(false)
   const pendingMemberWinnerRef = useRef<WinnerData | null>(null)
+  // ISSUE-276: spin API レスポンスの sessionId / resultToken を保持（オーナー用）
+  const resultTokenRef = useRef<string | null>(null)
+  const resultSessionIdRef = useRef<string | null>(null)
   const prevSessionIdRef = useRef<string | null | undefined>(undefined)
   const confettiTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const clockOffsetMsRef = useRef<number>(0)
@@ -177,6 +180,10 @@ export function useSpin({
       setClockOffsetMs(offset)
       const data = await res.json()
 
+      // ISSUE-276: 正式抽選結果の検証トークンを保存（WinnerData に含めて share URL へ）
+      resultTokenRef.current = data.resultToken ?? null
+      resultSessionIdRef.current = data.sessionId ?? null
+
       // ISSUE-221: メンバーに spin_start を Broadcast 送信（postgres_changes より ~600ms 速い）
       // メンバーは受信後に即 fetchRoom() してスケジュールを組むため同期精度が大幅に向上する
       spinSyncChannelRef.current?.send({
@@ -238,6 +245,8 @@ export function useSpin({
         totalAmount: latestSession.totalAmount ?? undefined,
         treatAmount: latestSession.treatAmount ?? undefined,
         perPersonAmount: latestSession.perPersonAmount ?? undefined,
+        sessionId: latestSession.id,
+        resultToken: latestSession.resultToken,
       })
       setPhase("result")
     }
@@ -258,6 +267,8 @@ export function useSpin({
         totalAmount: hasBillInput ? totalBill : undefined,
         treatAmount: hasBillInput ? treatAmount : undefined,
         perPersonAmount: hasBillInput ? splitAmount : undefined,
+        sessionId: resultSessionIdRef.current ?? undefined,
+        resultToken: resultTokenRef.current ?? undefined,
       })
       playResultSound()
       vibrate(HapticPattern.result)
@@ -394,6 +405,8 @@ export function useSpin({
         totalAmount: session.totalAmount ?? undefined,
         treatAmount: session.treatAmount ?? undefined,
         perPersonAmount: session.perPersonAmount ?? undefined,
+        sessionId: session.id,
+        resultToken: session.resultToken,
       }
       setPendingWinnerIndex(wp.orderIndex)
 
@@ -433,6 +446,8 @@ export function useSpin({
               totalAmount: latestSession.totalAmount ?? undefined,
               treatAmount: latestSession.treatAmount ?? undefined,
               perPersonAmount: latestSession.perPersonAmount ?? undefined,
+              sessionId: latestSession.id,
+              resultToken: latestSession.resultToken,
             })
             setPhase("result")
           }

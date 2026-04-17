@@ -20,6 +20,9 @@ export interface SharePayload {
   videoBlob?: Blob | null
   // ISSUE-094: room code so /result page can offer "join this group" CTA
   roomCode?: string
+  // ISSUE-276: 正式抽選結果の署名トークン — /result ページで検証バッジを表示する
+  sessionId?: string
+  resultToken?: string
 }
 
 export interface ShareTemplate {
@@ -90,6 +93,9 @@ export function buildShareUrl(payload: SharePayload): string {
   if (payload.totalBill) params.set("total", String(payload.totalBill))
   if (payload.treatAmount) params.set("treat", String(payload.treatAmount))
   if (payload.roomCode) params.set("room", payload.roomCode)
+  // ISSUE-276: 正式抽選結果を示す署名トークンを含める
+  if (payload.sessionId) params.set("session", payload.sessionId)
+  if (payload.resultToken) params.set("token", payload.resultToken)
   params.set("ref", "share")
   return `${window.location.origin}/result?${params.toString()}`
 }

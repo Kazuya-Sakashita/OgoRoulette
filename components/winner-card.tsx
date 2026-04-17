@@ -52,6 +52,9 @@ interface WinnerCardProps {
   onReact?: (emoji: string) => void
   // ISSUE-243: グループ連続当選カウント（2以上で表示）
   consecutiveCount?: number
+  // ISSUE-276: 正式抽選結果の署名トークン（room-based roulette のみ）
+  sessionId?: string
+  resultToken?: string
 }
 
 const REACTIONS = [
@@ -95,6 +98,8 @@ export function WinnerCard({
   sessionSpinCount,
   onReact,
   consecutiveCount,
+  sessionId,
+  resultToken,
 }: WinnerCardProps) {
   const color = SEGMENT_COLORS[winnerIndex % SEGMENT_COLORS.length]
   const [reaction] = useState(() => getPersonalizedReaction(treatCount))
@@ -180,6 +185,9 @@ export function WinnerCard({
     totalBill: hasBillInfo ? bill : undefined,
     treatAmount: hasBillInfo ? treat : undefined,
     roomCode,
+    // ISSUE-276: 正式抽選結果の署名トークン（room-based roulette のみ）
+    sessionId,
+    resultToken,
   }
   const shareUrl = buildShareUrl(sharePayload)
   // Default template for quick-share buttons in details phase

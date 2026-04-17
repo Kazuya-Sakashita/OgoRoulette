@@ -203,6 +203,8 @@ export function RoomPlayOverlays({
           isGuest={!currentUser}
           onAdvanceToDetails={handleDetailsPhase}
           onReact={handleReact}
+          sessionId={winner.sessionId}
+          resultToken={winner.resultToken}
         />
       )}
 
