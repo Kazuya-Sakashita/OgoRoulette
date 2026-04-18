@@ -2,7 +2,7 @@
 name: ISSUE-290
 type: bug
 priority: Critical
-status: 🔲 未対応
+status: ✅ 完了
 ---
 
 # ISSUE-290: Critical — OG画像エンドポイントが本番で0バイトを返す（SNS共有の視覚プレビュー全滅）
