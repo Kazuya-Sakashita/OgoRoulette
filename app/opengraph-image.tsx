@@ -13,9 +13,8 @@ export default async function Image() {
       "https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@700&display=swap",
       {
         headers: {
-          // woff 形式を要求（Satori が対応している形式）
-          "User-Agent":
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+          // IE9 UA → Google returns WOFF (satori edge runtime does not support WOFF2 decompression)
+          "User-Agent": "Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; Trident/5.0)",
         },
       }
     ).then((r) => r.text())
@@ -28,7 +27,8 @@ export default async function Image() {
     // フォント取得失敗時はシステムフォントで描画（日本語が豆腐になる可能性あり）
   }
 
-  return new ImageResponse(
+  try {
+  const imgRes = new ImageResponse(
     (
       <div
         style={{
@@ -91,7 +91,17 @@ export default async function Image() {
             zIndex: 1,
           }}
         >
-          <span style={{ fontSize: 68 }}>🎰</span>
+          {/* 絵文字はSatoriでクラッシュするためCSSルーレット記号で代替 */}
+          <div
+            style={{
+              display: "flex",
+              fontSize: 64,
+              fontWeight: 900,
+              color: "#F97316",
+            }}
+          >
+            &#9679;
+          </div>
         </div>
 
         {/* アプリ名 */}
@@ -107,8 +117,8 @@ export default async function Image() {
             zIndex: 1,
           }}
         >
-          <span style={{ color: "#ffffff" }}>Ogo</span>
-          <span style={{ color: "#F97316" }}>Roulette</span>
+          <div style={{ display: "flex", color: "#ffffff" }}>Ogo</div>
+          <div style={{ display: "flex", color: "#F97316" }}>Roulette</div>
         </div>
 
         {/* キャッチコピー（日本語） */}
@@ -152,9 +162,9 @@ export default async function Image() {
           }}
         >
           {[
-            "🔄  全員の画面が同期",
-            "🎯  公平に決まる",
-            "💰  割り勘も計算",
+            "全員の画面が同期",
+            "公平に決まる",
+            "割り勘も計算",
           ].map((label) => (
             <div
               key={label}
@@ -207,4 +217,12 @@ export default async function Image() {
         : {}),
     }
   )
+  const buf = await imgRes.arrayBuffer()
+  return new Response(buf, {
+    headers: { "content-type": "image/png", "cache-control": "public, max-age=86400, immutable" },
+  })
+  } catch (err) {
+    console.error("[opengraph-image] ImageResponse failed:", err)
+    return new Response("OG image generation failed", { status: 500 })
+  }
 }

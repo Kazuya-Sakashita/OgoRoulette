@@ -12,9 +12,8 @@ async function loadFont(text: string): Promise<ArrayBuffer | null> {
       `https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@700&text=${encodeURIComponent(text)}`,
       {
         headers: {
-          // Modern Chrome UA → Google returns WOFF2 (supported by satori 0.10+)
-          "User-Agent":
-            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+          // IE9 UA → Google returns WOFF (satori edge runtime does not support WOFF2 decompression)
+          "User-Agent": "Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; Trident/5.0)",
         },
       }
     )
@@ -28,6 +27,15 @@ async function loadFont(text: string): Promise<ArrayBuffer | null> {
     // Font load failure: fall back to default sans-serif (Latin glyphs only)
     return null
   }
+}
+
+// Satori は 8 桁 hex (#RRGGBBAA) 非対応のため rgba() に変換するヘルパー
+function hexToRgba(hex: string, alpha: number): string {
+  const h = hex.replace("#", "")
+  const r = parseInt(h.slice(0, 2), 16)
+  const g = parseInt(h.slice(2, 4), 16)
+  const b = parseInt(h.slice(4, 6), 16)
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`
 }
 
 // GET /api/og?winner=田中&color=%23F97316&amount=15000&count=5
@@ -67,7 +75,10 @@ export async function GET(request: NextRequest) {
 
   const fontFamily = fonts.length > 0 ? '"Noto Sans JP", sans-serif' : "sans-serif"
 
-  return new ImageResponse(
+  try {
+  // arrayBuffer() でレンダリングを完結させてからレスポンス送信する。
+  // ImageResponse はストリームなので try-catch だけでは rendering エラーを捕まえられない。
+  const imgRes = new ImageResponse(
     (
       <div
         style={{
@@ -78,7 +89,7 @@ export async function GET(request: NextRequest) {
           alignItems: "center",
           justifyContent: "center",
           // ISSUE-097: Use winner color for a more dramatic, brand-consistent gradient
-          background: `linear-gradient(150deg, ${color}33 0%, #080F1C 40%, #080F1C 60%, ${color}26 100%)`,
+          background: `linear-gradient(150deg, ${hexToRgba(color, 0.2)} 0%, #080F1C 40%, #080F1C 60%, ${hexToRgba(color, 0.15)} 100%)`,
           position: "relative",
           overflow: "hidden",
           fontFamily,
@@ -88,8 +99,11 @@ export async function GET(request: NextRequest) {
         <div
           style={{
             position: "absolute",
-            inset: 0,
-            background: `radial-gradient(ellipse at 50% 55%, ${color}55 0%, ${color}28 42%, transparent 68%)`,
+            top: 0,
+            right: 0,
+            bottom: 0,
+            left: 0,
+            background: `radial-gradient(ellipse at 50% 55%, ${hexToRgba(color, 0.33)} 0%, ${hexToRgba(color, 0.16)} 42%, rgba(0,0,0,0) 68%)`,
           }}
         />
 
@@ -118,23 +132,37 @@ export async function GET(request: NextRequest) {
               borderRadius: "50%",
               background: color,
               opacity: dot.opacity,
-              top: dot.top,
-              bottom: dot.bottom,
-              left: dot.left,
-              right: dot.right,
+              ...(dot.top !== undefined ? { top: dot.top } : {}),
+              ...(dot.bottom !== undefined ? { bottom: dot.bottom } : {}),
+              ...(dot.left !== undefined ? { left: dot.left } : {}),
+              ...(dot.right !== undefined ? { right: dot.right } : {}),
             }}
           />
         ))}
 
-        {/* Crown */}
+        {/* Crown — 絵文字はSatoriでクラッシュするためCSS円で代替 */}
         <div
           style={{
-            fontSize: "88px",
-            lineHeight: 1,
+            display: "flex",
+            width: "64px",
+            height: "64px",
+            borderRadius: "50%",
+            background: hexToRgba(color, 0.2),
+            border: `3px solid ${hexToRgba(color, 0.53)}`,
             marginBottom: "12px",
+            alignItems: "center",
+            justifyContent: "center",
           }}
         >
-          👑
+          <div
+            style={{
+              display: "flex",
+              width: "28px",
+              height: "28px",
+              borderRadius: "50%",
+              background: color,
+            }}
+          />
         </div>
 
         {/* Avatar circle */}
@@ -143,7 +171,7 @@ export async function GET(request: NextRequest) {
             width: "136px",
             height: "136px",
             borderRadius: "50%",
-            background: `linear-gradient(135deg, ${color}, ${color}88)`,
+            background: `linear-gradient(135deg, ${color}, ${hexToRgba(color, 0.53)})`,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -152,7 +180,6 @@ export async function GET(request: NextRequest) {
             color: "#0B1B2B",
             marginBottom: "24px",
             border: "5px solid rgba(255,255,255,0.28)",
-            boxShadow: `0 0 80px ${color}55`,
             fontFamily,
           }}
         >
@@ -195,11 +222,10 @@ export async function GET(request: NextRequest) {
             fontWeight: 900,
             color: "white",
             lineHeight: 1.1,
-            textShadow: `0 0 60px ${color}`,
             fontFamily,
           }}
         >
-          {winner}さん
+          {`${winner}さん`}
         </div>
 
         {/* Amount badge */}
@@ -209,15 +235,15 @@ export async function GET(request: NextRequest) {
               marginTop: "20px",
               padding: "10px 28px",
               borderRadius: "32px",
-              background: `${color}30`,
-              border: `2px solid ${color}60`,
+              background: hexToRgba(color, 0.19),
+              border: `2px solid ${hexToRgba(color, 0.38)}`,
               fontSize: "36px",
               fontWeight: 700,
               color: color,
               fontFamily,
             }}
           >
-            {formattedAmount} 奢り
+            {`${formattedAmount} 奢り`}
           </div>
         )}
 
@@ -236,10 +262,18 @@ export async function GET(request: NextRequest) {
             fontFamily,
           }}
         >
-          🎰 OgoRoulette
+          OgoRoulette
         </div>
       </div>
     ),
     { width: 1200, height: 630, fonts }
   )
+  const buf = await imgRes.arrayBuffer()
+  return new Response(buf, {
+    headers: { "content-type": "image/png", "cache-control": "public, max-age=3600, immutable" },
+  })
+  } catch (err) {
+    console.error("[og] ImageResponse failed:", err)
+    return new Response("OG image generation failed", { status: 500 })
+  }
 }
