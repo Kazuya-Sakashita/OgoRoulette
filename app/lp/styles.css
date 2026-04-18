@@ -535,6 +535,76 @@ section { padding: 72px 0; }
 .stat-label { font-size: 12px; color: var(--c-muted); margin-top: 2px; }
 
 /* ========================================
+   DESKTOP (1024px+)
+======================================== */
+@media (min-width: 1024px) {
+  /* Nav */
+  .nav__inner { max-width: 960px; }
+
+  /* Containers */
+  .container { max-width: 720px; }
+  .container--wide { max-width: 960px; }
+
+  /* Hero: 2-column grid — text left, wheel right */
+  .hero .container {
+    max-width: 960px;
+    display: grid;
+    grid-template-columns: 1fr 300px;
+    column-gap: 64px;
+    text-align: left;
+    align-items: start;
+  }
+  .hero__eyebrow,
+  .hero__title,
+  .hero__subtitle,
+  .hero__cta_group,
+  .hero__cta-group,
+  .hero__note,
+  .stat-row {
+    grid-column: 1;
+  }
+  .wheel-container { grid-column: 2; grid-row: 1 / 9; margin: 0; align-self: center; }
+  .hero__subtitle  { text-align: left; margin-left: 0; max-width: 100%; }
+  .hero__cta_group,
+  .hero__cta-group { align-items: flex-start; flex-direction: row; }
+  .stat-row        { justify-content: flex-start; }
+  .hero__scroll_hint,
+  .hero__scroll-hint { display: none; }
+
+  /* Pain: 3-column row */
+  .pain__cards { flex-direction: row; }
+
+  /* Solution: 3-column row */
+  .solution__cards { flex-direction: row; }
+
+  /* Experience steps: 3-column row */
+  .experience__steps {
+    flex-direction: row;
+    gap: 0;
+  }
+  .exp__step { flex-direction: column; align-items: center; text-align: center; flex: 1; padding-bottom: 0; }
+  .exp__step:not(:last-child)::after {
+    left: auto; right: -50%; top: 19px; bottom: auto;
+    width: auto; height: 2px;
+    background: linear-gradient(to right, rgba(249,115,22,0.4), rgba(249,115,22,0.05));
+  }
+  .exp__num { margin-bottom: 16px; }
+
+  /* Features: 4-column grid */
+  .features__grid { grid-template-columns: repeat(4, 1fr); }
+
+  /* Scenes: 2×N grid */
+  .scenes__list  { flex-direction: row; flex-wrap: wrap; }
+  .scene__item   { flex: 1 1 calc(50% - 8px); }
+
+  /* Free: horizontal row */
+  .free__points  { flex-direction: row; }
+
+  /* Final CTA buttons: row */
+  .final-cta__btns { flex-direction: row; justify-content: center; }
+}
+
+/* ========================================
    PRINT / PDF OVERRIDES
 ======================================== */
 @media print {
