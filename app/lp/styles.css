@@ -571,11 +571,16 @@ section { padding: 72px 0; }
   .hero__scroll_hint,
   .hero__scroll-hint { display: none; }
 
-  /* Pain: 3-column row */
+  /* Pain: 3-column row（各カード均等幅） */
   .pain__cards { flex-direction: row; }
+  .pain__card  { flex: 1; }
 
-  /* Solution: 3-column row */
-  .solution__cards { flex-direction: row; }
+  /* Solution: 2×2グリッド（1列4枚は狭すぎるため） */
+  .solution__cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
 
   /* Experience steps: 3-column row */
   .experience__steps {
