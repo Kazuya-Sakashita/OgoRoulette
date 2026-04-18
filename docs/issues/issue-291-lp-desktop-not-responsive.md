@@ -2,7 +2,7 @@
 name: ISSUE-291
 type: ux
 priority: Medium
-status: 🔲 未対応
+status: ✅ 完了
 ---
 
 # ISSUE-291: Medium — LPページがデスクトップ幅で未対応（480px 固定でサイドに空白が広がる）
