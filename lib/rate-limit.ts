@@ -1,6 +1,9 @@
 // レートリミット
-// - Vercel KV（KV_REST_API_URL + KV_REST_API_TOKEN が設定されている場合）: サーバー横断で有効
-// - 未設定の場合: インメモリフォールバック（ローカル開発用）
+// - Vercel KV（KV_REST_API_URL + KV_REST_API_TOKEN が設定されている場合）: サーバー横断で有効（最優先）
+// - KV 未設定の場合: PostgreSQL バックエンド（ISSUE-277: Vercel マルチインスタンス対応）
+// - DB も利用不可の場合: インメモリフォールバック（ローカル開発用）
+
+import { prisma } from "@/lib/prisma"
 
 // ─── インメモリストア（フォールバック用）───────────────────
 
@@ -84,11 +87,47 @@ async function checkRateLimitKV(
   return { allowed, remaining, resetAt }
 }
 
+// ─── PostgreSQL バックエンド（ISSUE-277: 分散レートリミット）──────────────────
+
+async function checkRateLimitDB(
+  ip: string,
+  endpoint: string,
+  limit: number,
+  windowMs: number
+): Promise<{ allowed: boolean; remaining: number; resetAt: number }> {
+  const key = `${endpoint}:${ip}`
+  const windowStart = Math.floor(Date.now() / windowMs)
+  const resetAt = new Date((windowStart + 1) * windowMs)
+
+  // ON CONFLICT DO UPDATE でアトミックにインクリメント。
+  // ウィンドウが切れていれば count をリセットして 1 から再開する。
+  const result = await prisma.$queryRaw<Array<{ count: bigint }>>`
+    INSERT INTO rate_limits (key, count, reset_at)
+    VALUES (${key}, 1, ${resetAt})
+    ON CONFLICT (key) DO UPDATE SET
+      count = CASE
+        WHEN rate_limits.reset_at < NOW() THEN 1
+        ELSE rate_limits.count + 1
+      END,
+      reset_at = CASE
+        WHEN rate_limits.reset_at < NOW() THEN EXCLUDED.reset_at
+        ELSE rate_limits.reset_at
+      END
+    RETURNING count
+  `
+  const count = Number(result[0]?.count ?? 1)
+  return {
+    allowed: count <= limit,
+    remaining: Math.max(0, limit - count),
+    resetAt: resetAt.getTime(),
+  }
+}
+
 // ─── 公開 API ──────────────────────────────────────────────
 
 /**
  * IPアドレスとエンドポイント名をキーにレート制限を確認する。
- * Vercel KV が設定されている場合はサーバー横断で機能する。
+ * 優先順: KV（Vercel Redis）→ PostgreSQL（分散対応）→ インメモリ（ローカル開発用）
  *
  * @param ip       クライアント IP
  * @param endpoint ルートを識別する任意の文字列（例: "join", "spin"）
@@ -106,11 +145,15 @@ export async function checkRateLimit(
     try {
       return await checkRateLimitKV(ip, endpoint, limit, windowMs)
     } catch (err) {
-      // KV が一時的に利用不可の場合はメモリフォールバック
-      console.warn("[rate-limit] KV unavailable, falling back to memory:", err)
+      console.warn("[rate-limit] KV unavailable, falling back to DB:", err)
     }
   }
-  return checkRateLimitMemory(ip, endpoint, limit, windowMs)
+  try {
+    return await checkRateLimitDB(ip, endpoint, limit, windowMs)
+  } catch (err) {
+    console.warn("[rate-limit] DB unavailable, falling back to memory:", err)
+    return checkRateLimitMemory(ip, endpoint, limit, windowMs)
+  }
 }
 
 /**

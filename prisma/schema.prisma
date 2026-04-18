@@ -222,3 +222,18 @@ enum SharePlatform {
   IMAGE       // Save image
 }
 
+// ============================================
+// Rate Limit (ISSUE-277: 分散レートリミット)
+// ============================================
+// Vercel マルチインスタンス間で共有されるレートリミットストア。
+// ON CONFLICT DO UPDATE でアトミックなインクリメントを実現。
+// RLS 有効 + ポリシーなし → Supabase REST API からは完全非公開。
+// ============================================
+model RateLimit {
+  key     String   @id          // "${endpoint}:${ip}"
+  count   Int                   // リクエスト数
+  resetAt DateTime @map("reset_at") @db.Timestamptz  // ウィンドウ終端
+
+  @@map("rate_limits")
+}
+
