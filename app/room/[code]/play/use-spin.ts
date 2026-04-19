@@ -7,7 +7,47 @@ import { SPIN_COUNTDOWN_MS } from "@/lib/constants"
 import { trackEvent, AnalyticsEvent } from "@/lib/analytics"
 import { createClient } from "@/lib/supabase/client"
 import type { User } from "@supabase/supabase-js"
-import type { Phase, Room, Session, WinnerData } from "./types"
+import type { Phase, Room, Session, SessionWinner, WinnerData } from "./types"
+
+// ─── タイムアウト定数 ──────────────────────────────────────────────────────────
+// spinning 安全網: アニメーション最大長 + バッファ
+const SPINNING_TIMEOUT_MS = 4500 + 500 + 2500
+// confetti 表示時間
+const CONFETTI_DETAILS_MS = 3000  // winner card PhaseA→B
+const CONFETTI_RESULT_MS = 6000   // 当選発表後フル演出
+const PRISM_BURST_MS = 1800
+
+// ─── 純粋ヘルパー ──────────────────────────────────────────────────────────────
+
+/**
+ * Session と当選参加者から WinnerData を組み立てる。
+ * showResult / scheduleSpin / 初期ロードの3箇所で同一パターンが使われるため共通化。
+ */
+function buildWinnerFromSession(session: Session, wp: SessionWinner): WinnerData {
+  return {
+    name: wp.name,
+    index: wp.orderIndex,
+    totalAmount: session.totalAmount ?? undefined,
+    treatAmount: session.treatAmount ?? undefined,
+    perPersonAmount: session.perPersonAmount ?? undefined,
+    sessionId: session.id,
+    resultToken: session.resultToken,
+  }
+}
+
+/** spin API エラーレスポンスからユーザー向けメッセージを生成する（副作用なし）。 */
+function getSpinApiErrorMessage(status: number, errorData: Record<string, unknown>): string {
+  if (status === 409) return "既にスピンが進行中です。少しお待ちください。"
+  if (status >= 500) return "サーバーエラーが発生しました。もう一度お試しください。"
+  return (errorData.error as string | undefined) || "スピンに失敗しました。もう一度お試しください。"
+}
+
+/** ネットワークエラー時のユーザー向けメッセージ（オンライン状態で分岐）。 */
+function getNetworkErrorMessage(): string {
+  return !navigator.onLine
+    ? "インターネット接続を確認してください。"
+    : "ネットワークエラーが発生しました。もう一度お試しください。"
+}
 
 interface UseSpinParams {
   code: string
@@ -136,7 +176,7 @@ export function useSpin({
     setConfettiBurstKey((k) => k + 1)
     setShowConfetti(true)
     clearTimeout(confettiTimerRef.current ?? undefined)
-    confettiTimerRef.current = setTimeout(() => setShowConfetti(false), 3000)
+    confettiTimerRef.current = setTimeout(() => setShowConfetti(false), CONFETTI_DETAILS_MS)
   }
 
   const handleSpin = async () => {
@@ -168,12 +208,7 @@ export function useSpin({
         const data = await res.json()
         trackEvent(AnalyticsEvent.SPIN_API_ERROR, { error: data.error ?? "unknown", status: res.status })
         // ISSUE-224: ステータスコード別の具体的メッセージ
-        const status = res.status
-        const msg =
-          status === 409 ? "既にスピンが進行中です。少しお待ちください。" :
-          status >= 500 ? "サーバーエラーが発生しました。もう一度お試しください。" :
-          data.error || "スピンに失敗しました。もう一度お試しください。"
-        setSpinError(msg)
+        setSpinError(getSpinApiErrorMessage(res.status, data))
         setPhase("waiting")
         return
       }
@@ -212,10 +247,7 @@ export function useSpin({
       }, delay)
     } catch {
       // ISSUE-224: ネットワーク断かどうかを判定して具体的に案内する
-      const msg = !navigator.onLine
-        ? "インターネット接続を確認してください。"
-        : "ネットワークエラーが発生しました。もう一度お試しください。"
-      setSpinError(msg)
+      setSpinError(getNetworkErrorMessage())
       setPhase("waiting")
     } finally {
       // ISSUE-223: 非同期処理完了後にロック解除（エラー時も成功時も）
@@ -253,16 +285,39 @@ export function useSpin({
     }
     const wp = latestSession.participants?.find((p) => p.isWinner)
     if (wp) {
-      setWinner({
-        name: wp.name,
-        index: wp.orderIndex,
-        totalAmount: latestSession.totalAmount ?? undefined,
-        treatAmount: latestSession.treatAmount ?? undefined,
-        perPersonAmount: latestSession.perPersonAmount ?? undefined,
-        sessionId: latestSession.id,
-        resultToken: latestSession.resultToken,
-      })
+      setWinner(buildWinnerFromSession(latestSession, wp))
       setPhase("result")
+    }
+  }
+
+  // ISSUE-005: spin-complete API を最大 3 回リトライして COMPLETED に遷移させる。
+  // IIFE から名前付き関数に切り出すことでスタックトレースを追いやすくした。
+  const completeSpinOnServer = async () => {
+    const MAX_RETRIES = 3
+    for (let i = 0; i < MAX_RETRIES; i++) {
+      try {
+        const res = await fetch(`/api/rooms/${code}/spin-complete`, {
+          method: "POST",
+          headers: buildGuestAuthHeaders(),
+        })
+        if (res.ok || res.status === 404) {
+          if (res.ok) {
+            fetchRanking()
+            trackEvent(AnalyticsEvent.ROOM_COMPLETED)
+          }
+          return
+        }
+        if (res.status === 409) return
+      } catch {
+        // ネットワークエラー → retry
+      }
+      if (i < MAX_RETRIES - 1) {
+        await new Promise(r => setTimeout(r, 1000 * (i + 1)))
+      } else {
+        console.error("[OgoRoulette] spin-complete failed after retries")
+        trackEvent(AnalyticsEvent.SPIN_COMPLETE_FAILED)
+        setSpinError("結果の保存に失敗しました。ページを再読み込みしてください")
+      }
     }
   }
 
@@ -275,6 +330,7 @@ export function useSpin({
     trackEvent(AnalyticsEvent.SPIN_ANIMATION_COMPLETE)
 
     if (isOwner) {
+      // [OWNER] WinnerData は bill 入力値 + API レスポンストークンから組み立てる
       setWinner({
         name: winnerName,
         index: winnerIndex,
@@ -288,42 +344,16 @@ export function useSpin({
       vibrate(HapticPattern.result)
       setShowConfetti(true)
       setShowPrismBurst(true)
-      setTimeout(() => setShowPrismBurst(false), 1800)
+      setTimeout(() => setShowPrismBurst(false), PRISM_BURST_MS)
       clearTimeout(confettiTimerRef.current ?? undefined)
-      confettiTimerRef.current = setTimeout(() => setShowConfetti(false), 6000)
+      confettiTimerRef.current = setTimeout(() => setShowConfetti(false), CONFETTI_RESULT_MS)
       // ISSUE-005: ルームとセッションを COMPLETED にする（retry 付き）
-      ;(async () => {
-        const MAX_RETRIES = 3
-        for (let i = 0; i < MAX_RETRIES; i++) {
-          try {
-            const res = await fetch(`/api/rooms/${code}/spin-complete`, {
-              method: "POST",
-              headers: buildGuestAuthHeaders(),
-            })
-            if (res.ok || res.status === 404) {
-              if (res.ok) {
-                fetchRanking()
-                trackEvent(AnalyticsEvent.ROOM_COMPLETED)
-              }
-              return
-            }
-            if (res.status === 409) return
-          } catch {
-            // ネットワークエラー → retry
-          }
-          if (i < MAX_RETRIES - 1) {
-            await new Promise(r => setTimeout(r, 1000 * (i + 1)))
-          } else {
-            console.error("[OgoRoulette] spin-complete failed after retries")
-            trackEvent(AnalyticsEvent.SPIN_COMPLETE_FAILED)
-            setSpinError("結果の保存に失敗しました。ページを再読み込みしてください")
-          }
-        }
-      })().catch((err) => {
+      completeSpinOnServer().catch((err) => {
         console.error("[OgoRoulette] spin-complete unexpected error:", err)
         setSpinError("結果の保存に失敗しました。ページを再読み込みしてください")
       })
     } else {
+      // [MEMBER] pendingMemberWinnerRef に事前キャッシュされた当選者を使う
       const serverWinner = pendingMemberWinnerRef.current
       if (serverWinner) {
         setWinner(serverWinner)
@@ -332,10 +362,11 @@ export function useSpin({
         vibrate(HapticPattern.result)
         setShowConfetti(true)
         setShowPrismBurst(true)
-        setTimeout(() => setShowPrismBurst(false), 1800)
+        setTimeout(() => setShowPrismBurst(false), PRISM_BURST_MS)
         clearTimeout(confettiTimerRef.current ?? undefined)
-        confettiTimerRef.current = setTimeout(() => setShowConfetti(false), 6000)
+        confettiTimerRef.current = setTimeout(() => setShowConfetti(false), CONFETTI_RESULT_MS)
       } else {
+        // フォールバック: room から再取得（pendingMemberWinnerRef が空の場合）
         showResult(room, scheduledSessionIdRef.current)
       }
     }
@@ -346,7 +377,6 @@ export function useSpin({
   // ISSUE-003: phase="spinning" タイムアウト安全網
   useEffect(() => {
     if (phase !== "spinning") return
-    const SPIN_TIMEOUT_MS = 4500 + 500 + 2500
     const id = setTimeout(() => {
       console.warn("[OgoRoulette] spin animation timeout — resetting phase to waiting")
       trackEvent(AnalyticsEvent.PHASE_TIMEOUT, { phase: "spinning" })
@@ -354,21 +384,20 @@ export function useSpin({
       setSpinError("アニメーションがタイムアウトしました。再試行してください")
       spinScheduledRef.current = null
       setPendingWinnerIndex(undefined)
-    }, SPIN_TIMEOUT_MS)
+    }, SPINNING_TIMEOUT_MS)
     return () => clearTimeout(id)
   }, [phase])
 
   // ISSUE-003: phase="preparing" タイムアウト安全網
   useEffect(() => {
     if (phase !== "preparing") return
-    const PREPARING_TIMEOUT_MS = SPIN_COUNTDOWN_MS + 6000
     const id = setTimeout(() => {
       console.warn("[OgoRoulette] preparing phase timeout — resetting")
       trackEvent(AnalyticsEvent.PHASE_TIMEOUT, { phase: "preparing" })
       setPhase("waiting")
       setSpinError("準備がタイムアウトしました。再試行してください")
       spinScheduledRef.current = null
-    }, PREPARING_TIMEOUT_MS)
+    }, SPIN_COUNTDOWN_MS + 6000)
     return () => clearTimeout(id)
   }, [phase])
 
@@ -414,15 +443,7 @@ export function useSpin({
       const wp = session.participants?.find((p) => p.isWinner)
       if (!wp) return
 
-      pendingMemberWinnerRef.current = {
-        name: wp.name,
-        index: wp.orderIndex,
-        totalAmount: session.totalAmount ?? undefined,
-        treatAmount: session.treatAmount ?? undefined,
-        perPersonAmount: session.perPersonAmount ?? undefined,
-        sessionId: session.id,
-        resultToken: session.resultToken,
-      }
+      pendingMemberWinnerRef.current = buildWinnerFromSession(session, wp)
       // ISSUE-278: showResult フォールバック検証用にセッション ID を保存
       scheduledSessionIdRef.current = session.id
       setPendingWinnerIndex(wp.orderIndex)
@@ -460,15 +481,7 @@ export function useSpin({
         if (room.status === "COMPLETED") {
           const wp = latestSession.participants?.find((p) => p.isWinner)
           if (wp) {
-            setWinner({
-              name: wp.name,
-              index: wp.orderIndex,
-              totalAmount: latestSession.totalAmount ?? undefined,
-              treatAmount: latestSession.treatAmount ?? undefined,
-              perPersonAmount: latestSession.perPersonAmount ?? undefined,
-              sessionId: latestSession.id,
-              resultToken: latestSession.resultToken,
-            })
+            setWinner(buildWinnerFromSession(latestSession, wp))
             setPhase("result")
           }
         } else if (room.status === "IN_SESSION") {
