@@ -371,8 +371,8 @@ export default function LPPage() {
           <div className="features__highlight">
             <div className="features__highlight-icon">🔒</div>
             <div>
-              <div className="features__highlight-title">サーバー側で公平に決定 · セキュリティスコア 99/100</div>
-              <div className="features__highlight-desc">当選者は暗号的乱数でサーバーが決定。誰も操作できない本物の公平さ。セキュリティ監査で全評価軸 PASS 取得済み。</div>
+              <div className="features__highlight-title">サーバー側で公平に決定 · 個人情報を収集しません</div>
+              <div className="features__highlight-desc">当選者は暗号的乱数でサーバーが決定。誰も操作できない本物の公平さ。本名・メールアドレス不要。名前だけで参加でき、データは暗号化通信（HTTPS）で保護されます。</div>
             </div>
           </div>
         </div>
@@ -477,7 +477,7 @@ export default function LPPage() {
               <span className={"badge badge--gold"}>SNS反響</span>
             </div>
             <h2 className="section-title">「これ絶対バズる」<br /><span className="grad-text">と言われるレベルの体験。</span></h2>
-            <div className="buzz__big">🔥🎰🔥</div>
+            <div className="buzz__big">🎰</div>
           </div>
 
           <div className="buzz__quote">
