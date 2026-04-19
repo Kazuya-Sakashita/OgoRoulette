@@ -1,7 +1,7 @@
 # ISSUE-219: 設計改善(P1) — showWinnerCard / winner の二重管理を廃止しクラッシュ耐性を高める
 
 ## ステータス
-🔴 未着手
+✅ 完了 2026-04-19 — showWinnerCard state 廃止。winner && のみで制御、800ms 遅延を WinnerCard の delay: 0.8 アニメーションで実現。
 
 ## 優先度
 **P1 / High** — ISSUE-218 の応急修正後に対処。根本的な設計問題のため再発を防ぐ
