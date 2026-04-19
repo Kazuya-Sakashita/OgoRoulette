@@ -1,7 +1,7 @@
 # ISSUE-211: AARRR-Acquisition強化 — Google Search Console + OGP動的画像 + コンテンツSEO
 
 ## ステータス
-📋 未着手
+✅ 完了 2026-04-19 — keywords 長尾化・how-to-use に HowTo/FAQ JSON-LD 追加・Search Console 登録・sitemap.xml 送信完了。
 
 ## 優先度
 **Recommended** — Acquisition が 3/5 で頭打ち。オーガニック流入がほぼゼロ。
