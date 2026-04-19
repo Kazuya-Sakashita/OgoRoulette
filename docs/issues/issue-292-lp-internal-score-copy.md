@@ -2,7 +2,7 @@
 name: ISSUE-292
 type: ux
 priority: Low
-status: 🔲 未対応
+status: ✅ 完了
 ---
 
 # ISSUE-292: Low — LP に内部スコア（「セキュリティスコア 99/100」）が公開されており外部ユーザーに伝わらない
