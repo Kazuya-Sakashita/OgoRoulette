@@ -1,7 +1,7 @@
 # ISSUE-215: AARRR-Revenue Phase 1 — プレミアムテーマ + ブランドルームモード
 
 ## ステータス
-📋 未着手
+⚠️ Phase 1a 完了（2026-04-19） — Premium Nudge・/premium プランページ実装済み。Phase 1b（Stripe 課金）は未着手。
 
 ## 優先度
 **Medium** — Revenue 0/5 が 6軸スコアの構造的ボトルネック。感情スコア 17+ 達成後に着手
