@@ -1,7 +1,7 @@
 # ISSUE-283: High — use-spin.ts の複雑度が限界を超えており保守不能
 
 ## ステータス
-🔲 対応延期 — ISSUE-278/279/282 修正直後に大規模リファクタを行うとリグレッションリスクが高い。安定稼働後に改めて段階的分割を検討。現在の use-spin.ts は型安全性が向上しており保守性は改善済み。
+✅ 完了 2026-04-18 — 安全リファクタリング実施。定数3本・純粋ヘルパー3本を抽出、completeSpinOnServer を named function 化、WinnerData 組み立てを buildWinnerFromSession() に統一。動作変更なし（tsc + build 確認済み）。
 
 ## 優先度
 **High / 技術的負債 / 保守性**
