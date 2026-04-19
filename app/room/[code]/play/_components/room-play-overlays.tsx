@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { RecordingCanvas } from "@/components/recording-canvas"
 import { ShareSheet } from "@/components/share-sheet"
@@ -8,6 +8,7 @@ import { PrismBurst } from "@/components/prism-burst"
 import { Confetti } from "@/components/confetti"
 import { CountdownOverlay } from "@/components/countdown-overlay"
 import { WinnerCard } from "@/components/winner-card"
+import { PremiumNudge } from "@/components/premium-nudge"
 import { SEGMENT_COLORS } from "@/lib/constants"
 import { getTreatTitle } from "@/lib/group-storage"
 import type { RecordingPhase } from "@/components/recording-canvas"
@@ -96,6 +97,23 @@ export function RoomPlayOverlays({
     const t = setTimeout(() => setShowFlash(false), 200)
     return () => clearTimeout(t)
   }, [winner])
+
+  // ISSUE-215: Premium Nudge — WinnerCard を閉じた後、初回のみ表示
+  const [showPremiumNudge, setShowPremiumNudge] = useState(false)
+  const prevWinnerRef = useRef<WinnerData | null>(null)
+
+  useEffect(() => {
+    if (prevWinnerRef.current && !winner) {
+      const seen = typeof window !== "undefined" && localStorage.getItem("premium_nudge_seen")
+      if (!seen) setShowPremiumNudge(true)
+    }
+    prevWinnerRef.current = winner
+  }, [winner])
+
+  const handleDismissNudge = () => {
+    setShowPremiumNudge(false)
+    localStorage.setItem("premium_nudge_seen", "1")
+  }
 
   return (
     <>
@@ -216,6 +234,9 @@ export function RoomPlayOverlays({
           </motion.div>
         ))}
       </AnimatePresence>
+
+      {/* ISSUE-215: Premium Nudge — WinnerCard 閉じた後、初回のみ */}
+      {showPremiumNudge && <PremiumNudge onDismiss={handleDismissNudge} />}
     </>
   )
 }
