@@ -97,14 +97,6 @@ export function RoomPlayOverlays({
     return () => clearTimeout(t)
   }, [winner])
 
-  // ISSUE-207: 名前リビール — winner 確定から 0.8秒後に WinnerCard を表示
-  const [showWinnerCard, setShowWinnerCard] = useState(false)
-  useEffect(() => {
-    if (!winner) { setShowWinnerCard(false); return }
-    const t = setTimeout(() => setShowWinnerCard(true), 800)
-    return () => clearTimeout(t)
-  }, [winner])
-
   return (
     <>
       <RecordingCanvas
@@ -165,8 +157,8 @@ export function RoomPlayOverlays({
         <div className="fixed inset-0 pointer-events-none z-20 bg-white/25 transition-opacity duration-200" />
       )}
 
-      {/* ISSUE-207: 当選者発表リビール（0.8秒の中間演出） */}
-      {winner && !showWinnerCard && (
+      {/* ISSUE-207: 当選者発表リビール（WinnerCard が 0.8s 遅延入場するまで表示） */}
+      {winner && (
         <div className="fixed inset-0 flex flex-col items-center justify-center z-40 pointer-events-none">
           <p
             className="text-4xl font-black tracking-tight animate-bounce"
@@ -177,8 +169,8 @@ export function RoomPlayOverlays({
         </div>
       )}
 
-      {/* ISSUE-218: winner && ガードを追加して winner=null 時の winner!.name TypeError を防ぐ */}
-      {showWinnerCard && winner && (
+      {/* ISSUE-219: showWinnerCard state 廃止。winner のみで制御、遅延は WinnerCard 側のアニメーションで実現 */}
+      {winner && (
         <WinnerCard
           winner={winner.name}
           winnerIndex={winner.index}

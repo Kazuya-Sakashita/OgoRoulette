@@ -311,7 +311,7 @@ export function WinnerCard({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0, scale: 0.96, filter: "blur(4px)" }}
-            transition={{ duration: 0.25 }}
+            transition={{ delay: 0.8, duration: 0.25 }}
           >
             {/* Full-screen winner color flood */}
             <motion.div
